@@ -90,7 +90,7 @@ TrackAnalyzer::TrackAnalyzer(const edm::ParameterSet& iConfig)
    //now do what ever initialization is needed
 
   //configuration parameters
-  tag_generalTracks_ = iConfig.getUntrackedParameter<edm::InputTag>("generalTracks")
+  tag_generalTracks_ = iConfig.getUntrackedParameter<edm::InputTag>("generalTracks");
 
 }
 

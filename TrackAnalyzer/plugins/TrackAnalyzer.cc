@@ -1,9 +1,9 @@
 // -*- C++ -*-
 //
-// Package:    TrackFiller/TrackAnalyzer
+// Package:    DisplacedJets/TrackAnalyzer
 // Class:      TrackAnalyzer
 // 
-/**\class TrackAnalyzer TrackAnalyzer.cc TrackFiller/TrackAnalyzer/plugins/TrackAnalyzer.cc
+/**\class TrackAnalyzer TrackAnalyzer.cc TrackAnalyzer/TrackAnalyzer/plugins/TrackAnalyzer.cc
 
  Description: [one line class summary]
 

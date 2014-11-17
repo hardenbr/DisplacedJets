@@ -48,6 +48,7 @@
 #include "DataFormats/TrackReco/interface/Track.h"
 #include "DataFormats/JetReco/interface/CaloJetCollection.h"
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
+#include "DataFormats/BTauReco/interface/TrackIPTagInfo.h"
 
 //mesages
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
@@ -85,6 +86,7 @@ private:
 
   //tracking tags
   edm::InputTag tag_generalTracks_;
+  edm::InputTag tag_trackIPTagInfoCollection_;
   
   //jet tags
   edm::InputTag tag_ak4CaloJets_;
@@ -94,6 +96,10 @@ private:
   edm::InputTag tag_genParticles_;
   edm::InputTag tag_ak5GenJets_;
   edm::InputTag tag_genMetCalo_;
+
+  //cuts
+  Float_t cut_jetPt;
+  Float_t cut_jetEta;
   
   //output related
   TTree *trackTree_;   
@@ -146,6 +152,11 @@ TrackAnalyzer::TrackAnalyzer(const edm::ParameterSet& iConfig)
   tag_generalTracks_ = iConfig.getUntrackedParameter<edm::InputTag>("generalTracks");
   tag_ak5CaloJets_ = iConfig.getUntrackedParameter<edm::InputTag>("ak5CaloJets");
 
+  //cuts 
+  cut_jetPt = iConfig.getUntrackedParameter<float>("jetPt");
+  cut_jetEta = iConfig.getUntrackedParameter<float>("jetEta");
+
+
   //mc tags
   if(isMC_) {
     tag_ak5GenJets_ = iConfig.getUntrackedParameter<edm::InputTag>("ak5GenJets");
@@ -184,7 +195,10 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   
   edm::Handle<reco::CaloJetCollection> ak5CaloJets;
   iEvent.getByLabel(tag_ak5CaloJets_, ak5CaloJets);
-  
+
+  edm::Handle<reco::TrackIPTagInfoCollection> trackIPTagInfoCollection;
+  iEvent.getByLabel(tag_trackIPTagInfoCollection_, trackIPTagInfoCollection);
+
   //SIM Compatible 
   if(isMC_) {
     edm::Handle<reco::GenParticleCollection > genParticle;
@@ -216,15 +230,33 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   //////////////////////
   // Fill Trees
   //////////////////////
-  nTracks = tracks->size();
-  nCaloJets = ak5CaloJets->size();
+  
+  nTracks = 0;
+  nCaloJets = 0;
 
+  //
   Int_t jj = 0;
   for(reco::CaloJetCollection::const_iterator jet = ak5CaloJets->begin(); jet != ak5CaloJets->end(); ++jet, jj++){
+
+    if (jet->pt() < cut_jetPt) continue;
+    if (fabs(jet->eta()) > cut_jetEta) continue;
+
     caloJetPt[jj] = jet->pt();
     caloJetEta[jj] = jet->eta();
-    caloJetPhi[jj] = jet->phi();    
+    caloJetPhi[jj] = jet->phi();        
+
+    nCaloJets++;
   }
+
+  Int_t tt = 0;
+  for(reco::TrackIPTagInfoCollection::const_iterator ipinfo = trackIPTagInfoCollection->begin(); ipinfo != trackIPTagInfoCollection->end(); ++ipinfo, tt++){
+    std::vector<reco::btag::TrackIPData> ipdata = ipinfo->impactParameterData();
+    Int_t datasize = ipdata.size();
+    
+    std::cout << "2d IP value: " << ipdata[0].impactParameter2D()->value() << std::endl;
+    std::cout << "2d IP sig: " << ipdata[0].impactParameter2D()->significance() << std::endl;
+  }
+
    
   // Int_t tt = 0;
   // for(reco::TrackCollection::const_iterator track = tracks->begin(); track != tracks->end(); ++track, tt++){
@@ -233,6 +265,9 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   //   trackPhi[tt] = track->outerPhi();    
   // }
   
+  //end by filling
+  trackTree_->Fill();
+
 }
 
 

@@ -48,6 +48,8 @@
 #include "DataFormats/TrackReco/interface/Track.h"
 #include "DataFormats/JetReco/interface/CaloJetCollection.h"
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
+#include "DataFormats/BTauReco/interface/TrackIPTagInfo.h"
+#include "DataFormats/BTauReco/interface/TrackIPData.h"
 
 //mesages
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
@@ -85,6 +87,7 @@ private:
 
   //tracking tags
   edm::InputTag tag_generalTracks_;
+  edm::InputTag tag_trackIPTagInfoCollection_;
   
   //jet tags
   edm::InputTag tag_ak4CaloJets_;
@@ -94,6 +97,10 @@ private:
   edm::InputTag tag_genParticles_;
   edm::InputTag tag_ak5GenJets_;
   edm::InputTag tag_genMetCalo_;
+
+  //cuts
+  Double_t cut_jetPt;
+  Double_t cut_jetEta;
   
   //output related
   TTree *trackTree_;   
@@ -136,7 +143,6 @@ private:
 // constructors and destructor
 //
 TrackAnalyzer::TrackAnalyzer(const edm::ParameterSet& iConfig)
-
 {
   //output configuration
   outputFileName_    =   iConfig.getUntrackedParameter<std::string>("outputFileName");
@@ -145,6 +151,11 @@ TrackAnalyzer::TrackAnalyzer(const edm::ParameterSet& iConfig)
   //tags
   tag_generalTracks_ = iConfig.getUntrackedParameter<edm::InputTag>("generalTracks");
   tag_ak5CaloJets_ = iConfig.getUntrackedParameter<edm::InputTag>("ak5CaloJets");
+
+  //cuts 
+  cut_jetPt = iConfig.getUntrackedParameter<double>("jetPt");
+  cut_jetEta = iConfig.getUntrackedParameter<double>("jetEta");
+
 
   //mc tags
   if(isMC_) {
@@ -184,7 +195,10 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   
   edm::Handle<reco::CaloJetCollection> ak5CaloJets;
   iEvent.getByLabel(tag_ak5CaloJets_, ak5CaloJets);
-  
+
+  edm::Handle<reco::TrackIPTagInfoCollection> trackIPTagInfoCollection;
+  iEvent.getByLabel(tag_trackIPTagInfoCollection_, trackIPTagInfoCollection);
+
   //SIM Compatible 
   if(isMC_) {
     edm::Handle<reco::GenParticleCollection > genParticle;
@@ -216,15 +230,36 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   //////////////////////
   // Fill Trees
   //////////////////////
-  nTracks = tracks->size();
-  nCaloJets = ak5CaloJets->size();
+  
+  nTracks = 0;
+  nCaloJets = 0;
 
+  //
   Int_t jj = 0;
   for(reco::CaloJetCollection::const_iterator jet = ak5CaloJets->begin(); jet != ak5CaloJets->end(); ++jet, jj++){
+
+    if (jet->pt() < cut_jetPt) continue;
+    if (fabs(jet->eta()) > cut_jetEta) continue;
+
     caloJetPt[jj] = jet->pt();
     caloJetEta[jj] = jet->eta();
-    caloJetPhi[jj] = jet->phi();    
+    caloJetPhi[jj] = jet->phi();        
+
+    nCaloJets++;
   }
+
+  Int_t tt = 0;
+  for(reco::TrackIPTagInfoCollection::const_iterator ipinfo = trackIPTagInfoCollection->begin(); ipinfo != trackIPTagInfoCollection->end(); ++ipinfo, tt++){
+    const std::vector<reco::btag::TrackIPData>  &ipdata = ipinfo->impactParameterData();
+
+    //    Int_t datasize = ipdata.size();
+    
+    for( std::vector<reco::btag::TrackIPData>::const_iterator ip = ipdata.begin(); ip != ipdata.end(); ++ip){
+      std::cout << "2d IP value: " << ((*ip).ip2d).value() << std::endl;
+      std::cout << "2d IP sig: " << ((*ip).ip2d).significance() << std::endl;
+    }
+  }
+
    
   // Int_t tt = 0;
   // for(reco::TrackCollection::const_iterator track = tracks->begin(); track != tracks->end(); ++track, tt++){

@@ -3,16 +3,18 @@ import FWCore.ParameterSet.Config as cms
 isMC = True
 
 
-process = cms.Process("analyzer")
 
+process = cms.Process("ANA")
+
+process.load("setup_cff")
 process.load("FWCore.MessageService.MessageLogger_cfi")
 
 #geometry and global tag sequences
-process.load("Configuration.Geometry.GeometryIdeal_cff")
-process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
+#process.load("Configuration.Geometry.GeometryIdeal_cff")
+#process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
 process.GlobalTag.globaltag = 'MCRUN2_72_V1A::All'
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(10) )
 
 process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring(
@@ -80,23 +82,23 @@ process.source = cms.Source("PoolSource",
 # )
 
 
-# #calculate the track IPs from the jet tracks associator
-# process.trackIPsFromJetTracks = cms.EDProducer( "TrackIPProducer",
-#     maximumTransverseImpactParameter = cms.double( 0.1 ),
-#     minimumNumberOfHits = cms.int32( 8 ),
-#     minimumTransverseMomentum = cms.double( 1.0 ),
-#     primaryVertex =  cms.InputTag( "offlinePrimaryVerticies","","RECO" ),
-#     maximumLongitudinalImpactParameter = cms.double( 0.1 ),
-#     computeGhostTrack = cms.bool( False ),
-#     ghostTrackPriorDeltaR = cms.double( 0.03 ),
-#     jetTracks = cms.InputTag( "ak5JetTracksAssociatorAtVertex","","RECO" ),
-#     jetDirectionUsingGhostTrack = cms.bool( False ),
-#     minimumNumberOfPixelHits = cms.int32( 2 ),
-#     jetDirectionUsingTracks = cms.bool( False ),
-#     computeProbabilities = cms.bool( False ),
-#     useTrackQuality = cms.bool( False ),
-#     maximumChiSquared = cms.double( 20.0 )
-# )
+#calculate the track IPs from the jet tracks associator
+process.trackIPsFromJetTracks = cms.EDProducer( "TrackIPProducer",
+    maximumTransverseImpactParameter = cms.double( 999999 ),
+    minimumNumberOfHits = cms.int32( 4 ),
+    minimumTransverseMomentum = cms.double( 1.0 ),
+    primaryVertex =  cms.InputTag( "offlinePrimaryVerticies","","RECO" ),
+    maximumLongitudinalImpactParameter = cms.double( 999999 ),
+    computeGhostTrack = cms.bool( False ),
+    ghostTrackPriorDeltaR = cms.double( 0.03 ),
+    jetTracks = cms.InputTag( "ak5JetTracksAssociatorAtVertex","","RECO" ),
+    jetDirectionUsingGhostTrack = cms.bool( False ),
+    minimumNumberOfPixelHits = cms.int32( 0 ),
+    jetDirectionUsingTracks = cms.bool( False ),
+    computeProbabilities = cms.bool( False ),
+    useTrackQuality = cms.bool( False ),
+    maximumChiSquared = cms.double( 20.0 )
+)
 
 # #build the jet tags from the track IP
 # process.jetTagProducer = cms.EDProducer( "JetTagProducer",
@@ -118,6 +120,11 @@ process.analyzer.isMC =  cms.untracked.bool(isMC)
 #tags
 process.analyzer.generalTracks =  cms.untracked.InputTag('generalTracks','','RECO')
 process.analyzer.ak5CaloJets =  cms.untracked.InputTag('ak5CaloJets','','RECO')
+process.analyzer.trackIPTagInfoCollection = cms.untracked.InputTag('trackIPTagInfoCollection','','')
+
+#cuts
+process.analyzer.jetPt = cms.untracked.double(40.0)
+process.analyzer.jetEta = cms.untracked.double(2.0)
 
 #mctags
 if isMC:
@@ -127,4 +134,5 @@ if isMC:
 
 
 #run the anlayzer
-process.p = cms.Path(process.analyzer)
+process.p = cms.Path(process.trackIPsFromJetTracks + process.analyzer)
+

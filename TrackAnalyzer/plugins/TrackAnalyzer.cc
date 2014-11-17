@@ -20,6 +20,7 @@
 
 // system include files                                                                                                                                                 
 #include <vector> 
+#include <string> 
 #include <cmath>
 #include <memory>
 #include <iostream>
@@ -52,19 +53,41 @@
 //
 
 class TrackAnalyzer : public edm::EDAnalyzer {
-   public:
-      explicit TrackAnalyzer(const edm::ParameterSet&);
-      ~TrackAnalyzer();
 
-      static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
-
-   private:
-      virtual void beginJob() override;
-      virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
-      virtual void endJob() override;
+public:
+  explicit TrackAnalyzer(const edm::ParameterSet&);
+  ~TrackAnalyzer();
   
-      edm::InputTag tag_generalTracks_;
+  static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
+  
+private:
 
+  //methods
+  virtual void beginJob() override;
+  virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
+  virtual void endJob() override;
+  
+  //file configuration tags
+  std::string outputFileName_;
+  
+  //tracking tags
+  edm::InputTag tag_generalTracks_;
+  
+  //jet tags
+  edm::InputTag tag_ak4CaloJets_;
+  edm::InputTag tag_ak5CaloJets_;
+  
+  //gen info
+  edm::InputTag tag_genParticles_;
+  edm::InputTag tag_ak5GenJets_;
+  edm::InputTag tag_genMetCalo_;
+  
+  //output related
+  TTree *trackTree_;   
+
+  //output histograms
+
+  
       //virtual void beginRun(edm::Run const&, edm::EventSetup const&) override;
       //virtual void endRun(edm::Run const&, edm::EventSetup const&) override;
       //virtual void beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) override;
@@ -87,10 +110,19 @@ class TrackAnalyzer : public edm::EDAnalyzer {
 TrackAnalyzer::TrackAnalyzer(const edm::ParameterSet& iConfig)
 
 {
-   //now do what ever initialization is needed
+  //output configuration
+  outputFileName_    =   iConfig.getUntrackedParameter<std::string>("outputFileName");
+  isMC_    =   iConfig.getUntrackedParameter<std::bool>("isMC");
 
-  //configuration parameters
+  //tags
   tag_generalTracks_ = iConfig.getUntrackedParameter<edm::InputTag>("generalTracks");
+
+  //mc tags
+  if(isMC_) {
+    tag_ak5GenJets_ = iConfig.getUntrackedParameter<edm::InputTag>("ak5GenJets");
+    tag_genMetCalo_ = iConfig.getUntrackedParameter<edm::InputTag>("genMetCalo");
+    tag_genParticles_ = iConfig.getUntrackedParameter<edm::InputTag>("genParticles");
+  }
 
 }
 
@@ -114,11 +146,50 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
    using namespace edm;
 
-   Handle<std::vector<reco::Track> > tracks;
+   //////////////////////
+   // Extract Collections 
+   //////////////////////
 
+   // AOD Compatible
+   Handle<std::vector<reco::Track> > tracks;
    iEvent.getByLabel(tag_generalTracks_, tracks); 
 
-   
+   Handle<std::vector<reco::CaloJet> > ak5CaloJets;
+   iEvents.getByLabel(tag_ak5CaloJets_, ak5CaloJets);
+
+
+   //SIM Compatible 
+   if(isMC_) {
+     Handle<std::vector<reco::GenParticle> > genParticle;
+     iEvents.getByLabel(tag_genParticle_, genParticle);
+
+     Handle<std::vector<int> > genParticleID;
+     iEvents.getByLabel(tag_genParticle_, genParticleID);
+
+     Handle<std::vector<int> > genMetCalo;
+     iEvents.getByLabel(tag_genMetCalo_, genMetCalo);
+
+     Handle<std::vector<int> > ak5GenJets;
+     iEvents.getByLabel(tag_ak5GenJets_, ak5GenJets);
+   }
+
+
+   // RECO Compatible
+
+   // RAW Compatible
+
+   // All Formats Compatible
+
+
+   //////////////////////
+   // Calculate Variables
+   //////////////////////
+
+
+   //////////////////////
+   // Fill Trees
+   //////////////////////
+   trackTree_ = new TTree("track variables");
    
 
 }
@@ -128,6 +199,8 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 void 
 TrackAnalyzer::beginJob()
 {
+  
+
 }
 
 // ------------ method called once each job just after ending the event loop  ------------

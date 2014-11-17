@@ -1,9 +1,9 @@
 // -*- C++ -*-
 //
-// Package:    TrackFiller/TrackAnalyzer
+// Package:    DisplacedJets/TrackAnalyzer
 // Class:      TrackAnalyzer
 // 
-/**\class TrackAnalyzer TrackAnalyzer.cc TrackFiller/TrackAnalyzer/plugins/TrackAnalyzer.cc
+/**\class TrackAnalyzer TrackAnalyzer.cc TrackAnalyzer/TrackAnalyzer/plugins/TrackAnalyzer.cc
 
  Description: [one line class summary]
 
@@ -20,6 +20,7 @@
 
 // system include files                                                                                                                                                 
 #include <vector> 
+#include <string> 
 #include <cmath>
 #include <memory>
 #include <iostream>
@@ -52,18 +53,28 @@
 //
 
 class TrackAnalyzer : public edm::EDAnalyzer {
-   public:
-      explicit TrackAnalyzer(const edm::ParameterSet&);
-      ~TrackAnalyzer();
 
-      static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
-
-   private:
-      virtual void beginJob() override;
-      virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
-      virtual void endJob() override;
+public:
+  explicit TrackAnalyzer(const edm::ParameterSet&);
+  ~TrackAnalyzer();
   
-      edm::InputTag tag_generalTracks_;
+  static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
+  
+private:
+
+  //methods
+  virtual void beginJob() override;
+  virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
+  virtual void endJob() override;
+  
+  //file configuration tags
+  std::string outputFileName_;
+  
+  //tracking tags
+  edm::InputTag tag_generalTracks_;
+  
+  //jet tags
+  edm::InputTag tag_ak4CaloJets_;
 
       //virtual void beginRun(edm::Run const&, edm::EventSetup const&) override;
       //virtual void endRun(edm::Run const&, edm::EventSetup const&) override;
@@ -114,11 +125,29 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
    using namespace edm;
 
-   Handle<std::vector<reco::Track> > tracks;
+   //////////////////////
+   // Extract Collections 
+   //////////////////////
 
+   // AOD Compatible
+   Handle<std::vector<reco::Track> > tracks;
    iEvent.getByLabel(tag_generalTracks_, tracks); 
 
-   
+   // RECO Compatible
+
+   // RAW Compatible
+
+   // All Formats Compatible
+
+
+   //////////////////////
+   // Calculate Variables
+   //////////////////////
+
+
+   //////////////////////
+   // Fill Trees
+   //////////////////////
    
 
 }
@@ -128,6 +157,8 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 void 
 TrackAnalyzer::beginJob()
 {
+  
+
 }
 
 // ------------ method called once each job just after ending the event loop  ------------

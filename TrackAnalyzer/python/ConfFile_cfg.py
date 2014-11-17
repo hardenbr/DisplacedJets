@@ -20,16 +20,76 @@ process.source = cms.Source("PoolSource",
     )
 )
 
-#calculate the track IP from the tags
-process.trackIPFromJetTracks = cms.EDProducer( "TrackIPProducer",
+
+# #custom ES producers for track computers
+# process.DisplacedDijethltESPPromptTrackCountingESProducer = cms.ESProducer( "PromptTrackCountingESProducer",
+#   maxImpactParameterSig = cms.double( 999999.0 ),
+#   deltaR = cms.double( -1.0 ),
+#   minimumImpactParameter = cms.double( -1.0 ),
+#   maximumDecayLength = cms.double( 999999.0 ),
+#   impactParameterType = cms.int32( 1 ),
+#   trackQualityClass = cms.string( "any" ),
+#   deltaRmin = cms.double( 0.0 ),
+#   maxImpactParameter = cms.double( 0.1 ),
+#   useSignedImpactParameterSig = cms.bool( True ),
+#   maximumDistanceToJetAxis = cms.double( 999999.0 ),
+#   nthTrack = cms.int32( -1 )
+# )
+
+# process.DisplacedDijethltESPTrackCounting2D1st = cms.ESProducer( "TrackCountingESProducer",
+#   b_pT = cms.double( 0.3684 ),
+#   deltaR = cms.double( -1.0 ),
+#   minimumImpactParameter = cms.double( 0.05 ),
+#   a_dR = cms.double( -0.001053 ),
+#   min_pT = cms.double( 120.0 ),
+#   maximumDistanceToJetAxis = cms.double( 9999999.0 ),
+#   max_pT = cms.double( 500.0 ),
+#   impactParameterType = cms.int32( 1 ),
+#   trackQualityClass = cms.string( "any" ),
+#   useVariableJTA = cms.bool( False ),
+#   min_pT_dRcut = cms.double( 0.5 ),
+#   max_pT_trackPTcut = cms.double( 3.0 ),
+#   max_pT_dRcut = cms.double( 0.1 ),
+#   b_dR = cms.double( 0.6263 ),
+#   a_pT = cms.double( 0.005263 ),
+#   maximumDecayLength = cms.double( 999999.0 ),
+#   nthTrack = cms.int32( 1 ),
+#   useSignedImpactParameterSig = cms.bool( False )
+# )
+
+# # second highest IP significance track computer
+# process.DisplacedDijethltESPTrackCounting2D2nd= cms.ESProducer( "TrackCountingESProducer",
+#   b_pT = cms.double( 0.3684 ),
+#   deltaR = cms.double( -1.0 ),
+#   minimumImpactParameter = cms.double( 0.05 ),
+#   a_dR = cms.double( -0.001053 ),
+#   min_pT = cms.double( 120.0 ),
+#   maximumDistanceToJetAxis = cms.double( 9999999.0 ),
+#   max_pT = cms.double( 500.0 ),
+#   impactParameterType = cms.int32( 1 ),
+#   trackQualityClass = cms.string( "any" ),
+#   useVariableJTA = cms.bool( False ),
+#   min_pT_dRcut = cms.double( 0.5 ),
+#   max_pT_trackPTcut = cms.double( 3.0 ),
+#   max_pT_dRcut = cms.double( 0.1 ),
+#   b_dR = cms.double( 0.6263 ),
+#   a_pT = cms.double( 0.005263 ),
+#   maximumDecayLength = cms.double( 999999.0 ),
+#   nthTrack = cms.int32( 2 ),
+#   useSignedImpactParameterSig = cms.bool( False )
+# )
+
+
+#calculate the track IPs from the jet tracks associator
+process.trackIPsFromJetTracks = cms.EDProducer( "TrackIPProducer",
     maximumTransverseImpactParameter = cms.double( 0.1 ),
     minimumNumberOfHits = cms.int32( 8 ),
     minimumTransverseMomentum = cms.double( 1.0 ),
-    primaryVertex = cms.InputTag( "hltFastPVPixelVertices" ),
+    primaryVertex =  cms.InputTag( "offlinePrimaryVerticies","","RECO" ),
     maximumLongitudinalImpactParameter = cms.double( 0.1 ),
     computeGhostTrack = cms.bool( False ),
     ghostTrackPriorDeltaR = cms.double( 0.03 ),
-    jetTracks = cms.InputTag( "offlinePrimaryVerticies","","RECO" ),
+    jetTracks = cms.InputTag( "ak5JetTracksAssociatorAtVertex","","RECO" ),
     jetDirectionUsingGhostTrack = cms.bool( False ),
     minimumNumberOfPixelHits = cms.int32( 2 ),
     jetDirectionUsingTracks = cms.bool( False ),
@@ -38,6 +98,14 @@ process.trackIPFromJetTracks = cms.EDProducer( "TrackIPProducer",
     maximumChiSquared = cms.double( 20.0 )
 )
 
+# #build the jet tags from the track IP
+# process.jetTagProducer = cms.EDProducer( "JetTagProducer",
+#     jetTagComputer = cms.string( "DisplacedDijethltESPPromptTrackCountingESProducer" ),
+#     tagInfos = cms.VInputTag( 'trackIPFromJetTracks' )
+# )
+
+
+################################################################################################
 
 
 #configure the analyzer 
@@ -56,7 +124,6 @@ if isMC:
     process.analyzer.ak5GenJets =  cms.untracked.InputTag('ak5GenJets','','SIM')
     process.analyzer.genMetCalo =  cms.untracked.InputTag('genMetCalo','','SIM')
     process.analyzer.genParticles =  cms.untracked.InputTag('genParticles','','SIM')
-
 
 
 #run the anlayzer

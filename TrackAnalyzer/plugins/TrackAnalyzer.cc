@@ -69,6 +69,7 @@ private:
   
   //file configuration tags
   std::string outputFileName_;
+  TFile outputFile_;
   
   //tracking tags
   edm::InputTag tag_generalTracks_;
@@ -84,6 +85,20 @@ private:
   
   //output related
   TTree *trackTree_;   
+
+  const Int_t MAX_TRACKS = 9999;
+  const Int_t MAX_JETS = 999;
+
+  Int_t nTracks = MAX_TRACKS;
+  Int_t nCaloJets = MAX_JETS;
+
+  Float_t trackPt[nTracks];
+  Float_t trackEta[nTracks];
+  Float_t trackPhi[nTracks];
+
+  Float_t caloJetPt[nCaloJets];
+  Float_t caloJetEta[nCaloJets];
+  Float_t caloJetPhi[nCaloJets];
 
   //output histograms
 
@@ -155,22 +170,21 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    iEvent.getByLabel(tag_generalTracks_, tracks); 
 
    Handle<std::vector<reco::CaloJet> > ak5CaloJets;
-   iEvents.getByLabel(tag_ak5CaloJets_, ak5CaloJets);
-
+   iEvent.getByLabel(tag_ak5CaloJets_, ak5CaloJets);
 
    //SIM Compatible 
    if(isMC_) {
      Handle<std::vector<reco::GenParticle> > genParticle;
-     iEvents.getByLabel(tag_genParticle_, genParticle);
+     iEvent.getByLabel(tag_genParticle_, genParticle);
 
      Handle<std::vector<int> > genParticleID;
-     iEvents.getByLabel(tag_genParticle_, genParticleID);
+     iEvent.getByLabel(tag_genParticle_, genParticleID);
 
      Handle<std::vector<int> > genMetCalo;
-     iEvents.getByLabel(tag_genMetCalo_, genMetCalo);
+     iEvent.getByLabel(tag_genMetCalo_, genMetCalo);
 
      Handle<std::vector<int> > ak5GenJets;
-     iEvents.getByLabel(tag_ak5GenJets_, ak5GenJets);
+     iEvent.getByLabel(tag_ak5GenJets_, ak5GenJets);
    }
 
 
@@ -189,9 +203,22 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    //////////////////////
    // Fill Trees
    //////////////////////
-   trackTree_ = new TTree("track variables");
-   
+   nTracks = tracks->size();
+   nCaloJets = ak5CaloJets->size();
 
+   Int_t jj = 0;
+   for(reco::const_iterator jet = ak5CaloJets->begin(); jet != ak5CaloJets->end(); ++jet, jj++){
+     caloJetPt[jj] = jet->pt();
+     caloJetEta[jj] = jet->eta();
+     caloJetPhi[jj] = jet->phi();    
+   }
+   
+   Int_t tt = 0;
+   for(reco::const_iterator track = tracks->begin(); track != ak5CaloJets->end(); ++track, tt++){
+     trackPt[tt] = track->outerPt();
+     trackEta[tt] = track->outerEta();
+     trackPhi[tt] = track->outerPhi();    
+   }   
 }
 
 
@@ -199,14 +226,27 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 void 
 TrackAnalyzer::beginJob()
 {
-  
+  outputfile_ = new TFile(outputFileName_, "RECREATE")
+  trackTree_  = new TTree("track variables");
 
+  trackTree_->Branch("nCaloJets", &nCaloJets, "nCaloJets/I")
+  trackTree_->Branch("nTracks", &nTracks, "nTracks/I")
+
+  trackTree_->Branch("caloJetPt", &caloJetPt, "caloJetPt[nCaloJets]/F")
+  trackTree_->Branch("caloJetPhi", &caloJetPhi, "caloJetPhi[nCaloJets]/F")
+  trackTree_->Branch("caloJetEta", &caloJetEta, "caloJetEta[nCaloJets]/F")
+
+  trackTree_->Branch("trackPt", &trackPt, "trackPt[nTracks]/F")
+  trackTree_->Branch("trackPhi", &trackPhi, "trackPhi[nTracks]/F")
+  trackTree_->Branch("trackEta", &trackEta, "trackEta[nTracks]/F") 
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
 void 
 TrackAnalyzer::endJob() 
 {
+  trackTree_->Write();
+  outputfile->Close();
 }
 
 // ------------ method called when starting to processes a run  ------------

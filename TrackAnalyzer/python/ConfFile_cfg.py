@@ -12,7 +12,7 @@ process.load("Configuration.Geometry.GeometryIdeal_cff")
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
 process.GlobalTag.globaltag = 'MCRUN2_72_V1A::All'
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(10) )
 
 process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring(
@@ -80,23 +80,23 @@ process.source = cms.Source("PoolSource",
 # )
 
 
-#calculate the track IPs from the jet tracks associator
-process.trackIPsFromJetTracks = cms.EDProducer( "TrackIPProducer",
-    maximumTransverseImpactParameter = cms.double( 0.1 ),
-    minimumNumberOfHits = cms.int32( 8 ),
-    minimumTransverseMomentum = cms.double( 1.0 ),
-    primaryVertex =  cms.InputTag( "offlinePrimaryVerticies","","RECO" ),
-    maximumLongitudinalImpactParameter = cms.double( 0.1 ),
-    computeGhostTrack = cms.bool( False ),
-    ghostTrackPriorDeltaR = cms.double( 0.03 ),
-    jetTracks = cms.InputTag( "ak5JetTracksAssociatorAtVertex","","RECO" ),
-    jetDirectionUsingGhostTrack = cms.bool( False ),
-    minimumNumberOfPixelHits = cms.int32( 2 ),
-    jetDirectionUsingTracks = cms.bool( False ),
-    computeProbabilities = cms.bool( False ),
-    useTrackQuality = cms.bool( False ),
-    maximumChiSquared = cms.double( 20.0 )
-)
+# #calculate the track IPs from the jet tracks associator
+# process.trackIPsFromJetTracks = cms.EDProducer( "TrackIPProducer",
+#     maximumTransverseImpactParameter = cms.double( 0.1 ),
+#     minimumNumberOfHits = cms.int32( 8 ),
+#     minimumTransverseMomentum = cms.double( 1.0 ),
+#     primaryVertex =  cms.InputTag( "offlinePrimaryVerticies","","RECO" ),
+#     maximumLongitudinalImpactParameter = cms.double( 0.1 ),
+#     computeGhostTrack = cms.bool( False ),
+#     ghostTrackPriorDeltaR = cms.double( 0.03 ),
+#     jetTracks = cms.InputTag( "ak5JetTracksAssociatorAtVertex","","RECO" ),
+#     jetDirectionUsingGhostTrack = cms.bool( False ),
+#     minimumNumberOfPixelHits = cms.int32( 2 ),
+#     jetDirectionUsingTracks = cms.bool( False ),
+#     computeProbabilities = cms.bool( False ),
+#     useTrackQuality = cms.bool( False ),
+#     maximumChiSquared = cms.double( 20.0 )
+# )
 
 # #build the jet tags from the track IP
 # process.jetTagProducer = cms.EDProducer( "JetTagProducer",

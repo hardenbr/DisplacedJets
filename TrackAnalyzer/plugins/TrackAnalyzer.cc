@@ -17,6 +17,7 @@
 //
 //
 
+#define DEBUG
 
 //root includes
 #include "TFile.h"  
@@ -151,7 +152,7 @@ TrackAnalyzer::TrackAnalyzer(const edm::ParameterSet& iConfig)
   //tags
   tag_generalTracks_ = iConfig.getUntrackedParameter<edm::InputTag>("generalTracks");
   tag_ak5CaloJets_ = iConfig.getUntrackedParameter<edm::InputTag>("ak5CaloJets");
-
+  tag_trackIPTagInfoCollection_ = iConfig.getUntrackedParameter<edm::InputTag>("trackIPTagInfoCollection");
   //cuts 
   cut_jetPt = iConfig.getUntrackedParameter<double>("jetPt");
   cut_jetEta = iConfig.getUntrackedParameter<double>("jetEta");
@@ -209,7 +210,7 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     
     // edm::Handle<std::vector<float> > genMetCalo;
     // iEvent.getByLabel(tag_genMetCalo_, genMetCalo);
-
+    
     // edm::Handle<std::vector<float> > ak5GenJets;
     // iEvent.getByLabel(tag_ak5GenJets_, ak5GenJets);
   }
@@ -248,11 +249,23 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     nCaloJets++;
   }
 
-  Int_t tt = 0;
+
+
+#ifdef DEBUG
+  std::cout << "[DEBUG] Begin Extracting IP Info" << std::endl;
+#endif 
+  Int_t tt = 0;  
   for(reco::TrackIPTagInfoCollection::const_iterator ipinfo = trackIPTagInfoCollection->begin(); ipinfo != trackIPTagInfoCollection->end(); ++ipinfo, tt++){
+
+#ifdef DEBUG
+  std::cout << "[DEBUG] Getting IP Data from Collection" << std::endl;
+#endif 
+
     const std::vector<reco::btag::TrackIPData>  &ipdata = ipinfo->impactParameterData();
 
-    //    Int_t datasize = ipdata.size();
+#ifdef DEBUG
+  std::cout << "[DEBUG] Extracting Significances from Info" << std::endl;
+#endif 
     
     for( std::vector<reco::btag::TrackIPData>::const_iterator ip = ipdata.begin(); ip != ipdata.end(); ++ip){
       std::cout << "2d IP value: " << ((*ip).ip2d).value() << std::endl;
@@ -278,6 +291,12 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 void 
 TrackAnalyzer::beginJob()
 {
+
+#ifdef DEBUG
+  std::cout << "[DEBUG] Setting Up Output File And Tree" << std::endl;
+#endif 
+
+
   outputFile_ = new TFile(outputFileName_.c_str(), "RECREATE");
   trackTree_  = new TTree("tree","track tree");
 

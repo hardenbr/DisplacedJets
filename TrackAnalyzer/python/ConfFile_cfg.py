@@ -120,7 +120,7 @@ process.analyzer.isMC =  cms.untracked.bool(isMC)
 #tags
 process.analyzer.generalTracks =  cms.untracked.InputTag('generalTracks','','RECO')
 process.analyzer.ak5CaloJets =  cms.untracked.InputTag('ak5CaloJets','','RECO')
-process.analyzer.trackIPTagInfoCollection = cms.untracked.InputTag('trackIPTagInfoCollection','','')
+process.analyzer.trackIPTagInfoCollection = cms.untracked.InputTag('trackIPsFromJetTracks','','ANA')
 
 #cuts
 process.analyzer.jetPt = cms.untracked.double(40.0)

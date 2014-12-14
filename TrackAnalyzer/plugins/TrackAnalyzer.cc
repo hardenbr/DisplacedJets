@@ -17,7 +17,7 @@
 //
 //
 
-#define DEBUG
+//#define DEBUG
 
 //root includes
 #include "TFile.h"  
@@ -112,7 +112,13 @@ private:
 
   static const Int_t MAX_TRACKS = 9999;
   static const Int_t MAX_JETS = 999;
+
+  //bookkeeping
+  int evNum = 0;
   
+  //every jet has its own id
+  int jetid = 0;
+
   //tree variables
   Int_t nTracks = MAX_TRACKS;
   Int_t nCaloJets = MAX_JETS;
@@ -121,6 +127,22 @@ private:
   Float_t trackPt[MAX_TRACKS];
   Float_t trackEta[MAX_TRACKS];
   Float_t trackPhi[MAX_TRACKS];
+
+  //track quality
+  Float_t trackChi2[MAX_TRACKS];
+  
+  //track infoTags
+  Float_t trackIP3D[MAX_TRACKS];
+  Float_t trackIP2D[MAX_TRACKS];
+  Float_t trackIPSig3D[MAX_TRACKS];
+  Float_t trackIPSig2D[MAX_TRACKS];
+  Float_t trackDistanceJetAxis[MAX_TRACKS];
+  Float_t trackDistanceJetAxisSig[MAX_TRACKS];
+  
+  //tracks to jet comparisons
+  Int_t trackJetID[MAX_TRACKS];
+  Int_t jetJetID[MAX_JETS];
+  Float_t jetTrackDR[MAX_TRACKS];
 
   // jet kinematics
   Float_t caloJetPt[MAX_JETS];
@@ -136,10 +158,7 @@ private:
   Float_t caloJetHfrac[MAX_JETS];
   Float_t caloJetEfrac[MAX_JETS];
 
-
   //output histograms
-
-  
       //virtual void beginRun(edm::Run const&, edm::EventSetup const&) override;
       //virtual void endRun(edm::Run const&, edm::EventSetup const&) override;
       //virtual void beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) override;
@@ -270,7 +289,7 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     
     //area 
     //caloJetN90[jj] = jet->n90();
-    //    caloJetN60[jj] = jet->n60();
+    //caloJetN60[jj] = jet->n60();
     caloJetTowerArea[jj] = jet->towersArea();        
 
     //energy
@@ -292,10 +311,15 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   //iterate over the ip info
   reco::TrackIPTagInfoCollection::const_iterator ipinfo = ip.begin(); 
+
   for(; ipinfo != ip.end(); ++ipinfo){    
 
+    jetJetID = jetid; 
+
+#ifdef DEBUG
     std::cout << "Jet pt: " << ipinfo->jet()->pt() << std::endl;
     std::cout << "Tot tracks: " << ipinfo->tracks().size() << std::endl;    
+#endif
 
     reco::TrackRefVector selTracks = ipinfo->selectedTracks();
     int n_seltracks = selTracks.size();
@@ -311,7 +335,30 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     for(int tt = 0; tt < n_seltracks; tt++){      
       
       reco::btag::TrackIPData data = ipinfo->impactParameterData()[tt];  
-      
+      const reco::Track ptrack = *(selectedTracks[tt]);
+
+      //kinematics
+      trackPt = ptrack.pt();
+      trackPhi = ptrack.phi();
+      trackEta = ptrack.eta();
+
+      //jet track association  
+      trackJetID = jetid;
+      jetTrackDR = reco::deltaR( ptrack.eta(), ptrack.phi(),
+				   ipinfo->jet()->eta(), ipinfo->jet()->phi());
+      //ip info tags
+      trackIP3D = data.ip3d.value();
+      trackIPSig3D = data.ip3d.significance();
+      trackIP2D = data.ip3d.value();
+      trackIPSig2D = data.ip2d.significance();
+      trackDistanceJetAxis = data.distanceToJetAxis();
+
+      //track quality
+      trackChi2 = ptrack.normalizedChi2();
+
+	
+	
+#ifdef DEBUG
       std::cout << selTracks[tt]->pt() << "\t";
       std::cout << ipinfo->probabilities(0)[tt] << "\t";
       std::cout << ipinfo->probabilities(1)[tt] << "\t";
@@ -327,12 +374,15 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       std::cout << (data.closestToGhostTrack - pv).mag() << "\t";
       std::cout << data.ip2d.value() << "\t";
       std::cout << data.ip2d.significance() <<  std::endl;     
-
+#endif 
     }
+
+    //increment the jetid
+    jetid++;
   }
 
+  evNum++;
   trackTree_->Fill();
-
 }
 
 
@@ -347,25 +397,47 @@ TrackAnalyzer::beginJob()
 
   outputFile_ = new TFile(outputFileName_.c_str(), "RECREATE");
   trackTree_  = new TTree("tree","track tree");
-
+  
+  // book-keeping
   trackTree_->Branch("nCaloJets", &nCaloJets, "nCaloJets/I");
   trackTree_->Branch("nTracks", &nTracks, "nTracks/I");
-
+  trackTree_->Branch("jetJetID", &jetJetID, "jetJetID/I");
+  trackTree_->Branch("evNum", &evNum, "evNum/I");
+  
+  //jet kinematics
   trackTree_->Branch("caloJetPt", &caloJetPt, "caloJetPt[nCaloJets]/F");
   trackTree_->Branch("caloJetPhi", &caloJetPhi, "caloJetPhi[nCaloJets]/F");
   trackTree_->Branch("caloJetEta", &caloJetEta, "caloJetEta[nCaloJets]/F");
 
+  // jet area
   trackTree_->Branch("caloJetn90", &caloJetN90, "caloJetN90[nCaloJets]/F");
   trackTree_->Branch("caloJetn60", &caloJetN60, "caloJetN60[nCaloJets]/F");
   trackTree_->Branch("caloJetTowerArea", &caloJetTowerArea, "caloJetTowerArea[nCaloJets]/F");
+
+  // jet energy fraction
   trackTree_->Branch("caloJetHfrac", &caloJetHfrac, "caloJetHfrac[nCaloJets]/F");
   trackTree_->Branch("caloJetEfrac", &caloJetEfrac, "caloJetEFrac[nCaloJets]/F");
 
-
-
+  //track kinematics
   trackTree_->Branch("trackPt", &trackPt, "trackPt[nTracks]/F");
   trackTree_->Branch("trackPhi", &trackPhi, "trackPhi[nTracks]/F");
   trackTree_->Branch("trackEta", &trackEta, "trackEta[nTracks]/F");
+
+  //track quality
+  trackTree_->Branch("trackChi2", &trackChi2, "trackChi2[nTracks]/F");
+
+  //ip tag info
+  trackTree_->Branch("trackIP2D", &trackIP2D, "trackIP2D[nTracks]/F");
+  trackTree_->Branch("trackIPSig2D", &trackIPSig2D, "trackIPSig2D[nTracks]/F");
+  trackTree_->Branch("trackIP3D", &trackIP3D, "trackIP3D[nTracks]/F");
+  trackTree_->Branch("trackIPSig3D", &trackIPSig3D, "trackIPSig3D[nTracks]/F");
+  trackTree_->Branch("trackDistanceJetAxis", &trackDistanceJetAxis, "trackDistanceJetAxis[nTracks]/F");
+  trackTree_->Branch("trackDistanceJetAxisSig", &trackDistanceJetAxisSig, "trackDistanceJetAxisSig[nTracks]/F");
+
+  //track jet association
+  trackTree_->Branch("trackJetID", &trackJetID, "trackJetID[nTracks]/F");  
+  trackTree_->Branch("jetTrackDR", &jetTrackDR, "jetTrackDR[nTracks]/F");  
+
 }
 
 // ------------ method called once each job just after ending the event loop  ------------

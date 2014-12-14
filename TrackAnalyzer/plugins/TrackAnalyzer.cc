@@ -51,6 +51,9 @@
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
 #include "DataFormats/BTauReco/interface/TrackIPTagInfo.h"
 #include "DataFormats/BTauReco/interface/TrackIPData.h"
+#include "DataFormats/JetReco/interface/JetTracksAssociation.h"
+#include "DataFormats/Common/interface/Ref.h"
+#include "DataFormats/GeometryVector/interface/GlobalPoint.h"
 
 //mesages
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
@@ -89,6 +92,7 @@ private:
   //tracking tags
   edm::InputTag tag_generalTracks_;
   edm::InputTag tag_trackIPTagInfoCollection_;
+  edm::EDGetTokenT<reco::TrackIPTagInfoCollection> token_trackIPTagInfoCollection_;
   
   //jet tags
   edm::InputTag tag_ak4CaloJets_;
@@ -104,7 +108,7 @@ private:
   Double_t cut_jetEta;
   
   //output related
-  TTree *trackTree_;   
+  TTree* trackTree_;   
 
   static const Int_t MAX_TRACKS = 9999;
   static const Int_t MAX_JETS = 999;
@@ -113,13 +117,25 @@ private:
   Int_t nTracks = MAX_TRACKS;
   Int_t nCaloJets = MAX_JETS;
 
+  // track kinematics
   Float_t trackPt[MAX_TRACKS];
   Float_t trackEta[MAX_TRACKS];
   Float_t trackPhi[MAX_TRACKS];
 
+  // jet kinematics
   Float_t caloJetPt[MAX_JETS];
   Float_t caloJetEta[MAX_JETS];
   Float_t caloJetPhi[MAX_JETS];
+
+  // size
+  Float_t caloJetN90[MAX_JETS];
+  Float_t caloJetN60[MAX_JETS];
+  Float_t caloJetTowerArea[MAX_JETS];
+
+  // energy contribution
+  Float_t caloJetHfrac[MAX_JETS];
+  Float_t caloJetEfrac[MAX_JETS];
+
 
   //output histograms
 
@@ -152,7 +168,10 @@ TrackAnalyzer::TrackAnalyzer(const edm::ParameterSet& iConfig)
   //tags
   tag_generalTracks_ = iConfig.getUntrackedParameter<edm::InputTag>("generalTracks");
   tag_ak5CaloJets_ = iConfig.getUntrackedParameter<edm::InputTag>("ak5CaloJets");
-  tag_trackIPTagInfoCollection_ = iConfig.getUntrackedParameter<edm::InputTag>("trackIPTagInfoCollection");
+  //  tag_trackIPTagInfoCollection_ = iConfig.getUntrackedParameter<edm::InputTag>("trackIPTagInfoCollection");
+  token_trackIPTagInfoCollection_ = consumes<reco::TrackIPTagInfoCollection>(iConfig.getUntrackedParameter<edm::InputTag>("trackIPTagInfoCollection"));
+
+
   //cuts 
   cut_jetPt = iConfig.getUntrackedParameter<double>("jetPt");
   cut_jetEta = iConfig.getUntrackedParameter<double>("jetEta");
@@ -198,7 +217,9 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   iEvent.getByLabel(tag_ak5CaloJets_, ak5CaloJets);
 
   edm::Handle<reco::TrackIPTagInfoCollection> trackIPTagInfoCollection;
-  iEvent.getByLabel(tag_trackIPTagInfoCollection_, trackIPTagInfoCollection);
+  iEvent.getByToken(token_trackIPTagInfoCollection_, trackIPTagInfoCollection);
+  //iEvent.getByLabel(tag_trackIPTagInfoCollection_, trackIPTagInfoCollection);
+
 
   //SIM Compatible 
   if(isMC_) {
@@ -223,14 +244,14 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   // All Formats Compatible
   
   
-  //////////////////////
+  //////////////////////////////////
   // Calculate Variables
-  //////////////////////
+  //////////////////////////////////
   
 
-  //////////////////////
+  /////////////////////////////////
   // Fill Trees
-  //////////////////////
+  /////////////////////////////////
   
   nTracks = 0;
   nCaloJets = 0;
@@ -239,12 +260,22 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   Int_t jj = 0;
   for(reco::CaloJetCollection::const_iterator jet = ak5CaloJets->begin(); jet != ak5CaloJets->end(); ++jet, jj++){
 
+    //cuts 
     if (jet->pt() < cut_jetPt) continue;
     if (fabs(jet->eta()) > cut_jetEta) continue;
 
     caloJetPt[jj] = jet->pt();
     caloJetEta[jj] = jet->eta();
     caloJetPhi[jj] = jet->phi();        
+    
+    //area 
+    //caloJetN90[jj] = jet->n90();
+    //    caloJetN60[jj] = jet->n60();
+    caloJetTowerArea[jj] = jet->towersArea();        
+
+    //energy
+    caloJetHfrac[jj] = jet->energyFractionHadronic();
+    caloJetEfrac[jj] = jet->emEnergyFraction();
 
     nCaloJets++;
   }
@@ -253,35 +284,53 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
 #ifdef DEBUG
   std::cout << "[DEBUG] Begin Extracting IP Info" << std::endl;
-#endif 
-  Int_t tt = 0;  
-  for(reco::TrackIPTagInfoCollection::const_iterator ipinfo = trackIPTagInfoCollection->begin(); ipinfo != trackIPTagInfoCollection->end(); ++ipinfo, tt++){
+#endif
+
+  //extract the collection from the handle
+  const reco::TrackIPTagInfoCollection & ip = *(trackIPTagInfoCollection.product()); 
+  std::cout << "Found " << ip.size() << " TagInfo" << std::endl;
+
+  //iterate over the ip info
+  reco::TrackIPTagInfoCollection::const_iterator ipinfo = ip.begin(); 
+  for(; ipinfo != ip.end(); ++ipinfo){    
+
+    std::cout << "Jet pt: " << ipinfo->jet()->pt() << std::endl;
+    std::cout << "Tot tracks: " << ipinfo->tracks().size() << std::endl;    
+
+    reco::TrackRefVector selTracks = ipinfo->selectedTracks();
+    int n_seltracks = selTracks.size();
+
+    GlobalPoint pv(ipinfo->primaryVertex()->position().x(),ipinfo->primaryVertex()->position().y(),ipinfo->primaryVertex()->position().z());
+    //    std::cout << pv << " vs " << ipinfo->primaryVertex()->position()   << std::endl;
 
 #ifdef DEBUG
-  std::cout << "[DEBUG] Getting IP Data from Collection" << std::endl;
+      std::cout << "[DEBUG] N Selected Tracks: " << n_seltracks << std::endl; 
+      std::cout << "[DEBUG] Extracting Significances from Info" << std::endl; 
 #endif 
 
-    const std::vector<reco::btag::TrackIPData>  &ipdata = ipinfo->impactParameterData();
+    for(int tt = 0; tt < n_seltracks; tt++){      
+      
+      reco::btag::TrackIPData data = ipinfo->impactParameterData()[tt];  
+      
+      std::cout << selTracks[tt]->pt() << "\t";
+      std::cout << ipinfo->probabilities(0)[tt] << "\t";
+      std::cout << ipinfo->probabilities(1)[tt] << "\t";
+      std::cout << data.ip3d.value() << "\t";
+      std::cout << data.ip3d.significance() << "\t";
+      std::cout << data.distanceToJetAxis.value() << "\t";
+      std::cout << data.distanceToJetAxis.significance() << "\t";
+      std::cout << data.distanceToGhostTrack.value() << "\t";
+      std::cout << data.distanceToGhostTrack.significance() << "\t";
+      std::cout << data.closestToJetAxis << "\t";
+      std::cout << (data.closestToJetAxis - pv).mag() << "\t";
+      std::cout << data.closestToGhostTrack << "\t";
+      std::cout << (data.closestToGhostTrack - pv).mag() << "\t";
+      std::cout << data.ip2d.value() << "\t";
+      std::cout << data.ip2d.significance() <<  std::endl;     
 
-#ifdef DEBUG
-  std::cout << "[DEBUG] Extracting Significances from Info" << std::endl;
-#endif 
-    
-    for( std::vector<reco::btag::TrackIPData>::const_iterator ip = ipdata.begin(); ip != ipdata.end(); ++ip){
-      std::cout << "2d IP value: " << ((*ip).ip2d).value() << std::endl;
-      std::cout << "2d IP sig: " << ((*ip).ip2d).significance() << std::endl;
     }
   }
 
-   
-  // Int_t tt = 0;
-  // for(reco::TrackCollection::const_iterator track = tracks->begin(); track != tracks->end(); ++track, tt++){
-  //   trackPt[tt] = track->outerPt();
-  //   trackEta[tt] = track->outerEta();
-  //   trackPhi[tt] = track->outerPhi();    
-  // }
-  
-  //end by filling
   trackTree_->Fill();
 
 }
@@ -296,7 +345,6 @@ TrackAnalyzer::beginJob()
   std::cout << "[DEBUG] Setting Up Output File And Tree" << std::endl;
 #endif 
 
-
   outputFile_ = new TFile(outputFileName_.c_str(), "RECREATE");
   trackTree_  = new TTree("tree","track tree");
 
@@ -306,6 +354,14 @@ TrackAnalyzer::beginJob()
   trackTree_->Branch("caloJetPt", &caloJetPt, "caloJetPt[nCaloJets]/F");
   trackTree_->Branch("caloJetPhi", &caloJetPhi, "caloJetPhi[nCaloJets]/F");
   trackTree_->Branch("caloJetEta", &caloJetEta, "caloJetEta[nCaloJets]/F");
+
+  trackTree_->Branch("caloJetn90", &caloJetN90, "caloJetN90[nCaloJets]/F");
+  trackTree_->Branch("caloJetn60", &caloJetN60, "caloJetN60[nCaloJets]/F");
+  trackTree_->Branch("caloJetTowerArea", &caloJetTowerArea, "caloJetTowerArea[nCaloJets]/F");
+  trackTree_->Branch("caloJetHfrac", &caloJetHfrac, "caloJetHfrac[nCaloJets]/F");
+  trackTree_->Branch("caloJetEfrac", &caloJetEfrac, "caloJetEFrac[nCaloJets]/F");
+
+
 
   trackTree_->Branch("trackPt", &trackPt, "trackPt[nTracks]/F");
   trackTree_->Branch("trackPhi", &trackPhi, "trackPhi[nTracks]/F");

@@ -233,8 +233,7 @@ private:
 
   //////////////////// SV TAG ////////////////
 
-  //  auto_ptr<std::vector<reco::Vertex> > displacedSVertexCollection(new std::vector<reco::Vertex>(0,0));
-
+  Int_t nSV = 0;
 
   Int_t svVertexJetID[MAX_VTX]; 
   Int_t nSvJets = 0;
@@ -242,8 +241,6 @@ private:
   Float_t svJetEta[MAX_JETS];
   Float_t svJetPhi[MAX_JETS];
   Float_t svJetID[MAX_JETS];
-
-  Int_t nSvVertex = 0;
 
   //kinematics
   Float_t svMass[MAX_VTX];
@@ -441,6 +438,9 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   const reco::TrackIPTagInfoCollection & lifetime = *(lifetimeIPTagInfo.product()); 
   const reco::SecondaryVertexTagInfoCollection & sv = *(secondaryVertexTagInfo.product()); 
 
+  //  std::auto_ptr<reco::VertexCollection> displacedSvVertexCollectionResult(new reco::VertexCollection);
+  //  reco::VertexCollection displacedSvVertexCollection;
+
   std::cout << "-- Found " << ip.size() << " IP TagInfo" << std::endl;
   std::cout << "-- Found " << lifetime.size() << " Lifetime TagInfo" << std::endl;
   std::cout << "-- Found " << sv.size() << " Secondary Vertex TagInfo" << std::endl;
@@ -596,7 +596,7 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   jj = 0;
   jetid -= nLiJets; //reset the jetid counter
   nSvJets = 0;
-  nSvVertex = 0;
+  nSV = 0;
   for(; svinfo != sv.end(); ++svinfo, jj++){    
 
     //skip low pt jets
@@ -606,7 +606,7 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     //    TaggingVariableList svVars = svinfo->taggingVariables();        
 
     reco::TrackRefVector svTracks = svinfo->selectedTracks();    
-    int nSV = svinfo->nVertices();     
+
 
     // global jet identifier 
     svJetID[nSvJets] = jetid; 
@@ -617,10 +617,15 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     svJetPhi[nSvJets] = svinfo->jet()->phi();        
 
     // number of secondary vertices 
-    for(int vv = 0; vv < nSV; vv++) {
+    int nSvVertex = 0;
+    int thisJetnSV = svinfo->nVertices();
+    for(int vv = 0; vv < thisJetnSV; vv++) {
+
+      std::cout << "jet " << jetid << " nSV " << nSV << " nSvVertex " << nSvVertex << " thisJetnSV " << thisJetnSV << std::endl;
       svVertexJetID[vv] = jetid;
 
       reco::Vertex svVertex = svinfo->secondaryVertex(vv);  
+      //displacedSvVertexCollection.push_back(svVertex);
 
       //place it in the collection to view later 
       //displacedSVertexCollection->push_back(svVertex);
@@ -646,16 +651,6 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       svYErr[nSvVertex] = svVertex.yError();   
       svZ[nSvVertex] = svVertex.z();      
       svZErr[nSvVertex] = svVertex.zError();      
-
-      // std::vector<float> tagValList = svVars.getList(reco::btau::vertexJetDeltaR,false);    
-      // std::copy( tagValList.begin(), tagValList.end(), &svFlight);
-      // tagValList = svVars.getList(reco::btau::flightDistance2dVal,false);
-      // std::copy( tagValList.begin(), tagValList.end(), &svFlight);
-      // tagValList = svVars.getList(reco::btau::flightDistance2dSig,false);
-      // std::copy( tagValList.begin(), tagValList.end(), );
-      // tagValList = svVars.getList(reco::btau::flightDistance3dVal,false);
-      // std::copy( tagValList.begin(), tagValList.end(), );
-      // tagValList = svVars.getList(reco::btau::flightDistance3dSig,false);
       
       // flight
       svFlight[nSvVertex] = svinfo->flightDistance(vv).value();
@@ -707,14 +702,16 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       svDRTrackJet[nSvVertex] = reco::deltaR(vertexSum, jetDir); 
       svDRTrackFlight[nSvVertex] = reco::deltaR(vertexSum, flightDir);       
       
-      nSvVertex++; // index in array for vertex
+      nSvVertex++; // index in array corresponding to a single jet for vertex
+      nSV++; // event sv index  
     } // end sv vertex loop
 
     nSvJets++; //index in array for jet
     jetid++; //global jet identifier
   } // end sv tag (jet) loop
 
-  //iEvent.put(displacedSVertexCollection, "displacedSVertexCollection");
+  // *displacedSvVertexCollectionResult = displacedSvVertexCollection;  
+  // iEvent.put(displacedSvVertexCollectionResult);//, "displacedSVertexCollection");
 
   evNum++;
   trackTree_->Fill();
@@ -729,15 +726,19 @@ TrackAnalyzer::beginJob()
 #ifdef DEBUG
   std::cout << "[DEBUG] Setting Up Output File And Tree" << std::endl;
 #endif 
-
+  
+  // storage 
   outputFile_ = new TFile(outputFileName_.c_str(), "RECREATE");
   trackTree_  = new TTree("tree","tag tree");
-  
+
   // book-keeping
   trackTree_->Branch("nCaloJets", &nCaloJets, "nCaloJets/I");
   trackTree_->Branch("nTracks", &nTracks, "nTracks/I");
+  trackTree_->Branch("nTagJets", &nTagJets, "nTagJets/I");  
+  trackTree_->Branch("nSvJets", &nSvJets, "nSvJets/I");
+  trackTree_->Branch("nSV", &nSV, "nSV/I");
+  trackTree_->Branch("nLiJets", &nLiJets, "nLiJets/I");
 
-  trackTree_->Branch("jetJetID", &jetJetID, "jetJetID[nTagJets]/I");
   trackTree_->Branch("evNum", &evNum, "evNum/I");
 
   ////////////////////////////// Calo Jet Information////////////////////////
@@ -758,8 +759,7 @@ TrackAnalyzer::beginJob()
 
   ////////////////////////////// IP Jet tags////////////////////////
 
-  //jet tags
-  trackTree_->Branch("nTagJets", &nTagJets, "nTagJets/I");
+  trackTree_->Branch("jetJetID", &jetJetID, "jetJetID[nTagJets]/I");
 
   //tag jet kinematics
   trackTree_->Branch("tagJetPt", &tagJetPt, "tagJetPt[nTagJets]/F");
@@ -801,7 +801,6 @@ TrackAnalyzer::beginJob()
   ////////////////////////////// LIFETIME Jet tags////////////////////////
 
   //lifetime jets
-  trackTree_->Branch("nLiJets", &nLiJets, "nLiJets/I");
   trackTree_->Branch("liJetID", &liJetID, "liJetID[nLiJets]/I");
   trackTree_->Branch("liJetPt", &liJetPt, "liJetPt[nLiJets]/F");
   trackTree_->Branch("liJetPhi", &liJetPhi, "liJetPhi[nLiJets]/F");
@@ -823,51 +822,49 @@ TrackAnalyzer::beginJob()
   //////////////////////////////SV Jet tags////////////////////////
 
   //sv jets
-  trackTree_->Branch("nSvJets", &nSvJets, "nSVJets/I");
   trackTree_->Branch("svJetPt", &svJetPt, "svJetPt[nSvJets]/F");
   trackTree_->Branch("svJetEta", &svJetEta, "svJetEta[nSvJets]/F");
   trackTree_->Branch("svJetPhi", &svJetPhi, "svJetPhi[nSvJets]/F");
   trackTree_->Branch("svJetID", &svJetID, "svJetID[nSvJets]/F");
 
   // vertex
-  trackTree_->Branch("nSvVertex", &nSvVertex, "svVertexJetID/I");
-  trackTree_->Branch("svVertexJetID", &svVertexJetID, "svVertexJetID[nSvVertex]/F");
+  trackTree_->Branch("svVertexJetID", &svVertexJetID, "svVertexJetID[nSV]/F");
 
   // quality
-  trackTree_->Branch("svChi2", &svChi2, "svChi2[nSvVertex]/F");
-  trackTree_->Branch("svNChi2", &svNChi2, "svNChi2[nSvVertex]/F");
-  trackTree_->Branch("svNDof", &svNDof, "svNDof[nSvVertex]/F");
-  trackTree_->Branch("svIsValid", &svIsValid, "svIsValid[nSvVertex]/F");
+  trackTree_->Branch("svChi2", &svChi2, "svChi2[nSV]/F");
+  trackTree_->Branch("svNChi2", &svNChi2, "svNChi2[nSV]/F");
+  trackTree_->Branch("svNDof", &svNDof, "svNDof[nSV]/F");
+  trackTree_->Branch("svIsValid", &svIsValid, "svIsValid[nSV]/F");
 
   // kinematics
-  trackTree_->Branch("svMass", &svMass, "svMass[nSvVertex]/F");
-  trackTree_->Branch("svPt", &svPt, "svPt[nSvVertex]/F");
-  trackTree_->Branch("svPx", &svPx, "svPx[nSvVertex]/F");
-  trackTree_->Branch("svPy", &svPy, "svPy[nSvVertex]/F");
-  trackTree_->Branch("svEta", &svEta, "svEta[nSvVertex]/F");
-  trackTree_->Branch("svPhi", &svPhi, "svPhi[nSvVertex]/F");
+  trackTree_->Branch("svMass", &svMass, "svMass[nSV]/F");
+  trackTree_->Branch("svPt", &svPt, "svPt[nSV]/F");
+  trackTree_->Branch("svPx", &svPx, "svPx[nSV]/F");
+  trackTree_->Branch("svPy", &svPy, "svPy[nSV]/F");
+  trackTree_->Branch("svEta", &svEta, "svEta[nSV]/F");
+  trackTree_->Branch("svPhi", &svPhi, "svPhi[nSV]/F");
 
   // position and err
-  trackTree_->Branch("svX", &svX, "svX[nSvVertex]/F");
-  trackTree_->Branch("svY", &svY, "svY[nSvVertex]/F");
-  trackTree_->Branch("svZ", &svZ, "svZ[nSvVertex]/F");
-  trackTree_->Branch("svXErr", &svXErr, "svXErr[nSvVertex]/F");
-  trackTree_->Branch("svYErr", &svYErr, "svYErr[nSvVertex]/F");
-  trackTree_->Branch("svZErr", &svZErr, "svZErr[nSvVertex]/F");
+  trackTree_->Branch("svX", &svX, "svX[nSV]/F");
+  trackTree_->Branch("svY", &svY, "svY[nSV]/F");
+  trackTree_->Branch("svZ", &svZ, "svZ[nSV]/F");
+  trackTree_->Branch("svXErr", &svXErr, "svXErr[nSV]/F");
+  trackTree_->Branch("svYErr", &svYErr, "svYErr[nSV]/F");
+  trackTree_->Branch("svZErr", &svZErr, "svZErr[nSV]/F");
 
   // vertex sum track charge
-  trackTree_->Branch("svTotalCharge", &svTotalCharge, "svTotalCharge[nSvVertex]/F");
+  trackTree_->Branch("svTotalCharge", &svTotalCharge, "svTotalCharge[nSV]/F");
 
   // flight
-  trackTree_->Branch("svFlight", &svFlight, "svFlight[nSvVertex]/F");
-  trackTree_->Branch("svFlightErr", &svFlightErr, "svFlightErr[nSvVertex]/F");
-  trackTree_->Branch("svFlight2D", &svFlight2D, "svFlight2D[nSvVertex]/F");
-  trackTree_->Branch("svFlight2DErr", &svFlight2DErr, "svFlight2DErr[nSvVertex]/F");
+  trackTree_->Branch("svFlight", &svFlight, "svFlight[nSV]/F");
+  trackTree_->Branch("svFlightErr", &svFlightErr, "svFlightErr[nSV]/F");
+  trackTree_->Branch("svFlight2D", &svFlight2D, "svFlight2D[nSV]/F");
+  trackTree_->Branch("svFlight2DErr", &svFlight2DErr, "svFlight2DErr[nSV]/F");
 
   // DR quantities
-  trackTree_->Branch("svDRFlightJet", &svDRFlightJet, "svDRFlightJet[nSvVertex]/F");
-  trackTree_->Branch("svDRTrackJet", &svDRTrackJet, "svDRTrackJet[nSvVertex]/F");
-  trackTree_->Branch("svDRTrackFlight", &svDRTrackFlight, "svDRTrackFlight[nSvVertex]/F");
+  trackTree_->Branch("svDRFlightJet", &svDRFlightJet, "svDRFlightJet[nSV]/F");
+  trackTree_->Branch("svDRTrackJet", &svDRTrackJet, "svDRTrackJet[nSV]/F");
+  trackTree_->Branch("svDRTrackFlight", &svDRTrackFlight, "svDRTrackFlight[nSV]/F");
 
 }
 

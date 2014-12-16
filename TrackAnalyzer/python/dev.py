@@ -157,7 +157,7 @@ process.test_output = cms.OutputModule( "PoolOutputModule",
 
 #run the displaced jet tags
 process.load('DisplacedJets.Configuration.RecoDJTag_cff')
-process.p = cms.Path(process.djtagging + process.analyzer)
+process.p = cms.Path(process.djtagging)# + process.analyzer)
 
 #run the analyzer and the output
-#process.btag_output = cms.EndPath( process.test_output)
+process.btag_output = cms.EndPath( process.test_output)

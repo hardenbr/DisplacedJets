@@ -92,6 +92,8 @@ process.analyzer.isMC =  cms.untracked.bool(isMC)
 process.analyzer.generalTracks =  cms.untracked.InputTag('generalTracks', '', 'HLT')
 process.analyzer.ak5CaloJets =  cms.untracked.InputTag('ak5CaloJets', '', 'HLT')
 process.analyzer.trackIPTagInfoCollection = cms.untracked.InputTag('displacedImpactParameterTagInfos', '', 'ANA')
+process.analyzer.secondaryVertexTagInfo = cms.untracked.InputTag('displacedSecondaryVertexTagInfos', '', 'ANA')
+process.analyzer.lifetimeIPTagInfo = cms.untracked.InputTag('displacedLifetimeTagInfos', '', 'ANA')
 
 #cuts
 process.analyzer.jetPt = cms.untracked.double(40.0)
@@ -144,14 +146,14 @@ if isMC:
 
 #output anything produced in the ANA process
 process.test_output = cms.OutputModule( "PoolOutputModule",
-    fileName = cms.untracked.string( "edmoutput.root" ),
+    fileName = cms.untracked.string( "/afs/cern.ch/work/h/hardenbr/edmoutput.root" ),
     fastCloning = cms.untracked.bool( False ),
     dataset = cms.untracked.PSet(
         filterName = cms.untracked.string( "" ),
         dataTier = cms.untracked.string( "RAW" )
     ),
                                       outputCommands = cms.untracked.vstring(
-        'keep *_*_*_ANA'))
+        'keep *_*_*_*'))#        'keep *_*_*_ANA'))
 
 #run the displaced jet tags
 process.load('DisplacedJets.Configuration.RecoDJTag_cff')

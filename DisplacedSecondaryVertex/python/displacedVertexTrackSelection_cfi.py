@@ -5,7 +5,7 @@ from RecoBTag.ImpactParameter.variableJTA_cfi import *
 vertexTrackSelectionBlock = cms.PSet(
 	trackSelection = cms.PSet(
                 variableJTAPars,
-		totalHitsMin = cms.uint32(4), #displaced 8->4
+		totalHitsMin = cms.uint32(0), #displaced 8->0
 		jetDeltaRMax = cms.double(0.4), #displaced .3 -> .4
 		qualityClass = cms.string('any'),
 		pixelHitsMin = cms.uint32(0), #dispalced 2 -> 0 no pixel hits

@@ -5,16 +5,16 @@ from DisplacedJets.DisplacedSecondaryVertex.displacedVertexReco_cfi import *
 from DisplacedJets.DisplacedSecondaryVertex.displacedVertexCuts_cfi import *
 from DisplacedJets.DisplacedSecondaryVertex.displacedVertexSelection_cfi import *
 
-secondaryVertexTagInfos = cms.EDProducer("SecondaryVertexProducer",
+displacedSecondaryVertexTagInfos = cms.EDProducer("SecondaryVertexProducer",
 	vertexTrackSelectionBlock,
 	vertexSelectionBlock,
 	vertexCutsBlock,
 	vertexRecoBlock,
 	constraint = cms.string("BeamSpot"),
-	trackIPTagInfos = cms.InputTag(""), #displaced NEEDS TO BE LIFETIME TAG INFOS
+	trackIPTagInfos = cms.InputTag("displacedLifetimeTagInfos"), #displaced 
 	minimumTrackWeight = cms.double(0.5),
 	usePVError = cms.bool(True),
-	trackSort = cms.string('sip2dSig'), #displaced 3d->2d
+	trackSort = cms.string('sip3dSig'), 
         beamSpotTag = cms.InputTag('offlineBeamSpot'),                                        
         useExternalSV       = cms.bool(False),
         extSVCollection     = cms.InputTag('secondaryVertices'),

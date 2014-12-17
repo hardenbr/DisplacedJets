@@ -119,7 +119,6 @@ private:
   edm::InputTag tag_lifetimeIPTagInfo_;
   edm::InputTag tag_secondaryVertexTagInfo_; 
 
-
   edm::EDGetTokenT<reco::TrackIPTagInfoCollection> token_trackIPTagInfoCollection_;
   
   //jet tags
@@ -137,6 +136,7 @@ private:
   
   //output related
   TTree* trackTree_;   
+  TTree* jetTree_;   
 
   static const Int_t MAX_TRACKS = 9999;
   static const Int_t MAX_JETS = 999;
@@ -144,12 +144,9 @@ private:
 
   //bookkeeping
   int evNum = 0;
-  
-  //every jet has its own id
   Int_t jetid = 0;
 
   //tree variables
-
   Int_t nLiTracks = 0;
   Int_t nCaloJets = 0;
 
@@ -281,6 +278,77 @@ private:
   Float_t svDRFlightJet[MAX_VTX];
   Float_t svDRTrackJet[MAX_VTX];
   Float_t svDRTrackFlight[MAX_VTX];
+
+  ///////////////// JET TREE SPECIFIC MEMBERS /////////////////
+
+  //book keeping
+  Int_t nJetWithSv; 
+
+  // significance and aboslute IP weighted track energy
+  Float_t jetEIPSig[MAX_JETS];
+  Float_t jetEIP[MAX_JETS];
+
+  // IP significance sums
+  Float_t jetIPSigSum2D[MAX_JETS];
+  Float_t jetIPSigSum3D[MAX_JETS];
+  Float_t jetIPSigInvSum2D[MAX_JETS];
+  Float_t jetIPSigInvSum3D[MAX_JETS];
+
+  // IP significance log sums
+  Float_t jetIPSigLogSum2D[MAX_JETS];
+  Float_t jetIPSigLogSum3D[MAX_JETS];
+
+  // IP signed significance sums
+  Float_t jetIPSignedSigSum2D[MAX_JETS];
+  Float_t jetIPSignedSigSum3D[MAX_JETS];
+  Float_t jetIPSignedSigInvSum2D[MAX_JETS];
+  Float_t jetIPSignedSigInvSum3D[MAX_JETS];
+
+  // IP significance averages
+  Float_t jetMeanIPSig2D[MAX_JETS];
+  Float_t jetMeanIPSig3D[MAX_JETS];
+  Float_t jetMedianIPSig2D[MAX_JETS];
+  Float_t jetMedianIPSig3D[MAX_JETS];
+
+  // signed averages 
+  Float_t jetMeanSignedIPSig2D[MAX_JETS];
+  Float_t jetMeanSignedIPSig3D[MAX_JETS];
+  Float_t jetMedianSignedIPSig2D[MAX_JETS];
+  Float_t jetMedianSignedIPSig3D[MAX_JETS];
+
+  // Absolute IP averages
+  Float_t jetMeanIP2D[MAX_JETS];
+  Float_t jetMeanIP3D[MAX_JETS];
+  Float_t jetMedianIP2D[MAX_JETS];
+  Float_t jetMedianIP3D[MAX_JETS];
+
+  // Absolute Signed IP averages
+  Float_t jetMeanSignedIP2D[MAX_JETS];
+  Float_t jetMeanSignedIP3D[MAX_JETS];
+  Float_t jetMedianSignedIP2D[MAX_JETS];
+  Float_t jetMedianSignedIP3D[MAX_JETS];
+
+  // SV information
+  Float_t jetSvLxy[MAX_JETS];
+  Float_t jetSvLxySig[MAX_JETS];
+  Float_t jetSvLxyz[MAX_JETS];
+  Float_t jetSvLxyzSig[MAX_JETS];
+  Float_t jetVtxNTrack[MAX_JETS]; //vertex track multiplicty
+
+  // SV position
+  Float_t jetSvX[MAX_JETS];
+  Float_t jetSvY[MAX_JETS];
+  Float_t jetSvZ[MAX_JETS];
+
+  Float_t jetSvZErr[MAX_JETS];
+  Float_t jetSvYErr[MAX_JETS];
+  Float_t jetSvXErr[MAX_JETS];
+
+  //SV quality
+  Float_t jetSvChi2[MAX_JETS];
+  Float_t jetSvNChi2[MAX_JETS];
+  Float_t jetSvNDof[MAX_JETS];
+  Bool_t jetSvIsValid[MAX_JETS];
 
   //output histograms
       //virtual void beginRun(edm::Run const&, edm::EventSetup const&) override;
@@ -602,15 +670,11 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     //skip low pt jets
     if (svinfo->jet()->pt() < cut_jetPt) continue;    
 
-    //grab the tagging variables
-    //    TaggingVariableList svVars = svinfo->taggingVariables();        
-
     reco::TrackRefVector svTracks = svinfo->selectedTracks();    
-
 
     // global jet identifier 
     svJetID[nSvJets] = jetid; 
-
+    
     // jet kinematics
     svJetPt[nSvJets] = svinfo->jet()->pt();
     svJetEta[nSvJets] = svinfo->jet()->eta();
@@ -622,13 +686,9 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     for(int vv = 0; vv < thisJetnSV; vv++) {
 
       std::cout << "jet " << jetid << " nSV " << nSV << " nSvVertex " << nSvVertex << " thisJetnSV " << thisJetnSV << std::endl;
-      svVertexJetID[vv] = jetid;
 
+      svVertexJetID[nSvVertex] = jetid;
       reco::Vertex svVertex = svinfo->secondaryVertex(vv);  
-      //displacedSvVertexCollection.push_back(svVertex);
-
-      //place it in the collection to view later 
-      //displacedSVertexCollection->push_back(svVertex);
 
       // vertex kinematics
       svMass[nSvVertex] = svinfo->secondaryVertex(vv).p4().mass();
@@ -662,7 +722,7 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       svTotalCharge[nSvVertex] = 0;
 
       //tracking 
-      svNTracks[vv] = svVertex.nTracks();
+      svNTracks[nSvVertex] = svVertex.nTracks();
       reco::TrackKinematics vertexKinematics;
 
       Bool_t hasRefittedTracks = svVertex.hasRefittedTracks();      
@@ -703,18 +763,21 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       svDRTrackFlight[nSvVertex] = reco::deltaR(vertexSum, flightDir);       
       
       nSvVertex++; // index in array corresponding to a single jet for vertex
-      nSV++; // event sv index  
+      nSV++; // event sv index  (includes all jets)
     } // end sv vertex loop
 
     nSvJets++; //index in array for jet
     jetid++; //global jet identifier
   } // end sv tag (jet) loop
+  
 
-  // *displacedSvVertexCollectionResult = displacedSvVertexCollection;  
-  // iEvent.put(displacedSvVertexCollectionResult);//, "displacedSVertexCollection");
+  /////////////////////////////// JET TREE CALCULATIONS ////////////////////////////
+
+
 
   evNum++;
   trackTree_->Fill();
+  jetTree_->Fill();
 }
 
 
@@ -729,7 +792,8 @@ TrackAnalyzer::beginJob()
   
   // storage 
   outputFile_ = new TFile(outputFileName_.c_str(), "RECREATE");
-  trackTree_  = new TTree("tree","tag tree");
+  trackTree_  = new TTree("tracks","track, vertex,jet index tree");
+  jetTree_    = new TTree("jets", "jet indexed tree");
 
   // book-keeping
   trackTree_->Branch("nCaloJets", &nCaloJets, "nCaloJets/I");
@@ -818,7 +882,6 @@ TrackAnalyzer::beginJob()
   trackTree_->Branch("liTrackJetID", &liTrackJetID, "liTrackJetID[nTracks]/I");  
   trackTree_->Branch("liJetTrackDR", &liJetTrackDR, "liJetTrackDR[nTracks]/F");  
 
-
   //////////////////////////////SV Jet tags////////////////////////
 
   //sv jets
@@ -866,12 +929,112 @@ TrackAnalyzer::beginJob()
   trackTree_->Branch("svDRTrackJet", &svDRTrackJet, "svDRTrackJet[nSV]/F");
   trackTree_->Branch("svDRTrackFlight", &svDRTrackFlight, "svDRTrackFlight[nSV]/F");
 
+  ///////////  ///////////  ///////////  ///////////  ///////////  ///////////  ////
+  //////////////////////////////// JET TREE QUANITIES //////////////////////////////
+  ///////////  ///////////  ///////////  ///////////  ///////////  /////////// /////
+  //////// Everything is either a flat number or indexed by nCaloJets //////////////
+
+  //book keeping
+  jetTree_->Branch("nCaloJets", &nCaloJets, "nCaloJets/I");
+  jetTree_->Branch("nTracks", &nTracks, "nTracks/I");
+  jetTree_->Branch("evNum", &evNum, "evNum/I");
+  jetTree_->Branch("jetID", &jetJetID, "jetID[nCaloJets]/I");
+
+  jetTree_->Branch("nJetWithSv", &nJetWithSv, "nJetWithSv/I"); //number of SV in the event
+
+  //////////////// CALO JETS ///////////////////
+  
+  //jet kinematics
+  jetTree_->Branch("caloJetPt", &caloJetPt, "caloJetPt[nCaloJets]/F");
+  jetTree_->Branch("caloJetPhi", &caloJetPhi, "caloJetPhi[nCaloJets]/F");
+  jetTree_->Branch("caloJetEta", &caloJetEta, "caloJetEta[nCaloJets]/F");
+
+  // jet area
+  jetTree_->Branch("caloJetn90", &caloJetN90, "caloJetN90[nCaloJets]/F");
+  jetTree_->Branch("caloJetn60", &caloJetN60, "caloJetN60[nCaloJets]/F");
+  jetTree_->Branch("caloJetTowerArea", &caloJetTowerArea, "caloJetTowerArea[nCaloJets]/F");
+
+  // tag jet energy fraction
+  jetTree_->Branch("caloJetHfrac", &caloJetHfrac, "caloJetHfrac[nCaloJets]/F");
+  jetTree_->Branch("caloJetEfrac", &caloJetEfrac, "caloJetEFrac[nCaloJets]/F");
+
+  //////////////// IP TAG INFORMATION ////////////
+
+  // significance and absolute IP weighted track energy
+  jetTree_->Branch("jetEIPSig", &jetEIPSig, "jetEIPSig[nCaloJets]/F");
+  jetTree_->Branch("jetEIP", &jetEIP, "jetEIP[nCaloJets]/F");
+
+  //ip significance sums -- sum(|IPsig|)
+  jetTree_->Branch("jetIPSigSum2D", &jetIPSigSum2D, "jetIPSigSum2D[nCaloJets]/F");
+  jetTree_->Branch("jetIPSigSum3D", &jetIPSigSum3D, "jetIPSigSum3D[nCaloJets]/F");
+
+  //ip sig inverse sums -- sum(1 / |IPsig|)
+  jetTree_->Branch("jetIPSigInvSum2D", &jetIPSigInvSum2D, "jetIPSigInvSum2D[nCaloJets]/F");
+  jetTree_->Branch("jetIPSigInvSum3D", &jetIPSigInvSum3D, "jetIPSigInvSum3D[nCaloJets]/F");
+
+  //signed ip significance sums  -- sum(IPsig)
+  jetTree_->Branch("jetIPSignedSigSum2D", &jetIPSignedSigSum2D, "jetIPSignedSigSum2D[nCaloJets]/F");
+  jetTree_->Branch("jetIPSignedSigSum3D", &jetIPSignedSigSum3D, "jetIPSignedSigSum3D[nCaloJets]/F");
+
+  //signed ip sig inverse sums -- sum(1 / IPsig)
+  jetTree_->Branch("jetIPSignedSigInvSum2D", &jetIPSignedSigInvSum2D, "jetIPSignedSigInvSum2D[nCaloJets]/F");
+  jetTree_->Branch("jetIPSignedSigInvSum3D", &jetIPSignedSigInvSum3D, "jetIPSigInvSum3D[nCaloJets]/F");
+
+  //ip sig log sums  -- sum(log(|IPsig|))
+  jetTree_->Branch("jetIPSigLogSum2D", &jetIPSigLogSum2D, "jetIPSigLogSum2D[nCaloJets]/F");
+  jetTree_->Branch("jetIPSigLogSum3D", &jetIPSigLogSum3D, "jetIPSigLogSum3D[nCaloJets]/F");
+
+  // ip sig averages 
+  jetTree_->Branch("jetMeanIPSig2D", &jetMeanIPSig2D, "jetMeanIPSig2D[nCaloJets]/F");
+  jetTree_->Branch("jetMeanIPSig3D", &jetMeanIPSig3D, "jetMeanIPSig3D[nCaloJets]/F");
+  jetTree_->Branch("jetMedianIPSig2D", &jetMedianIPSig2D, "jetMedianIPSig2D[nCaloJets]/F");
+  jetTree_->Branch("jetMedianIPSig3D", &jetMedianIPSig3D, "jetMedianIPSig3D[nCaloJets]/F");
+
+  // ip sig signed averages
+  jetTree_->Branch("jetMeanSignedIPSig2D", &jetMeanSignedIPSig2D, "jetMeanSignedIPSig2D[nCaloJets]/F");
+  jetTree_->Branch("jetMeanSignedIPSig3D", &jetMeanSignedIPSig3D, "jetMeanSignedIPSig3D[nCaloJets]/F");
+  jetTree_->Branch("jetMedianSignedIPSig2D", &jetMedianSignedIPSig2D, "jetMedianSignedIPSig2D[nCaloJets]/F");
+  jetTree_->Branch("jetMedianSignedIPSig3D", &jetMedianSignedIPSig3D, "jetMedianSignedIPSig3D[nCaloJets]/F");
+
+  // ip value averages
+  jetTree_->Branch("jetMeanIP2D", &jetMeanIP2D, "jetMeanIP2D[nCaloJets]/F");
+  jetTree_->Branch("jetMeanIP3D", &jetMeanIP3D, "jetMeanIP3D[nCaloJets]/F");
+  jetTree_->Branch("jetMedianIP2D", &jetMedianIP2D, "jetMedianIP2D[nCaloJets]/F");
+  jetTree_->Branch("jetMedianIP3D", &jetMedianIP3D, "jetMedianIP3D[nCaloJets]/F");
+
+  // signed ip value averages
+  jetTree_->Branch("jetMeanSignedIP2D", &jetMeanSignedIP2D, "jetMeanSignedIP2D[nCaloJets]/F");
+  jetTree_->Branch("jetMeanSignedIP3D", &jetMeanSignedIP3D, "jetMeanSignedIP3D[nCaloJets]/F");
+  jetTree_->Branch("jetMedianSignedIP2D", &jetMedianSignedIP2D, "jetMedianSignedIP2D[nCaloJets]/F");
+  jetTree_->Branch("jetMedianSignedIP3D", &jetMedianSignedIP3D, "jetMedianSignedIP3D[nCaloJets]/F");
+
+  //////////////SECONDARY VTX INFORMATION //////////////
+
+  // SV Information
+  jetTree_->Branch("jetSvLxy", &jetSvLxy, "jetSvLxy[nCaloJets]/F");
+  jetTree_->Branch("jetSvLxySig", &jetSvLxySig, "jetSvLxySig[nCaloJets]/F");
+  jetTree_->Branch("jetSvLxyz", &jetSvLxyz, "jetSvLxyz[nCaloJets]/F");
+  jetTree_->Branch("jetSvLxyzSig", &jetSvLxyzSig, "jetSvLxyzSig[nCaloJets]/F");
+
+  // SV position
+  jetTree_->Branch("jetSvX", &jetSvX, "jetSvX[nCaloJets]/F");
+  jetTree_->Branch("jetSvY", &jetSvY, "jetSvY[nCaloJets]/F");
+  jetTree_->Branch("jetSvZ", &jetSvZ, "jetSvZ[nCaloJets]/F");
+  jetTree_->Branch("jetSvXErr", &jetSvXErr, "jetSvXErr[nCaloJets]/F");
+  jetTree_->Branch("jetSvYErr", &jetSvYErr, "jetSvYErr[nCaloJets]/F");
+  jetTree_->Branch("jetSvZErr", &jetSvZErr, "jetSvZErr[nCaloJets]/F");
+
+  // SV Quality
+  jetTree_->Branch("jetSvChi2", &jetSvChi2, "jetSvChi2[nCaloJets]/F");
+  jetTree_->Branch("jetSvNChi2", &jetSvNChi2, "jetSvNChi2[nCaloJets]/F");
+  jetTree_->Branch("jetSvNDof", &jetSvNDof, "jetSvNDof[nCaloJets]/F");  
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
 void 
 TrackAnalyzer::endJob() 
 {
+  jetTree_->Write();
   trackTree_->Write();
   outputFile_->Close();
 }

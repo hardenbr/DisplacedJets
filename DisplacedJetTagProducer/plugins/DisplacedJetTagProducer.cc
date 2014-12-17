@@ -1,9 +1,9 @@
 // -*- C++ -*-
 //
-// Package:    DisplacedJets/DisplacedTagsToVertices
-// Class:      DisplacedTagsToVertices
+// Package:    DisplacedJets/DisplacedJetTagProducer
+// Class:      DisplacedJetTagProducer
 // 
-/**\class DisplacedTagsToVertices DisplacedTagsToVertices.cc DisplacedJets/DisplacedTagsToVertices/plugins/DisplacedTagsToVertices.cc
+/**\class DisplacedJetTagProducer DisplacedJetTagProducer.cc DisplacedJets/DisplacedJetTagProducer/plugins/DisplacedJetTagProducer.cc
 
  Description: [one line class summary]
 
@@ -12,7 +12,7 @@
 */
 //
 // Original Author:  Joshua Robert Hardenbrook
-//         Created:  Tue, 16 Dec 2014 13:56:03 GMT
+//         Created:  Wed, 17 Dec 2014 11:41:33 GMT
 //
 //
 
@@ -59,22 +59,17 @@
 // class declaration
 //
 
-class DisplacedTagsToVertices : public edm::EDProducer {
-public:
-  explicit DisplacedTagsToVertices(const edm::ParameterSet&);
-  ~DisplacedTagsToVertices();
-  
-      static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
-  
-private:
-  virtual void beginJob() override;
-  virtual void produce(edm::Event&, const edm::EventSetup&) override;
-  virtual void endJob() override;
-  
+class DisplacedJetTagProducer : public edm::EDProducer {
+   public:
+      explicit DisplacedJetTagProducer(const edm::ParameterSet&);
+      ~DisplacedJetTagProducer();
 
-  edm::InputTag tag_secondaryVertexTagInfo_;   
-  std::string outputLabel_;
-  float jetPtCut_;
+      static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
+
+   private:
+      virtual void beginJob() override;
+      virtual void produce(edm::Event&, const edm::EventSetup&) override;
+      virtual void endJob() override;
       
       //virtual void beginRun(edm::Run const&, edm::EventSetup const&) override;
       //virtual void endRun(edm::Run const&, edm::EventSetup const&) override;
@@ -82,6 +77,12 @@ private:
       //virtual void endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) override;
 
       // ----------member data ---------------------------
+  float jetPtCut_ = 0;
+  std::string outputLabel_;
+
+  edm::InputTag tag_trackIPTagInfoCollection_;
+  edm::InputTag tag_secondaryVertexTagInfo_; 
+  edm::InputTag tag_ipTagInfo_;
 
 };
 
@@ -97,8 +98,16 @@ private:
 //
 // constructors and destructor
 //
-DisplacedTagsToVertices::DisplacedTagsToVertices(const edm::ParameterSet& iConfig)
+DisplacedJetTagProducer::DisplacedJetTagProducer(const edm::ParameterSet& iConfig)
 {
+
+   tag_secondaryVertexTagInfo_ = iConfig.getUntrackedParameter<edm::InputTag>("secondaryVertexTagInfo");
+   tag_ipTagInfo_ = iConfig.getUntrackedParameter<edm::InputTag>("ipTagInfo");
+
+   jetPtCut_ = iConfig.getUntrackedParameter<double>("jetPtCut");
+   outputLabel_ = iConfig.getUntrackedParameter<std::string>("outputLabel");
+   
+
    //register your products
 /* Examples
    produces<ExampleData2>();
@@ -110,16 +119,11 @@ DisplacedTagsToVertices::DisplacedTagsToVertices(const edm::ParameterSet& iConfi
    produces<ExampleData2,InRun>();
 */
    //now do what ever other initialization is needed
-
-  tag_secondaryVertexTagInfo_ = iConfig.getUntrackedParameter<edm::InputTag>("secondaryVertexTagInfo");
-  jetPtCut_ = iConfig.getUntrackedParameter<double>("jetPtCut");
-  outputLabel_ = iConfig.getUntrackedParameter<std::string>("outputLabel");
-
-  produces<reco::VertexCollection>(outputLabel_);  
+  
 }
 
 
-DisplacedTagsToVertices::~DisplacedTagsToVertices()
+DisplacedJetTagProducer::~DisplacedJetTagProducer()
 {
  
    // do anything here that needs to be done at desctruction time
@@ -134,37 +138,14 @@ DisplacedTagsToVertices::~DisplacedTagsToVertices()
 
 // ------------ method called to produce the data  ------------
 void
-DisplacedTagsToVertices::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
+DisplacedJetTagProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
-   using namespace edm;
 
-   Handle<reco::SecondaryVertexTagInfoCollection> secondaryVertexTagInfo;
-   iEvent.getByLabel(tag_secondaryVertexTagInfo_, secondaryVertexTagInfo);
-
-   std::auto_ptr<reco::VertexCollection> displacedSvVertexCollectionResult(new reco::VertexCollection);                                                                                          
-   reco::VertexCollection displacedSvVertexCollection;       
-
-   const reco::SecondaryVertexTagInfoCollection & sv = *(secondaryVertexTagInfo.product());
-   reco::SecondaryVertexTagInfoCollection::const_iterator svinfo = sv.begin();
-   // loop over each jet 
-   for(; svinfo != sv.end(); ++svinfo){
-
-     // apply a jet threshold
-     if (svinfo->jet()->pt()  > jetPtCut_){
-      continue;
-     }
-
-    int nSV = svinfo->nVertices();     
-
-    // loop over each SVvertex that jet has
-    for(int vv = 0; vv < nSV; vv++) {
-     reco::Vertex svVertex = svinfo->secondaryVertex(vv);       
-     displacedSvVertexCollection.push_back(svVertex);                                                                                                                                            
-    }
-   }
-
-   *displacedSvVertexCollectionResult = displacedSvVertexCollection;
-   iEvent.put(displacedSvVertexCollectionResult, outputLabel_);//, "displacedSVertexCollection");            
+   edm::Handle<reco::TrackIPTagInfoCollection> trackIPTagInfoCollection;
+   iEvent.getByLabel(tag_ipTagInfo_, trackIPTagInfoCollection);
+   
+   edm::Handle<reco::SecondaryVertexTagInfoCollection> secondaryVertexTagInfo;
+   iEvent.getByLabel(tag_secondaryVertexTagInfo_, secondaryVertexTagInfo);     
 
 /* This is an event example
    //Read 'ExampleData' from the Event
@@ -187,19 +168,19 @@ DisplacedTagsToVertices::produce(edm::Event& iEvent, const edm::EventSetup& iSet
 
 // ------------ method called once each job just before starting event loop  ------------
 void 
-DisplacedTagsToVertices::beginJob()
+DisplacedJetTagProducer::beginJob()
 {
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
 void 
-DisplacedTagsToVertices::endJob() {
+DisplacedJetTagProducer::endJob() {
 }
 
 // ------------ method called when starting to processes a run  ------------
 /*
 void
-DisplacedTagsToVertices::beginRun(edm::Run const&, edm::EventSetup const&)
+DisplacedJetTagProducer::beginRun(edm::Run const&, edm::EventSetup const&)
 {
 }
 */
@@ -207,7 +188,7 @@ DisplacedTagsToVertices::beginRun(edm::Run const&, edm::EventSetup const&)
 // ------------ method called when ending the processing of a run  ------------
 /*
 void
-DisplacedTagsToVertices::endRun(edm::Run const&, edm::EventSetup const&)
+DisplacedJetTagProducer::endRun(edm::Run const&, edm::EventSetup const&)
 {
 }
 */
@@ -215,7 +196,7 @@ DisplacedTagsToVertices::endRun(edm::Run const&, edm::EventSetup const&)
 // ------------ method called when starting to processes a luminosity block  ------------
 /*
 void
-DisplacedTagsToVertices::beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&)
+DisplacedJetTagProducer::beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&)
 {
 }
 */
@@ -223,14 +204,14 @@ DisplacedTagsToVertices::beginLuminosityBlock(edm::LuminosityBlock const&, edm::
 // ------------ method called when ending the processing of a luminosity block  ------------
 /*
 void
-DisplacedTagsToVertices::endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&)
+DisplacedJetTagProducer::endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&)
 {
 }
 */
  
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------
 void
-DisplacedTagsToVertices::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
+DisplacedJetTagProducer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   //The following says we do not know what parameters are allowed so do no validation
   // Please change this to state exactly what you do use, even if it is no parameters
   edm::ParameterSetDescription desc;
@@ -239,4 +220,4 @@ DisplacedTagsToVertices::fillDescriptions(edm::ConfigurationDescriptions& descri
 }
 
 //define this as a plug-in
-DEFINE_FWK_MODULE(DisplacedTagsToVertices);
+DEFINE_FWK_MODULE(DisplacedJetTagProducer);

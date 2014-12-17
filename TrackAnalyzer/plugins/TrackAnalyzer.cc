@@ -105,8 +105,8 @@ public:
 private:
 
   //methods
-  virtual Float_t getMedian(Float_t daArray[], int size);
-  virtual Float_t getVariance(Float_t values[], Float_t mean, int size);
+  virtual Float_t getJetMedian(Float_t daArray[], int size, int jetid, bool is_signed);
+  virtual Float_t getJetVariance(Float_t values[], Float_t mean, int size, int jetid, bool is_signed);
   virtual void beginJob() override;
   virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
   virtual void endJob() override;
@@ -623,7 +623,7 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   jetid -= nTagJets; //reset the jetid counter
   nLiJets = 0;
   nLiTracks = 0;
-
+  
   for(; liinfo != lifetime.end(); ++liinfo, jj++){        
     //skip low pt jets
     if (liinfo->jet()->pt() < cut_jetPt) continue;    
@@ -632,7 +632,8 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
     // track selection  
     int n_liTracks = liTracks.size();
-    liJetNSelTracks[nLiJets] = liTracks.size();
+
+    liJetNSelTracks[nLiJets] = n_liTracks;
 
     // redundancy for tree output
     liJetID[nLiJets] = jetid; 
@@ -806,15 +807,15 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     
     // significance and aboslute IP weighted track energy
     jetEIPSig2D[jj] = 0;
-    jetEIP2D[jj] = 0 ;
+    jetEIP2D[jj] = 0;
     jetEIPSig3D[jj] = 0;
-    jetEIP3D[jj] = 0 ;
+    jetEIP3D[jj] = 0;
 
     // signed versions of track weighting
     jetEIPSignedSig2D[jj] = 0;
-    jetEIPSigned2D[jj] = 0 ;
+    jetEIPSigned2D[jj] = 0;
     jetEIPSignedSig3D[jj] = 0;
-    jetEIPSigned3D[jj] = 0 ;
+    jetEIPSigned3D[jj] = 0;
 
     // IP significance sums
     jetIPSigSum2D[jj] = 0;
@@ -883,8 +884,9 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       // unsigned 
       jetIPSigSum2D[jj] += fabs(ip2ds);
       jetIPSigSum3D[jj] += fabs(ip3ds);
-      jetIPSigInvSum2D[jj] += ip2ds ? 1.0 / fabs(ip2ds): 0;
-      jetIPSigInvSum3D[jj] += ip3ds ? 1.0 / fabs(ip3ds): 0;
+      jetIPSigInvSum2D[jj] += (ip2ds ? 1.0 / fabs(ip2ds): 0);
+      jetIPSigInvSum3D[jj] += (ip3ds ? 1.0 / fabs(ip3ds): 0);
+
       // signed
       jetIPSignedSigSum2D[jj] += (ip2ds);
       jetIPSignedSigSum3D[jj] += (ip3ds);
@@ -892,34 +894,43 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       jetIPSignedSigInvSum3D[jj] += 1.0 / (ip3ds);
 
       // ip significance log sum
-      jetIPSigLogSum2D[jj] += ip2ds ? log(fabs(ip2ds)) : 0;
-      jetIPSigLogSum3D[jj] += ip3ds ? log(fabs(ip3ds)) : 0;
+      jetIPSigLogSum2D[jj] += (ip2ds ? log(fabs(ip2ds)) : 0);
+      jetIPSigLogSum3D[jj] += (ip3ds ? log(fabs(ip3ds)) : 0);
 
       // unsigned averages
-      jetMeanIPSig2D[jj] += fabs(ip2ds) / float(nLiTracks);
-      jetMeanIPSig3D[jj] += fabs(ip3ds) / float(nLiTracks);          
+      jetMeanIPSig2D[jj] += fabs(ip2ds) / float(liJetNSelTracks[jj]);
+      jetMeanIPSig3D[jj] += fabs(ip3ds) / float(liJetNSelTracks[jj]);          
 
       // unsigned averages
-      jetMeanIPSignedSig2D[jj] += ip2ds / float(nLiTracks);
-      jetMeanIPSignedSig3D[jj] += ip3ds / float(nLiTracks);          
+      jetMeanIPSignedSig2D[jj] += ip2ds / float(liJetNSelTracks[jj]);
+      jetMeanIPSignedSig3D[jj] += ip3ds / float(liJetNSelTracks[jj]);
     }
 
-    // do the average for the IP weighted
-    jetEIPSig2D[jj] /= jetIPSigSum2D[jj];
-    jetEIPSig3D[jj] /= jetIPSigSum3D[jj];
-    jetEIP2D[jj] /= jetIPSum2D[jj];
-    jetEIP3D[jj] /= jetIPSum3D[jj];
+    bool has_track = liJetNSelTracks[jj] > 0;
 
-    jetEIPSignedSig2D[jj] /= jetIPSignedSum2D[jj];
-    jetEIPSignedSig3D[jj] /= jetIPSignedSum3D[jj];
-    jetEIPSigned2D[jj] /= jetIPSignedSigSum2D[jj];
-    jetEIPSigned3D[jj] /= jetIPSignedSigSum3D[jj];
+    // do the average for the IP weighted
+    jetEIPSig2D[jj] /= has_track ? jetIPSigSum2D[jj] : 1;
+    jetEIPSig3D[jj] /= has_track ? jetIPSigSum3D[jj] : 1;
+    jetEIP2D[jj] /= has_track ?  jetIPSum2D[jj]: 1;
+    jetEIP3D[jj] /= has_track ?  jetIPSum3D[jj]: 1;
+
+    // averages for the signed values as well
+    jetEIPSignedSig2D[jj] /= has_track ?  jetIPSignedSum2D[jj]: 1;
+    jetEIPSignedSig3D[jj] /= has_track ?  jetIPSignedSum3D[jj]: 1;
+    jetEIPSigned2D[jj] /= has_track ?  jetIPSignedSigSum2D[jj]: 1;
+    jetEIPSigned3D[jj] /= has_track ?  jetIPSignedSigSum3D[jj]: 1;
 
     // compute combination variables
-    jetMedianIPSignedSig2D[jj] = TrackAnalyzer::getMedian(liTrackIP2D, nLiTracks);
-    jetMedianIPSignedSig3D[jj] = TrackAnalyzer::getMedian(liTrackIP3D, nLiTracks);
-    jetVarianceIPSignedSig2D[jj] = TrackAnalyzer::getVariance(liTrackIP2D, jetMeanIPSignedSig2D[jj], nLiTracks);
-    jetVarianceIPSignedSig3D[jj] = TrackAnalyzer::getVariance(liTrackIP3D, jetMeanIPSignedSig3D[jj], nLiTracks);    
+    jetMedianIPSignedSig2D[jj] = TrackAnalyzer::getJetMedian(liTrackIP2D, nLiTracks, jetJetID[jj], true);
+    jetMedianIPSignedSig3D[jj] = TrackAnalyzer::getJetMedian(liTrackIP3D, nLiTracks, jetJetID[jj], true);
+    jetVarianceIPSignedSig2D[jj] = TrackAnalyzer::getJetVariance(liTrackIP2D, jetMeanIPSignedSig2D[jj], nLiTracks, jetJetID[jj], true);
+    jetVarianceIPSignedSig3D[jj] = TrackAnalyzer::getJetVariance(liTrackIP3D, jetMeanIPSignedSig3D[jj], nLiTracks, jetJetID[jj], true);    
+
+    jetMedianIPSig2D[jj] = TrackAnalyzer::getJetMedian(liTrackIP2D, nLiTracks, jetJetID[jj], false);
+    jetMedianIPSig3D[jj] = TrackAnalyzer::getJetMedian(liTrackIP3D, nLiTracks, jetJetID[jj], false);
+    jetVarianceIPSig2D[jj] = TrackAnalyzer::getJetVariance(liTrackIP2D, jetMeanIPSig2D[jj], nLiTracks, jetJetID[jj], false);
+    jetVarianceIPSig3D[jj] = TrackAnalyzer::getJetVariance(liTrackIP3D, jetMeanIPSig3D[jj], nLiTracks, jetJetID[jj], false);    
+
 
     //  sv tag related 
     reco::SecondaryVertexTagInfoCollection::const_iterator svinfo = sv.begin();
@@ -1032,7 +1043,7 @@ TrackAnalyzer::beginJob()
   trackTree_->Branch("liJetPt", &liJetPt, "liJetPt[nLiJets]/F");
   trackTree_->Branch("liJetPhi", &liJetPhi, "liJetPhi[nLiJets]/F");
   trackTree_->Branch("liJetEta", &liJetEta, "liJetEta[nLiJets]/F");
-  trackTree_->Branch("liJetNSelTracks", &liJetNSelTracks, "liJetNSelTracks[nLiJets]/F");  
+  trackTree_->Branch("liJetNSelTracks", &liJetNSelTracks, "liJetNSelTracks[nLiJets]/I");  
 
   //lifetime ip tag info
   trackTree_->Branch("liTrackIP2D", &liTrackIP2D, "liTrackIP2D[nTracks]/F");
@@ -1123,6 +1134,9 @@ TrackAnalyzer::beginJob()
 
   //////////////// IP TAG INFORMATION ////////////
 
+  //number of selected tracks
+  jetTree_->Branch("jetNTracks", &liJetNSelTracks, "jetNTracks[nCaloJets]/I");  
+
   // significance and absolute IP weighted track energy
   jetTree_->Branch("jetEIPSig2D", &jetEIPSig2D, "jetEIPSig2D[nCaloJets]/F");
   jetTree_->Branch("jetEIP2D", &jetEIP2D, "jetEIP2D[nCaloJets]/F");
@@ -1159,12 +1173,16 @@ TrackAnalyzer::beginJob()
   jetTree_->Branch("jetMeanIPSig3D", &jetMeanIPSig3D, "jetMeanIPSig3D[nCaloJets]/F");
   jetTree_->Branch("jetMedianIPSig2D", &jetMedianIPSig2D, "jetMedianIPSig2D[nCaloJets]/F");
   jetTree_->Branch("jetMedianIPSig3D", &jetMedianIPSig3D, "jetMedianIPSig3D[nCaloJets]/F");
+  jetTree_->Branch("jetVarianceIPSig2D", &jetVarianceIPSig2D, "jetVarianceIPSig2D[nCaloJets]/F");
+  jetTree_->Branch("jetVarianceIPSig3D", &jetVarianceIPSig3D, "jetVarianceIPSig3D[nCaloJets]/F");
 
   // ip sig signed averages
   jetTree_->Branch("jetMeanIPSignedSig2D", &jetMeanIPSignedSig2D, "jetMeanIPSignedSig2D[nCaloJets]/F");
   jetTree_->Branch("jetMeanIPSignedSig3D", &jetMeanIPSignedSig3D, "jetMeanIPSignedSig3D[nCaloJets]/F");
   jetTree_->Branch("jetMedianIPSignedSig2D", &jetMedianIPSignedSig2D, "jetMedianIPSignedSig2D[nCaloJets]/F");
   jetTree_->Branch("jetMedianIPSignedSig3D", &jetMedianIPSignedSig3D, "jetMedianIPSignedSig3D[nCaloJets]/F");
+  jetTree_->Branch("jetVarianceIPSignedSig2D", &jetVarianceIPSignedSig2D, "jetVarianceIPSignedSig2D[nCaloJets]/F");
+  jetTree_->Branch("jetVarianceIPSignedSig3D", &jetVarianceIPSignedSig3D, "jetVarianceIPSignedSig3D[nCaloJets]/F");
 
   // ip value averages
   jetTree_->Branch("jetMeanIP2D", &jetMeanIP2D, "jetMeanIP2D[nCaloJets]/F");
@@ -1251,40 +1269,81 @@ TrackAnalyzer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   descriptions.addDefault(desc);
 }
 
-
-Float_t TrackAnalyzer::getMedian(Float_t values[], int size) {
+Float_t TrackAnalyzer::getJetMedian(Float_t values[], int size, int jetid, bool is_signed) {
   // Allocate an array of the same size and sort it.
-  double* sorted = new double[size];
+  
+  //the real size is only the tracks corresponding to the specific jet
+  Int_t true_size = 0;
   for (int i = 0; i < size; ++i) {
-    sorted[i] = values[i];
+    if (liTrackJetID[i] == jetid) {
+      true_size++; 
+    }
   }
-  for (int i = size - 1; i > 0; --i) {
+
+  //loop over the full array but only fill with the corresponding jetid
+  Float_t* sorted = new Float_t[true_size];
+  int true_index = 0;
+  for (int i = 0; true_index < true_size; ++i) {
+    if (liTrackJetID[i] == jetid) {
+      sorted[true_index] = is_signed ? values[i] : fabs(values[i]);
+      true_index++; 
+    }
+  }
+
+  // sort the array
+  for (int i = true_size - 1; i > 0; --i) {
     for (int j = 0; j < i; ++j) {
       if (sorted[j] > sorted[j+1]) {
-	double dTemp = sorted[j];
+	Float_t dTemp = sorted[j];
 	sorted[j] = sorted[j+1];
 	sorted[j+1] = dTemp;
       }
     }
   }
 
+  if(true_size == 0) {
+    return 0; //no tracks
+  }
+
+  // for (int ii=0; ii < true_size; ii++ ) {
+  //   std::cout << "index " << ii << " " << sorted[ii] << std::endl; 
+  // }
+  // std::cout << "------- " << std::endl;
+
   // Middle or average of middle values in the sorted array.
-  double dMedian = 0.0;
-  if ((size % 2) == 0) {
-    dMedian = (sorted[size/2] + sorted[(size/2) - 1])/2.0;
+  Float_t dMedian = 0.0;
+  if ((true_size % 2) == 0) {
+    dMedian = (sorted[true_size/2] + sorted[(true_size/2) - 1])/2.0;
   } else {
-    dMedian = sorted[size/2];
+    dMedian = sorted[true_size/2];
   }
   delete [] sorted;
+
+  //safety check
+  if(!is_signed ) { 
+    if (dMedian < 0 ) std::cout << "ASSERT FAIL: "  << dMedian << std::endl;
+    assert( dMedian >= 0 ); 
+  }
+
   return dMedian;
 }
 
-Float_t TrackAnalyzer::getVariance(Float_t values[], Float_t mean, int n) {
-  double sum = 0;
+Float_t TrackAnalyzer::getJetVariance(Float_t values[], Float_t mean, int n, int jetid, bool is_signed) {
+  Float_t sum = 0;
+  int true_n = 0;
+
   for (int i = 0; i < n; i++)  {
-    sum += (values[i] - mean) * (values[i] - mean);
+    if (liTrackJetID[n] == jetid) {
+      Float_t val = is_signed ? values[i] : fabs(values[i]);
+      sum += (val - mean) * (val - mean);
+      true_n++;
+    }
   }
-  return sum / (n-1);
+
+  //safety check
+  if(!is_signed ) { assert( sum >= 0 ); }
+
+  return sum / float((true_n - 1));
 }
 
 

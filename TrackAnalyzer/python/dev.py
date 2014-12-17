@@ -1,8 +1,10 @@
 import FWCore.ParameterSet.Config as cms
 
+
 isMC = True
 
 process = cms.Process("ANA")
+proc_label = "RECO" #"HLT"
 
 # from RecoBTag.SoftLepton.softLepton_cff import *
 # from RecoBTag.ImpactParameter.impactParameter_cff import *
@@ -68,12 +70,14 @@ if 'GlobalTag' in process.__dict__:
     process.GlobalTag.RefreshEachRun = cms.untracked.bool( False )
     process.GlobalTag.ReconnectEachRun = cms.untracked.bool( False )
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100) )
 
 process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring(
 #        'file:/afs/cern.ch/work/h/hardenbr/QCD_Pt-50to80_Tune4C_13TeV_pythia8_AOD.root'
-        'file:/afs/cern.ch/work/h/hardenbr/HTo2LongLivedTo4L_MH_700_MFF_300_CTau30_TSG_PU40BX25_AODSIM.root'
+#        'file:/afs/cern.ch/work/h/hardenbr/HTo2LongLivedTo4L_MH_700_MFF_300_CTau30_TSG_PU40BX25_AODSIM.root'
+        'file:/afs/cern.ch/work/h/hardenbr/QCD_470_600_AOD_40bx25.root'
+
     )
 )
 
@@ -89,8 +93,8 @@ process.analyzer.outputFileName = cms.untracked.string('trackOutput.root')
 process.analyzer.isMC =  cms.untracked.bool(isMC)
 
 #tags
-process.analyzer.generalTracks =  cms.untracked.InputTag('generalTracks', '', 'HLT')
-process.analyzer.ak5CaloJets =  cms.untracked.InputTag('ak5CaloJets', '', 'HLT')
+process.analyzer.generalTracks =  cms.untracked.InputTag('generalTracks', '', proc_label)
+process.analyzer.ak5CaloJets =  cms.untracked.InputTag('ak5CaloJets', '', proc_label)
 process.analyzer.trackIPTagInfoCollection = cms.untracked.InputTag('displacedImpactParameterTagInfos', '', 'ANA')
 process.analyzer.secondaryVertexTagInfo = cms.untracked.InputTag('displacedSecondaryVertexTagInfos', '', 'ANA')
 process.analyzer.lifetimeIPTagInfo = cms.untracked.InputTag('displacedLifetimeTagInfos', '', 'ANA')
@@ -102,10 +106,9 @@ process.analyzer.jetEta = cms.untracked.double(2.0)
 # Tags related to the monte carlo
 if isMC:
     # Gen Information
-    process.analyzer.ak5GenJets =  cms.untracked.InputTag('ak5GenJets', '', 'HLT')
-    process.analyzer.genMetCalo =  cms.untracked.InputTag('genMetCalo', '', 'HLT')
-    process.analyzer.genParticles =  cms.untracked.InputTag('genParticles', '', 'HLT')
-
+    process.analyzer.ak5GenJets =  cms.untracked.InputTag('ak5GenJets', '', proc_label)
+    process.analyzer.genMetCalo =  cms.untracked.InputTag('genMetCalo', '', proc_label)
+    process.analyzer.genParticles =  cms.untracked.InputTag('genParticles', '', proc_label)
 
 # process.edmoutput = cms.OutputModule( "PoolOutputModule",
 #     fileName = cms.untracked.string( "edmoutput.root" ),

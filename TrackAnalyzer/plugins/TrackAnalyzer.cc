@@ -909,16 +909,16 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     bool has_track = liJetNSelTracks[jj] > 0;
 
     // do the average for the IP weighted
-    jetEIPSig2D[jj] /= has_track ? jetIPSigSum2D[jj] : 1;
-    jetEIPSig3D[jj] /= has_track ? jetIPSigSum3D[jj] : 1;
-    jetEIP2D[jj] /= has_track ?  jetIPSum2D[jj]: 1;
-    jetEIP3D[jj] /= has_track ?  jetIPSum3D[jj]: 1;
+    jetEIPSig2D[jj] /= (has_track ? jetIPSigSum2D[jj] : 1);
+    jetEIPSig3D[jj] /= (has_track ? jetIPSigSum3D[jj] : 1);
+    jetEIP2D[jj] /= (has_track ?  jetIPSum2D[jj]: 1);
+    jetEIP3D[jj] /= (has_track ?  jetIPSum3D[jj]: 1);
 
     // averages for the signed values as well
-    jetEIPSignedSig2D[jj] /= has_track ?  jetIPSignedSum2D[jj]: 1;
-    jetEIPSignedSig3D[jj] /= has_track ?  jetIPSignedSum3D[jj]: 1;
-    jetEIPSigned2D[jj] /= has_track ?  jetIPSignedSigSum2D[jj]: 1;
-    jetEIPSigned3D[jj] /= has_track ?  jetIPSignedSigSum3D[jj]: 1;
+    jetEIPSignedSig2D[jj] /= (has_track ?  jetIPSignedSum2D[jj]: 1);
+    jetEIPSignedSig3D[jj] /= (has_track ?  jetIPSignedSum3D[jj]: 1);
+    jetEIPSigned2D[jj] /= (has_track ?  jetIPSignedSigSum2D[jj]: 1);
+    jetEIPSigned3D[jj] /= (has_track ?  jetIPSignedSigSum3D[jj]: 1);
 
     // compute combination variables
     jetMedianIPSignedSig2D[jj] = TrackAnalyzer::getJetMedian(liTrackIP2D, nLiTracks, jetJetID[jj], true);

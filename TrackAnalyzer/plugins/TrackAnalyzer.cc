@@ -145,6 +145,10 @@ private:
   static const Int_t MAX_JETS = 999;
   static const Int_t MAX_VTX = 999;
 
+#ifdef DEBUG
+  static const Int_t debug = 2; 
+#endif 
+ 
   //bookkeeping
   int evNum = 0;
   Int_t jetid = 0;
@@ -264,7 +268,7 @@ private:
   Float_t svChi2[MAX_VTX];
   Float_t svNChi2[MAX_VTX];
   Float_t svNDof[MAX_VTX];
-  Bool_t svIsValid[MAX_VTX];
+  Int_t svIsValid[MAX_VTX];
   
   //tracking
   Int_t svNTracks[MAX_VTX];
@@ -292,6 +296,12 @@ private:
   Float_t jetEIP2D[MAX_JETS];
   Float_t jetEIPSig3D[MAX_JETS];
   Float_t jetEIP3D[MAX_JETS];
+
+  // significance log IP weighted track energy
+  Float_t jetELogIPSig2D[MAX_JETS];
+  // Float_t jetELogIP2D[MAX_JETS];
+  Float_t jetELogIPSig3D[MAX_JETS];
+  //Float_t jetELogIP3D[MAX_JETS];
   
   // signed weighted pt 
   Float_t jetEIPSignedSig2D[MAX_JETS];
@@ -350,11 +360,12 @@ private:
   Float_t jetMedianIPSigned3D[MAX_JETS];
 
   // SV information
+  Int_t jetNSv[MAX_JETS];
   Float_t jetSvLxy[MAX_JETS];
   Float_t jetSvLxySig[MAX_JETS];
   Float_t jetSvLxyz[MAX_JETS];
   Float_t jetSvLxyzSig[MAX_JETS];
-  Float_t jetVtxNTrack[MAX_JETS]; //vertex track multiplicty
+  Int_t jetSvNTrack[MAX_JETS]; //vertex track multiplicty
 
   // SV position
   Float_t jetSvX[MAX_JETS];
@@ -369,7 +380,7 @@ private:
   Float_t jetSvChi2[MAX_JETS];
   Float_t jetSvNChi2[MAX_JETS];
   Float_t jetSvNDof[MAX_JETS];
-  Bool_t jetSvIsValid[MAX_JETS];
+  Int_t jetSvIsValid[MAX_JETS];
 
   //output histograms
       //virtual void beginRun(edm::Run const&, edm::EventSetup const&) override;
@@ -518,9 +529,9 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     nCaloJets++;
   } // end loop over calojets
 
-#ifdef DEBUG
-  std::cout << "[DEBUG] Begin Extracting Tag Info" << std::endl;
-#endif
+
+  if(debug > 1)std::cout << "[DEBUG] Begin Extracting Tag Info" << std::endl;
+
 
   //extract the collection from the handle
   const reco::TrackIPTagInfoCollection & ip = *(trackIPTagInfoCollection.product()); 
@@ -529,10 +540,11 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   //  std::auto_ptr<reco::VertexCollection> displacedSvVertexCollectionResult(new reco::VertexCollection);
   //  reco::VertexCollection displacedSvVertexCollection;
-
-  std::cout << "-- Found " << ip.size() << " IP TagInfo" << std::endl;
-  std::cout << "-- Found " << lifetime.size() << " Lifetime TagInfo" << std::endl;
-  std::cout << "-- Found " << sv.size() << " Secondary Vertex TagInfo" << std::endl;
+  if (debug > 1) {
+    std::cout << "-- Found " << ip.size() << " IP TagInfo" << std::endl;
+    std::cout << "-- Found " << lifetime.size() << " Lifetime TagInfo" << std::endl;
+    std::cout << "-- Found " << sv.size() << " Secondary Vertex TagInfo" << std::endl;
+  }
 
   nTracks = 0;
   nTagJets = 0;
@@ -548,11 +560,13 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     //skip low pt jets
     if (ipinfo->jet()->pt() < cut_jetPt) continue;
 
-#ifdef DEBUG
-    std::cout << "JET ID: " << jj << std::endl;
-    std::cout << "Jet pt: " << ipinfo->jet()->pt() << std::endl;
-    std::cout << "Tot tracks: " << ipinfo->tracks().size() << std::endl;    
-#endif
+
+    if(debug > 1){
+      std::cout << "JET ID: " << jj << std::endl;
+      std::cout << "Jet pt: " << ipinfo->jet()->pt() << std::endl;
+      std::cout << "Tot tracks: " << ipinfo->tracks().size() << std::endl;    
+    }
+
     
     //kinematics
     tagJetPt[nTagJets] = ipinfo->jet()->pt();
@@ -571,10 +585,12 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     reco::TrackRefVector selTracks = ipinfo->selectedTracks();
     tagJetNSelTracks[nTagJets] = selTracks.size();
     
-#ifdef DEBUG
+
+    if(debug > 1){
       std::cout << "[DEBUG] N Selected Tracks: " << tagJetNSelTracks[nTagJets] << std::endl; 
       std::cout << "[DEBUG] Extracting Significances from Info" << std::endl; 
-#endif 
+    }
+
 
    // Loop over the tracks and fill tree information
     
@@ -686,7 +702,7 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   jj = 0;
   jetid -= nLiJets; //reset the jetid counter
   nSvJets = 0;
-  nSV = 0;
+  nSV = 0; // global event counter fo SV
   for(; svinfo != sv.end(); ++svinfo, jj++){    
 
     //skip low pt jets
@@ -707,50 +723,50 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     int thisJetnSV = svinfo->nVertices();
     for(int vv = 0; vv < thisJetnSV; vv++) {
 
-      std::cout << "jet " << jetid << " nSV " << nSV << " nSvVertex " << nSvVertex << " thisJetnSV " << thisJetnSV << std::endl;
+      if(debug > 1)      std::cout << "[Tracking] jet " << jetid << " nSV " << nSV << " nSvVertex " << nSvVertex << " thisJetnSV " << thisJetnSV << std::endl;
 
-      svVertexJetID[nSvVertex] = jetid;
+      svVertexJetID[nSV] = jetid;
       reco::Vertex svVertex = svinfo->secondaryVertex(vv);  
 
       // vertex kinematics
-      svMass[nSvVertex] = svinfo->secondaryVertex(vv).p4().mass();
-      svPx[nSvVertex] = svVertex.p4().px();
-      svPy[nSvVertex] = svVertex.p4().py();
-      svPt[nSvVertex] = svVertex.p4().pt();
-      svEta[nSvVertex] = svVertex.p4().eta();
-      svPhi[nSvVertex] = svVertex.p4().phi();
+      svMass[nSV] = svinfo->secondaryVertex(vv).p4().mass();
+      svPx[nSV] = svVertex.p4().px();
+      svPy[nSV] = svVertex.p4().py();
+      svPt[nSV] = svVertex.p4().pt();
+      svEta[nSV] = svVertex.p4().eta();
+      svPhi[nSV] = svVertex.p4().phi();
       
       // quality
-      svChi2[nSvVertex] = svVertex.chi2();
-      svNChi2[nSvVertex] = svVertex.normalizedChi2();
-      svNDof[nSvVertex] = svVertex.ndof();
-      svIsValid[nSvVertex] = svVertex.isValid(); 	
+      svChi2[nSV] = svVertex.chi2();
+      svNChi2[nSV] = svVertex.normalizedChi2();
+      svNDof[nSV] = svVertex.ndof();
+      svIsValid[nSV] = svVertex.isValid(); 	
 
       // positional space
-      svX[nSvVertex] = svVertex.x();
-      svXErr[nSvVertex] = svVertex.xError();
-      svY[nSvVertex] = svVertex.y();   
-      svYErr[nSvVertex] = svVertex.yError();   
-      svZ[nSvVertex] = svVertex.z();      
-      svZErr[nSvVertex] = svVertex.zError();      
+      svX[nSV] = svVertex.x();
+      svXErr[nSV] = svVertex.xError();
+      svY[nSV] = svVertex.y();   
+      svYErr[nSV] = svVertex.yError();   
+      svZ[nSV] = svVertex.z();      
+      svZErr[nSV] = svVertex.zError();      
       
       // flight
-      svFlight[nSvVertex] = svinfo->flightDistance(vv).value();
-      svFlightErr[nSvVertex] = svinfo->flightDistance(vv).error();
-      svFlight2D[nSvVertex] = svinfo->flightDistance(vv, true).value();
-      svFlight2DErr[nSvVertex] = svinfo->flightDistance(vv, true).error();
+      svFlight[nSV] = svinfo->flightDistance(vv).value();
+      svFlightErr[nSV] = svinfo->flightDistance(vv).error();
+      svFlight2D[nSV] = svinfo->flightDistance(vv, true).value();
+      svFlight2DErr[nSV] = svinfo->flightDistance(vv, true).error();
 
       // charge
-      svTotalCharge[nSvVertex] = 0;
+      svTotalCharge[nSV] = 0;
 
       //tracking 
-      svNTracks[nSvVertex] = svVertex.nTracks();
+      svNTracks[nSV] = svVertex.nTracks();
       reco::TrackKinematics vertexKinematics;
 
       Bool_t hasRefittedTracks = svVertex.hasRefittedTracks();      
 
       // loop over the tracks associated with the Secondary Vertex to compute total charge
-      for(int tt = 0; tt < svNTracks[nSvVertex]; tt++) {		
+      for(int tt = 0; tt < svNTracks[nSV]; tt++) {		
 	//svTrackVertexID[tt] = vv; 		
 
 	reco::Track track  = *svinfo->track(tt);//->get(); //get the track from TrackRef 
@@ -766,11 +782,11 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	  reco::Track refitTrack = svVertex.refittedTracks()[vv];
 
           vertexKinematics.add(refitTrack, trackWeight);
-          svTotalCharge[nSvVertex] += refitTrack.charge();
+          svTotalCharge[nSV] += refitTrack.charge();
         }
         else {
           vertexKinematics.add(track, trackWeight);
-          svTotalCharge[nSvVertex] += track.charge();
+          svTotalCharge[nSV] += track.charge();
         }
       } // end sv tracking look
 
@@ -780,9 +796,9 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       GlobalVector flightDir = svinfo->flightDirection(vv);
 
       // deltaR variables
-      svDRFlightJet[nSvVertex] = reco::deltaR(flightDir, jetDir);
-      svDRTrackJet[nSvVertex] = reco::deltaR(vertexSum, jetDir); 
-      svDRTrackFlight[nSvVertex] = reco::deltaR(vertexSum, flightDir);       
+      svDRFlightJet[nSV] = reco::deltaR(flightDir, jetDir);
+      svDRTrackJet[nSV] = reco::deltaR(vertexSum, jetDir); 
+      svDRTrackFlight[nSV] = reco::deltaR(vertexSum, flightDir);       
       
       nSvVertex++; // index in array corresponding to a single jet for vertex
       nSV++; // event sv index  (includes all jets)
@@ -810,6 +826,12 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     jetEIP2D[jj] = 0;
     jetEIPSig3D[jj] = 0;
     jetEIP3D[jj] = 0;
+
+    //significance log weighted
+    jetELogIPSig2D[jj] = 0;
+    //jetELogIP2D[jj] = 0;
+    jetELogIPSig3D[jj] = 0;
+    //jetELogIP3D[jj] = 0;
 
     // signed versions of track weighting
     jetEIPSignedSig2D[jj] = 0;
@@ -867,6 +889,12 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       jetEIP2D[jj] += fabs(ip2d) * pt;
       jetEIP3D[jj] += fabs(ip3d) * pt;
 
+      // ip log weighted track pt sums
+      jetELogIPSig2D[jj] += (ip2ds ? log(fabs(ip2ds)) * pt : 0);
+      jetELogIPSig3D[jj] += (ip3ds ? log(fabs(ip3ds)) * pt : 0);
+      //jetELogIP2D[jj] += (ip2d ? log(fabs(ip2d)) * pt : 0);
+      //jetELogIP3D[jj] += (ip3d ? log(fabs(ip3d)) * pt : 0);
+
       jetEIPSignedSig2D[jj] += (ip2ds) * pt;
       jetEIPSignedSig3D[jj] += (ip3ds) * pt;
       jetEIPSigned2D[jj] += (ip2d) * pt;
@@ -914,6 +942,12 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     jetEIP2D[jj] /= (has_track ?  jetIPSum2D[jj]: 1);
     jetEIP3D[jj] /= (has_track ?  jetIPSum3D[jj]: 1);
 
+    // do the average for the IP weighted
+    jetELogIPSig2D[jj] /= (has_track ? jetIPSigLogSum2D[jj] : 1);
+    jetELogIPSig3D[jj] /= (has_track ? jetIPSigLogSum3D[jj] : 1);
+    //jetELogIP2D[jj] /= (has_track ?  jetIPLogSum2D[jj]: 1);
+    //jetELogIP3D[jj] /= (has_track ?  jetIPLogSum3D[jj]: 1);
+
     // averages for the signed values as well
     jetEIPSignedSig2D[jj] /= (has_track ?  jetIPSignedSum2D[jj]: 1);
     jetEIPSignedSig3D[jj] /= (has_track ?  jetIPSignedSum3D[jj]: 1);
@@ -931,20 +965,82 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     jetVarianceIPSig2D[jj] = TrackAnalyzer::getJetVariance(liTrackIP2D, jetMeanIPSig2D[jj], nLiTracks, jetJetID[jj], false);
     jetVarianceIPSig3D[jj] = TrackAnalyzer::getJetVariance(liTrackIP3D, jetMeanIPSig3D[jj], nLiTracks, jetJetID[jj], false);    
 
+    // loop over all secondary vertices in the event
+    for(int vv = 0; vv < nSV; vv++){    
 
-    //  sv tag related 
-    reco::SecondaryVertexTagInfoCollection::const_iterator svinfo = sv.begin();
-    for(; svinfo != sv.end(); ++svinfo){    
       //skip low pt jets
-      if (svinfo->jet()->pt() < cut_jetPt) continue;    
+      //if (svinfo2->jet()->pt() < cut_jetPt) continue;    
+      // make sure the svinfo jet matches the jet we are looping on
+      //if(debug > 1) std::cout << "[JETS] --------  svVertexJetID: " << svJetID[vv] << " jetjetid: " << jetJetID[jj] << std::endl;
+      if (svVertexJetID[vv] != jetJetID[jj]) continue;
+      
+      // SV information
+      jetSvLxy[jj] = 0;
+      jetSvLxySig[jj] = 0;
+      jetSvLxyz[jj] = 0;
+      jetSvLxyzSig[jj] = 0;
+      jetSvNTrack[jj] = 0; //vertex track multiplicty
 
-      // find the vertex with the highest sum(p_t) 
-      int thisJetnSV = svinfo->nVertices();
-      for(int vv = 0; vv < thisJetnSV; vv++) {
+      // SV position
+      jetSvX[jj] = 0;
+      jetSvY[jj] = 0;
+      jetSvZ[jj] = 0;
+      // error
+      jetSvZErr[jj] = 0;
+      jetSvYErr[jj] = 0;
+      jetSvXErr[jj] = 0;
 
+      //SV quality
+      jetSvChi2[jj] = 0;
+      jetSvNChi2[jj] = 0;
+      jetSvNDof[jj] = 0;
+      jetSvIsValid[jj] = 0;
+           
+      // find the vertex with the highest sum(p_t) in the full event list corresponding to the current jet
+      jetNSv[jj] = 0;
+
+      int bestSV = 0;
+      int highestSum = -1;	
+      for(int vvv = 0; vvv < nSV; vvv++) {
+	// check the jet ids match between the SV and current jet	
+	if (svVertexJetID[vvv] != jetJetID[jj]) continue;
+
+	// counter the number of SV collected
+	jetNSv[jj]++;
+	float sv_pt = svPt[vvv];
+	
+	if (sv_pt > highestSum) {
+	  bestSV = vv;
+	  highestSum = sv_pt;
+	  if(debug > 1) std::cout << "[JETS] -------- highest sum Pt PV: " << highestSum << " index " << vv << std::endl;
+	}
       } // end vertex loop
-      // do calculations with the tracks related to the selected vertex      
 
+      // no SV, nothing to do
+      if (jetNSv[jj] == 0) continue;
+
+      // SV information
+      jetSvLxy[jj] = svFlight2D[bestSV];
+      jetSvLxySig[jj] = svFlight2D[bestSV] / svFlight2DErr[bestSV];
+      jetSvLxyz[jj] = svFlight[bestSV];
+      jetSvLxyzSig[jj] =  svFlight[bestSV] / svFlightErr[bestSV];
+      jetSvNTrack[jj] = svNTracks[bestSV]; //vertex track multiplicty
+
+      // SV position and error
+      jetSvX[jj] = svX[bestSV];
+      jetSvY[jj] = svY[bestSV];
+      jetSvZ[jj] = svZ[bestSV];
+
+      jetSvZErr[jj] = svXErr[bestSV];
+      jetSvYErr[jj] = svYErr[bestSV];
+      jetSvXErr[jj] = svZErr[bestSV];
+
+      //SV quality
+      jetSvChi2[jj] = svChi2[bestSV];
+      jetSvNChi2[jj] = svNChi2[bestSV];
+      jetSvNDof[jj] = svNDof[bestSV];
+      jetSvIsValid[jj] = svIsValid[bestSV];            
+      
     } // end svtag (jet) loop
 
   } // end loop over jets
@@ -959,10 +1055,10 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 void 
 TrackAnalyzer::beginJob()
 {
+}
 
-#ifdef DEBUG
-  std::cout << "[DEBUG] Setting Up Output File And Tree" << std::endl;
-#endif 
+
+  if(debug > 1) std::cout << "[DEBUG] Setting Up Output File And Tree" << std::endl;
   
   // storage 
   outputFile_ = new TFile(outputFileName_.c_str(), "RECREATE");
@@ -1062,16 +1158,16 @@ TrackAnalyzer::beginJob()
   trackTree_->Branch("svJetPt", &svJetPt, "svJetPt[nSvJets]/F");
   trackTree_->Branch("svJetEta", &svJetEta, "svJetEta[nSvJets]/F");
   trackTree_->Branch("svJetPhi", &svJetPhi, "svJetPhi[nSvJets]/F");
-  trackTree_->Branch("svJetID", &svJetID, "svJetID[nSvJets]/F");
+  trackTree_->Branch("svJetID", &svJetID, "svJetID[nSvJets]/I");
 
   // vertex
-  trackTree_->Branch("svVertexJetID", &svVertexJetID, "svVertexJetID[nSV]/F");
+  trackTree_->Branch("svVertexJetID", &svVertexJetID, "svVertexJetID[nSV]/I");
 
   // quality
   trackTree_->Branch("svChi2", &svChi2, "svChi2[nSV]/F");
   trackTree_->Branch("svNChi2", &svNChi2, "svNChi2[nSV]/F");
   trackTree_->Branch("svNDof", &svNDof, "svNDof[nSV]/F");
-  trackTree_->Branch("svIsValid", &svIsValid, "svIsValid[nSV]/F");
+  trackTree_->Branch("svIsValid", &svIsValid, "svIsValid[nSV]/I");
 
   // kinematics
   trackTree_->Branch("svMass", &svMass, "svMass[nSV]/F");
@@ -1138,15 +1234,23 @@ TrackAnalyzer::beginJob()
   jetTree_->Branch("jetNTracks", &liJetNSelTracks, "jetNTracks[nCaloJets]/I");  
 
   // significance and absolute IP weighted track energy
+  // unsigned 
   jetTree_->Branch("jetEIPSig2D", &jetEIPSig2D, "jetEIPSig2D[nCaloJets]/F");
   jetTree_->Branch("jetEIP2D", &jetEIP2D, "jetEIP2D[nCaloJets]/F");
   jetTree_->Branch("jetEIPSig3D", &jetEIPSig3D, "jetEIPSig3D[nCaloJets]/F");
   jetTree_->Branch("jetEIP3D", &jetEIP3D, "jetEIP3D[nCaloJets]/F");
 
+  // signed
   jetTree_->Branch("jetEIPSignedSig2D", &jetEIPSignedSig2D, "jetEIPSignedSig2D[nCaloJets]/F");
   jetTree_->Branch("jetEIPSigned2D", &jetEIPSigned2D, "jetEIPSigned2D[nCaloJets]/F");
   jetTree_->Branch("jetEIPSignedSig3D", &jetEIPSignedSig3D, "jetEIPSignedSig3D[nCaloJets]/F");
   jetTree_->Branch("jetEIPSigned3D", &jetEIPSigned3D, "jetEIPSigned3D[nCaloJets]/F");
+
+  // log weighted track pt 
+  jetTree_->Branch("jetELogIPSig2D", &jetELogIPSig2D, "jetELogIPSig2D[nCaloJets]/F");
+  //jetTree_->Branch("jetELogIP2D", &jetELogIP2D, "jetELogIP2D[nCaloJets]/F");
+  jetTree_->Branch("jetELogIPSig3D", &jetELogIPSig3D, "jetELogIPSig3D[nCaloJets]/F");
+  //jetTree_->Branch("jetELogIP3D", &jetELogIP3D, "jetELogIP3D[nCaloJets]/F");
 
   //ip significance sums -- sum(|IPsig|)
   jetTree_->Branch("jetIPSigSum2D", &jetIPSigSum2D, "jetIPSigSum2D[nCaloJets]/F");
@@ -1199,6 +1303,8 @@ TrackAnalyzer::beginJob()
   //////////////SECONDARY VTX INFORMATION //////////////
 
   // SV Information
+  jetTree_->Branch("jetNSv", &jetNSv, "jetNSv[nCaloJets]/I");
+  jetTree_->Branch("jetSvNTrack", &jetSvNTrack, "jetSvNTrack[nCaloJets]/I");
   jetTree_->Branch("jetSvLxy", &jetSvLxy, "jetSvLxy[nCaloJets]/F");
   jetTree_->Branch("jetSvLxySig", &jetSvLxySig, "jetSvLxySig[nCaloJets]/F");
   jetTree_->Branch("jetSvLxyz", &jetSvLxyz, "jetSvLxyz[nCaloJets]/F");
@@ -1216,6 +1322,7 @@ TrackAnalyzer::beginJob()
   jetTree_->Branch("jetSvChi2", &jetSvChi2, "jetSvChi2[nCaloJets]/F");
   jetTree_->Branch("jetSvNChi2", &jetSvNChi2, "jetSvNChi2[nCaloJets]/F");
   jetTree_->Branch("jetSvNDof", &jetSvNDof, "jetSvNDof[nCaloJets]/F");  
+  jetTree_->Branch("jetSvIsValid", &jetSvIsValid, "jetSvIsValid[nCaloJets]/I");  
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
@@ -1304,11 +1411,6 @@ Float_t TrackAnalyzer::getJetMedian(Float_t values[], int size, int jetid, bool 
   if(true_size == 0) {
     return 0; //no tracks
   }
-
-  // for (int ii=0; ii < true_size; ii++ ) {
-  //   std::cout << "index " << ii << " " << sorted[ii] << std::endl; 
-  // }
-  // std::cout << "------- " << std::endl;
 
   // Middle or average of middle values in the sorted array.
   Float_t dMedian = 0.0;

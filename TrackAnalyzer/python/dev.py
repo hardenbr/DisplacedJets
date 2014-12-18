@@ -4,7 +4,7 @@ import FWCore.ParameterSet.Config as cms
 isMC = True
 
 process = cms.Process("ANA")
-proc_label = "HLT"
+proc_label = "RECO"
 
 # from RecoBTag.SoftLepton.softLepton_cff import *
 # from RecoBTag.ImpactParameter.impactParameter_cff import *
@@ -75,8 +75,8 @@ process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100) )
 process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring(
 #        'file:/afs/cern.ch/work/h/hardenbr/QCD_Pt-50to80_Tune4C_13TeV_pythia8_AOD.root'
-        'file:/afs/cern.ch/work/h/hardenbr/HTo2LongLivedTo4L_MH_700_MFF_300_CTau30_TSG_PU40BX25_AODSIM.root'
-#        'file:/afs/cern.ch/work/h/hardenbr/QCD_470_600_AOD_40bx25.root'
+#        'file:/afs/cern.ch/work/h/hardenbr/HTo2LongLivedTo4L_MH_700_MFF_300_CTau30_TSG_PU40BX25_AODSIM.root'
+        'file:/afs/cern.ch/work/h/hardenbr/QCD_470_600_AOD_40bx25.root'
 
     )
 )

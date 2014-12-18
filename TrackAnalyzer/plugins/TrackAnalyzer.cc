@@ -53,7 +53,6 @@
 #include "DataFormats/GeometryCommonDetAlgo/interface/Measurement1D.h"
 #include "DataFormats/HepMCCandidate/interface/GenParticleFwd.h"
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
-#include "DataFormats/HepMCCandidate/interface/GenParticle.h"
 
 #include "DataFormats/Math/interface/deltaR.h"
 
@@ -115,6 +114,7 @@ private:
   std::string outputFileName_;
   TFile *outputFile_;
   bool isMC_;
+  bool isSignalMC_;
 
   //tracking tags
   edm::InputTag tag_generalTracks_;
@@ -171,6 +171,14 @@ private:
   // energy contribution
   Float_t caloJetHfrac[MAX_JETS];
   Float_t caloJetEfrac[MAX_JETS];
+
+  ///////////////////// GEN MATCHED ////////////////////
+
+  Int_t genMatch[MAX_JETS];
+  Float_t genPt[MAX_JETS];
+  Float_t genEta[MAX_JETS];
+  Float_t genPhi[MAX_JETS];
+  Float_t genM[MAX_JETS];
 
   //////////////////// JET TAG /////////////////
 
@@ -408,6 +416,7 @@ TrackAnalyzer::TrackAnalyzer(const edm::ParameterSet& iConfig)
   //output configuration
   outputFileName_    =   iConfig.getUntrackedParameter<std::string>("outputFileName");
   isMC_    =   iConfig.getUntrackedParameter<bool>("isMC");
+  isSignalMC_    =   iConfig.getUntrackedParameter<bool>("isSignalMC");
 
   //tags
   tag_generalTracks_ = iConfig.getUntrackedParameter<edm::InputTag>("generalTracks");
@@ -426,8 +435,8 @@ TrackAnalyzer::TrackAnalyzer(const edm::ParameterSet& iConfig)
 
   //mc tags
   if(isMC_) {
-    tag_ak5GenJets_ = iConfig.getUntrackedParameter<edm::InputTag>("ak5GenJets");
-    tag_genMetCalo_ = iConfig.getUntrackedParameter<edm::InputTag>("genMetCalo");
+    //tag_ak5GenJets_ = iConfig.getUntrackedParameter<edm::InputTag>("ak5GenJets");
+    //tag_genMetCalo_ = iConfig.getUntrackedParameter<edm::InputTag>("genMetCalo");
     tag_genParticles_ = iConfig.getUntrackedParameter<edm::InputTag>("genParticles");
   }
 
@@ -475,8 +484,8 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   //SIM Compatible 
   if(isMC_) {
-    edm::Handle<reco::GenParticleCollection > genParticle;
-    iEvent.getByLabel(tag_genParticles_, genParticle);
+    //edm::Handle<reco::GenParticleCollection > genParticle;
+    //iEvent.getByLabel(tag_genParticles_, genParticle);
     
     // edm::Handle<std::vector<int> > genParticleID;
     // iEvent.getByLabel(tag_genParticle_, genParticleID);
@@ -513,6 +522,13 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     //cuts 
     if (jet->pt() < cut_jetPt) continue;
     //if (fabs(jet->eta()) > cut_jetEta) continue;
+    
+    // initialize to zero in case there isnt any match
+    genMatch[jj] = 0; 
+    genPt[jj] = 0;
+    genEta[jj] = 0;
+    genPhi[jj] = 0;
+    genM[jj] = 0;
 
     caloJetPt[jj] = jet->pt();
     caloJetEta[jj] = jet->eta();
@@ -530,9 +546,49 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     nCaloJets++;
   } // end loop over calojets
 
+  edm::Handle<reco::GenParticleCollection> genParticles;
 
-  if(debug > 1 )std::cout << "[DEBUG] Begin Extracting Tag Info" << std::endl;
+  // generator matching to truely displaced jets
+  if (isSignalMC_) {
+    iEvent.getByLabel("genParticles", genParticles);    
 
+    for(size_t pp = 0; pp < genParticles->size(); ++pp) {
+      const reco::GenParticle & part = (*genParticles)[pp];
+      int id = part.pdgId();
+      int st = part.status();  
+
+      if (st != 3 || fabs(id) > 6 ) continue;     
+
+      // const reco::Candidate * mom = part.mother();
+      double genpt = part.pt(), geneta = part.eta(), genphi = part.phi(), genmass = part.mass();
+      
+      //      if (debug > 1 ) 
+      //      std::cout << "[GEN CAND] id " << id << " status " << st << " pt " << genpt << " eta " << geneta << " phi " << genphi  << std::endl;      
+
+      // check each jet if it matches
+      for(int jj = 0; jj < nCaloJets; jj++ ) {
+
+	float calopt = caloJetPt[jj],  caloeta = caloJetEta[jj], calophi = caloJetPhi[jj];
+
+	//	if (calopt > 100) {std::cout << "[CALO JET] pt " << calopt << " eta " << caloeta << " phi " << calophi << std::endl;}
+
+	float dr = reco::deltaR( geneta, genphi, caloeta, calophi);
+	float dpt = fabs(calopt - genpt) / genpt;
+
+	// found a match
+	if (dr < .5 && dpt < .5) {
+	  std::cout << "[GEN MATCHED] id " << id << " status " << st << " pt " << genpt << " eta " << geneta  <<  " phi " << genphi << std::endl;      
+	  genMatch[jj]++; 
+	  genPt[jj] = genpt;
+	  genEta[jj] = geneta;
+	  genPhi[jj] = geneta;
+	  genM[jj] = genmass;
+	}
+      } //end loop over caloejts
+    }
+  }
+
+  if(debug > 1 ) std::cout << "[DEBUG] Begin Extracting Tag Info" << std::endl;
 
   //extract the collection from the handle
   const reco::TrackIPTagInfoCollection & ip = *(trackIPTagInfoCollection.product()); 
@@ -1090,6 +1146,14 @@ TrackAnalyzer::beginJob()
   trackTree_->Branch("caloJetHfrac", &caloJetHfrac, "caloJetHfrac[nCaloJets]/F");
   trackTree_->Branch("caloJetEfrac", &caloJetEfrac, "caloJetEFrac[nCaloJets]/F");
 
+  ////////////////////////////// GEN MATCHING /////////////////////
+
+  trackTree_->Branch("genMatch", &genMatch, "genMatch[nCaloJets]/I");  
+  trackTree_->Branch("genPt", &genPt, "genPt[nCaloJets]/I");  
+  trackTree_->Branch("genEta", &genEta, "genEta[nCaloJets]/I");  
+  trackTree_->Branch("genPhi", &genPhi, "genPhi[nCaloJets]/I");  
+  trackTree_->Branch("genM", &genM, "genM[nCaloJets]/I");  
+
   ////////////////////////////// IP Jet tags////////////////////////
 
   trackTree_->Branch("jetJetID", &jetJetID, "jetJetID[nTagJets]/I");
@@ -1210,6 +1274,14 @@ TrackAnalyzer::beginJob()
   jetTree_->Branch("jetID", &jetJetID, "jetID[nCaloJets]/I");
 
   jetTree_->Branch("nJetWithSv", &nJetWithSv, "nJetWithSv/I"); //number of SV in the event
+
+  //////////////// GEN MATCHING ///////////////
+
+  jetTree_->Branch("genMatch", &genMatch, "genMatch[nCaloJets]/I");  
+  jetTree_->Branch("genPt", &genPt, "genPt[nCaloJets]/I");  
+  jetTree_->Branch("genEta", &genEta, "genEta[nCaloJets]/I");  
+  jetTree_->Branch("genPhi", &genPhi, "genPhi[nCaloJets]/I");  
+  jetTree_->Branch("genM", &genM, "genM[nCaloJets]/I");  
 
   //////////////// CALO JETS ///////////////////
   

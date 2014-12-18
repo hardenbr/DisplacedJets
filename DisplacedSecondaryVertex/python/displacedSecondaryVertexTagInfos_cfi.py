@@ -10,7 +10,7 @@ displacedSecondaryVertexTagInfos = cms.EDProducer("SecondaryVertexProducer",
 	vertexSelectionBlock,
 	vertexCutsBlock,
 	vertexRecoBlock,
-	constraint = cms.string("BeamSpot"),
+	constraint = cms.string("None"), #displaced  -> None
 	trackIPTagInfos = cms.InputTag("displacedLifetimeTagInfos"), #displaced 
 	minimumTrackWeight = cms.double(0.5),
 	usePVError = cms.bool(True),

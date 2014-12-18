@@ -60,7 +60,7 @@ parser.add_option( "--xlabel", dest="xlabel",
 
 parser.add_option( "--ylabel", dest="ylabel",
 		                    help="label for the y axis",
-		                    action="store",type="string",default = "N Events")
+		                    action="store",type="string",default = "N Jets")
 
 parser.add_option( "--nbins", dest="nbins",
 		                    help="number of bins. Non-variable binning",
@@ -153,13 +153,35 @@ for key in stacks.keys():
 
 output.cd()
 #build the canvas
-canvas = rt.TCanvas("plot","plot", 800, 600)
+canvas = rt.TCanvas("plot","plot", 1024, 768)
 canvas.cd()
 
+draw_first = None
+draw_rest = []
+max = -1
 for key in stacks.keys(): 
     for samp in stacks[key]:
         #draw each histogram
-        samp.hist.Draw("same")
+        thisMax = samp.hist.GetMaximum() 
+
+        if thisMax > max: 
+
+            if draw_first != None and samp.hist not in draw_rest:
+                print "shifting down", samp.hist_name
+                draw_rest.append(draw_first)
+
+            max = thisMax
+            draw_first = samp.hist
+        else:
+            if samp.hist not in draw_rest:
+                print "appending", samp.hist_name
+                draw_rest.append(samp.hist)
+
+
+print "length of draw_rest", len(draw_rest)
+draw_first.Draw()
+
+for ii in draw_rest: ii.Draw("same")
 
 
 leg = canvas.BuildLegend()
@@ -168,3 +190,4 @@ leg.SetLineColor(0)
 CMS_lumi.CMS_lumi(canvas, 4, 0)
 
 raw_input("RAW INPUT")
+canvas.Print("%s.pdf" % options.var)

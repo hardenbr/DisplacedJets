@@ -1,7 +1,7 @@
 import ROOT as rt
 from  optparse  import OptionParser
 import sys, os, array
-import CMS_lumi as cms
+import CMS_lumi 
 import rootlogon
 rootlogon.style()
 
@@ -146,7 +146,8 @@ for key in stacks.keys():
         output.cd()
 
         #fill each histogram 
-        print "NUMBER OF EVENTS DRAWN", thisTree.Draw("%s>>%s" % (options.var, samp.hist_name), options.cut)
+        nevents =  thisTree.Draw("%s>>%s" % (options.var, samp.hist_name), options.cut)
+        samp.hist.Scale( float(options.lumi) * float(samp.xsec) / float(nevents))
         samp.hist.GetXaxis().SetTitle(options.xlabel)
         samp.hist.GetYaxis().SetTitle(options.ylabel)
 
@@ -160,8 +161,10 @@ for key in stacks.keys():
         #draw each histogram
         samp.hist.Draw("same")
 
-leg = canvas.BuildLegend()
 
+leg = canvas.BuildLegend()
 leg.SetFillColor(0)
-        
+leg.SetLineColor(0)
+CMS_lumi.CMS_lumi(canvas, 4, 0)
+
 raw_input("RAW INPUT")

@@ -1,1 +1,1 @@
-python ~/josh_scripts/plot1D.py -f test.list -v "jetMedianIPSig2D" -c "caloJetPt > 70" -t jets --xmin 0 --xmax 4 --nbins 15  --xlabel "Jet Median 2D IP Sig." -o test.root
+python plot1D.py -f test.list -v "jetMedianIPSig2D" -c "caloJetPt > 100" -t jets --xmin 0 --xmax 4 --nbins 15  --xlabel "Jet Median 2D IP Sig." -o test.root

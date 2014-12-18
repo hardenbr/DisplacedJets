@@ -144,9 +144,10 @@ private:
   static const Int_t MAX_TRACKS = 9999;
   static const Int_t MAX_JETS = 999;
   static const Int_t MAX_VTX = 999;
+  static const Int_t debug = 0; 
 
 #ifdef DEBUG
-  static const Int_t debug = 2; 
+  debug = 2; 
 #endif 
  
   //bookkeeping
@@ -530,7 +531,7 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   } // end loop over calojets
 
 
-  if(debug > 1)std::cout << "[DEBUG] Begin Extracting Tag Info" << std::endl;
+  if(debug > 1 )std::cout << "[DEBUG] Begin Extracting Tag Info" << std::endl;
 
 
   //extract the collection from the handle
@@ -1055,8 +1056,6 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 void 
 TrackAnalyzer::beginJob()
 {
-}
-
 
   if(debug > 1) std::cout << "[DEBUG] Setting Up Output File And Tree" << std::endl;
   

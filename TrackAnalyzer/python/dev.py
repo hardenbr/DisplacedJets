@@ -76,8 +76,8 @@ process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring(
 #        'file:/afs/cern.ch/work/h/hardenbr/QCD_Pt-50to80_Tune4C_13TeV_pythia8_AOD.root'
 #        'file:/afs/cern.ch/work/h/hardenbr/HTo2LongLivedTo4L_MH_700_MFF_300_CTau30_TSG_PU40BX25_AODSIM.root'
-        'file:/afs/cern.ch/work/h/hardenbr/QCD_470_600_AOD_40bx25.root'
-
+#        'file:/afs/cern.ch/work/h/hardenbr/QCD_470_600_AOD_40bx25.root'
+        'file:/afs/cern.ch/work/h/hardenbr/TEST_FILES/HTo2LongLivedTo4L_MH_700_MFF_300_CTau30_TSG_PU40BX25_AODSIM_10ev.root'
     )
 )
 

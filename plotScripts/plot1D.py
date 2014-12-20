@@ -46,6 +46,10 @@ parser.add_option( "--varbins", dest="var_bin",
 		                    help="variable binning. Configure within script",
 		                    action="store_true", default=False)
 
+parser.add_option( "--genmatch", dest="genmatch",
+		                    help="Do generator matching for the signal MC",
+		                    action="store_true", default=False)
+
 parser.add_option( "--xmin", dest="xmin",
 		                    help="minimum x for variable",
 		                    action="store",type="float",default=0)
@@ -90,7 +94,7 @@ else:
     varbins = makebins(options.xmin, options.xmax, .1, .3)
 
 class sample:
-    def __init__(self, file_name, xsec, fillColor, fillStyle, lineWidth, stack, label):
+    def __init__(self, file_name, isSignal, xsec, fillColor, fillStyle, lineWidth, stack, label):
 
         # set configuration
         self.file_name = file_name 
@@ -101,7 +105,8 @@ class sample:
         self.stack = stack
         self.label = label
         self.hist_name = file_name.split(".")[0]
-
+        self.isSignal = int(isSignal)
+        
         #build the corresponding histogram
         self.hist = None
         if not options.var_bin:
@@ -128,7 +133,7 @@ stacks = {}
 for line in lines[1:]:
     print line.split("|")
     (file_name, isSignal, xSec, fillColor, fillStyle, lineWidth, stack, label) = line.split("|")
-    samples[file_name] = sample(file_name, xSec, fillColor, fillStyle, lineWidth, stack, label)
+    samples[file_name] = sample(file_name, isSignal, xSec, fillColor, fillStyle, lineWidth, stack, label)
 
     #check if the stack already exists
     if stack not in stacks:
@@ -144,9 +149,17 @@ for key in stacks.keys():
         thisFile = rt.TFile(samp.file_name)
         thisTree = thisFile.Get(options.tree)        
         output.cd()
+        
+        thisCut = options.cut
+        #add in the gen amtching requirement to the cut
+        if samp.isSignal and options.genmatch:
+            print samp.file_name, isSignal
+            thisCut = "(" + options.cut + ") && ( genMatch > 0 )" 
+
+        print "Sample: ", samp.file_name,  "Cut: ", thisCut
 
         #fill each histogram 
-        nevents =  thisTree.Draw("%s>>%s" % (options.var, samp.hist_name), options.cut)
+        nevents =  thisTree.Draw("%s>>%s" % (options.var, samp.hist_name), thisCut)
         samp.hist.Scale( float(options.lumi) * float(samp.xsec) / float(nevents))
         samp.hist.GetXaxis().SetTitle(options.xlabel)
         samp.hist.GetYaxis().SetTitle(options.ylabel)

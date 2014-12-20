@@ -1,0 +1,25 @@
+python plot1D.py -f test.list -v "jetMedianIPSig2D" -c "1" -t jets --xmin 0 --xmax 4 --nbins 25  --xlabel "Jet Median 2D IP Sig." -o test.root --genmatch 
+python plot1D.py -f test.list -v "jetIPSigLogSum2D" -c "1" -t jets --xmin -20 --xmax 60 --nbins 25 --xlabel "Jet Sum over Log(IP_{sig})" -o test.root --genmatch 
+
+python plot1D.py -f test.list -v "jetVarianceIPSig2D" -c "1" -t jets --xmin -10 --xmax 10 --nbins 25 --xlabel "IP_{sig} Variance" -o test.root --genmatch 
+python plot1D.py -f test.list -v "jetIPSigInvSum2D" -c "1" -t jets --xmin 0 --xmax 20 --nbins 25 --xlabel "Sum 1 / 2D IP_{sig}" -o test.root --genmatch 
+python plot1D.py -f test.list -v "jetEIP2D" -c "1" -t jets --xmin 0 --xmax 20 --nbins 25 --xlabel "2DIP weighted Sum track pt" -o test.root --genmatch 
+python plot1D.py -f test.list -v "jetEIPSig2D" -c "1" -t jets --xmin 0 --xmax 20 --nbins 25 --xlabel "2DIP_{sig} weighted Sum track pt" -o test.root --genmatch 
+python plot1D.py -f test.list -v "jetELogIPSig2D" -c "1" -t jets --xmin -30 --xmax 50 --nbins 25 --xlabel "log(2DIP_{sig}) weighted Sum track pt" -o test.root --genmatch 
+
+### secondary vertex 1D
+python plot1D.py -f test.list -v "jetSvNTrack" -c "1" -t jets --xmin .5 --xmax 20.5 --nbins 20 --xlabel "SV Track Multiplicity" -o test.root --genmatch 
+python plot1D.py -f test.list -v "jetSvLxySig" -c "1" -t jets --xmin 0 --xmax 200 --nbins 50 --xlabel "SV L_{xy} Significance" -o test.root --genmatch 
+python plot1D.py -f test.list -v "jetSvLxy" -c "1" -t jets --xmin 0 --xmax 200 --nbins 50 --xlabel "SV L_{xy}" -o test.root --genmatch 
+
+#signal 2d
+
+python plot2D.py -f sig2D.list -v "jetSvNTrack:jetMedianIPSig2D" -c "1" -t jets --xmin 0 --xmax 5 --nxbins 25  --xlabel "Jet Median 2D IP Sig." --ymin 0.5 --ymax 15.5 --nybins 15 --ylabel "N SV Tracks" -o test.root --genmatch
+
+python plot2D.py -f sig2D.list -v "jetIPSigLogSum2D:jetMedianIPSig2D" -c "1" -t jets --xmin 0 --xmax 5 --nxbins 25  --xlabel "Jet Median 2D IP Sig." --ymin -10 --ymax 10 --nybins 25 --ylabel "Jet Sum over Log(IP_{sig})" -o test.root --genmatch
+
+python plot2D.py -f sig2D.list -v "jetEIPSig2D:jetMedianIPSig2D" -c "1" -t jets --xmin 0 --xmax 5 --nxbins 25  --xlabel "Jet Median 2D IP Sig." --ymin 0 --ymax 5 --nybins 30 --ylabel "2DIP_{sig} weighted Sum track pt" -o test.root --genmatch
+
+
+
+

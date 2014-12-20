@@ -1064,11 +1064,12 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
 	// counter the number of SV collected
 	jetNSv[jj]++;
-	float sv_pt = svPt[vvv];
+	//float sv_pt = svPt[vvv];
+	float sv_ntracks = svNTracks[vvv];
 	
-	if (sv_pt > highestSum) {
+	if (sv_ntracks > highestSum) {
 	  bestSV = vv;
-	  highestSum = sv_pt;
+	  highestSum = sv_ntracks;
 	  if(debug > 1) std::cout << "[JETS] -------- highest sum Pt PV: " << highestSum << " index " << vv << std::endl;
 	}
       } // end vertex loop

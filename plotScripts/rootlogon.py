@@ -30,7 +30,7 @@ def style():
 
   rt.gStyle.SetPaperSize(20,26)
   rt.gStyle.SetPadTopMargin(0.1)
-  rt.gStyle.SetPadRightMargin(0.10)
+  rt.gStyle.SetPadRightMargin(0.15)
   rt.gStyle.SetPadBottomMargin(0.2)
   rt.gStyle.SetPadLeftMargin(0.15)
 

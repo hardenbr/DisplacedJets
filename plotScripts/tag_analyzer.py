@@ -100,20 +100,25 @@ class jet_collection:
         
         s = MyStruct()
         
+        # identification
         tree.Branch("jetid",rt.AddressOf(s,"id"),"jetid/I")
         tree.Branch("nGrid",rt.AddressOf(s,"nGrid"),"nGrid/I")
 
+        # kinematics
         tree.Branch("pt",rt.AddressOf(s,"pt"),"pt/F")
         tree.Branch("eta",rt.AddressOf(s,"eta"),"eta/F")
         tree.Branch("phi",rt.AddressOf(s,"phi"),"phi/F")
 
+        # ip information for the metric
         tree.Branch("ipsiglog",rt.AddressOf(s,"ipsiglog"),"ipsiglog/F")
         tree.Branch("ipmed",rt.AddressOf(s,"ipmed"),"ipmed/F")
         tree.Branch("ipelog",rt.AddressOf(s,"ipelog"),"ipelog/F")
-        tree.Branch("genmatch",rt.AddressOf(s,"genmatch"),"genmatch/F")
+        tree.Branch("genmatch",rt.AddressOf(s,"genmatch"),"genmatch/I")
 
-        tree.Branch(disc, eval("s.%s" % disc) ,"%s[nGrid]/F" % disc )
-        tree.Branch(disc+"ID", eval("s.%sID" % disc) ,"%sID[nGrid]/I" % disc )
+        # add a branch for each discriminator
+        for disc in self.disc_list:
+            tree.Branch(disc, eval("s.%s" % disc) ,"%s[nGrid]/F" % disc )
+            tree.Branch(disc+"ID", eval("s.%sID" % disc) ,"%sID[nGrid]/I" % disc )
 
         # fill  the information common to every discriminant
         s.id = s.genmatch = s.pt = s.eta = s.phi = 0
@@ -132,9 +137,7 @@ class jet_collection:
 
             for disc in self.disc_list:            
 
-                jet_dict = jet.disc_dict
-                gridID = 0
-                
+                jet_dict = jet.disc_dict                
                 s.nGrid = len(jet_dict)
                 
                 disc_list = []
@@ -142,18 +145,15 @@ class jet_collection:
 
                 #loop over every calculated disc and assign it a unique ID
                 for key in jet_dict.keys():
-                    (disc, wvector) = key 
+                    (thisdisc, wvector) = key 
                     val = jet_dict[key] 
-
-                    disc_list.append(val)
-                
-                #print "disc values ", disc_array
+                    
+                    if thisdisc == disc: disc_list.append(val)
 
                 disc_array = array.array("f",disc_list)
                 exec("s.%s = disc_array" % disc) 
                 exec("s.%sID = discID_array" % disc)
                                 
-
             #fill the tree for each jet
             tree.Fill()
 
@@ -181,8 +181,6 @@ class jet_collection:
 
         while iev < tree.GetEntries():
             if iev % 500 == 0: print self.filename, "Filling Jets...",iev
-
-            if iev > 500: continue 
 
             iev += 1
             entry = itlist.Next()
@@ -230,17 +228,24 @@ class jet:
 
         return w1*x1 + w2*x2 + w3*x3
 
+    # most naive descriminant 
+    def calc_metric_val2(self, pars):
+        (w1, w2, w3) = pars
+
+        x1 = self.jetvars["jetELogIPSig2D"]
+        x2 = self.jetvars["jetMedianIPSig2D"]
+        x3 = self.jetvars["jetIPSigLogSum2D"]
+
+        return w1*x1 + w2*(x2*x2*x2) + w3*x3
+
+
     def fill_disc(self, disc, weight_space):
         
         wgrid = weight_space.grid
 
         #go over each point in the weight space            
         for wvector in wgrid:            
-            if disc == "metric":
-                self.disc_dict[disc, wvector] = self.calc_metric_val1(wvector)
-            else:
-                return "INVALID CHOICE OF DISCRIMINANT -- NAME:", disc 
-
+            self.disc_dict[disc, wvector] = self.calc_metric_val1(wvector)
 
 output_file = rt.TFile(options.output, "RECREATE")
         
@@ -253,10 +258,15 @@ w1_range = weight_range("elogipsig", 0, 1, 5, 20.)
 w2_range = weight_range("jetmedianipsig", 0, 1, 5, .05)
 w3_range = weight_range("ipsiglogsum", 0, 1, 5, 10.)
 metric_weight_space = weight_space("metric", 3, (w1_range.vector, w2_range.vector, w3_range.vector))
-
 ana.signal_jets.fill_discriminant("metric", metric_weight_space)
 ana.bkg_jets.fill_discriminant("metric", metric_weight_space)
 
+w1_range2 = weight_range("elogipsig", 0, 1, 5, 20.)
+w2_range2 = weight_range("jetmedianipsig", 0, 1, 5, .05)
+w3_range2 = weight_range("ipsiglogsum", 0, 1, 5, 10.)
+metric2_weight_space = weight_space("metric2", 3, (w1_range2.vector, w2_range2.vector, w3_range2.vector))
+ana.signal_jets.fill_discriminant("metric2", metric2_weight_space)
+ana.bkg_jets.fill_discriminant("metric2", metric2_weight_space)
 
 sig_tree = ana.signal_jets.build_grid_tree("sig")
 bkg_tree = ana.bkg_jets.build_grid_tree("bkg")

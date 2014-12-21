@@ -94,17 +94,18 @@ else:
     varbins = makebins(options.xmin, options.xmax, .1, .3)
 
 class sample:
-    def __init__(self, file_name, isSignal, xsec, fillColor, fillStyle, lineWidth, stack, label):
+    def __init__(self, file_name, tree_name, isSignal, xsec, fillColor, fillStyle, lineWidth, stack, label):
 
         # set configuration
         self.file_name = file_name 
+        self.tree_name = tree_name 
         self.xsec = xsec 
         self.fillColor = fillColor
         self.fillStyle = fillStyle
         self.lineWidth = lineWidth 
         self.stack = stack
         self.label = label
-        self.hist_name = file_name.split(".")[0]
+        self.hist_name = file_name.split(".")[0] + "_" + tree_name
         self.isSignal = int(isSignal)
         
         #build the corresponding histogram
@@ -132,8 +133,8 @@ stacks = {}
 #ignore the first line for labels
 for line in lines[1:]:
     print line.split("|")
-    (file_name, isSignal, xSec, fillColor, fillStyle, lineWidth, stack, label) = line.split("|")
-    samples[file_name] = sample(file_name, isSignal, xSec, fillColor, fillStyle, lineWidth, stack, label)
+    (file_name, tree_name, isSignal, xSec, fillColor, fillStyle, lineWidth, stack, label) = line.split("|")
+    samples[file_name] = sample(file_name, tree_name, isSignal, xSec, fillColor, fillStyle, lineWidth, stack, label)
 
     #check if the stack already exists
     if stack not in stacks:
@@ -147,7 +148,7 @@ for line in lines[1:]:
 for key in stacks.keys(): 
     for samp in stacks[key]:
         thisFile = rt.TFile(samp.file_name)
-        thisTree = thisFile.Get(options.tree)        
+        thisTree = thisFile.Get(samp.tree_name)        
         output.cd()
         
         thisCut = options.cut
@@ -159,7 +160,10 @@ for key in stacks.keys():
         print "Sample: ", samp.file_name,  "Cut: ", thisCut
 
         #fill each histogram 
-        nevents =  thisTree.Draw("%s>>%s" % (options.var, samp.hist_name), thisCut)
+        draw_string = "%s>>%s" % (options.var, samp.hist_name)
+        print draw_string
+        thisTree.Draw(draw_string , thisCut)
+        nevents = thisTree.GetEntries(thisCut)
         samp.hist.Scale( float(options.lumi) * float(samp.xsec) / float(nevents))
         samp.hist.GetXaxis().SetTitle(options.xlabel)
         samp.hist.GetYaxis().SetTitle(options.ylabel)

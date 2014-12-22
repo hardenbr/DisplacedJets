@@ -55,6 +55,10 @@
 #include "DataFormats/BTauReco/interface/VertexTypes.h"
 
 
+#include "DataFormats/HepMCCandidate/interface/GenParticleFwd.h"
+#include "DataFormats/HepMCCandidate/interface/GenParticle.h"
+
+
 //
 // class declaration
 //
@@ -73,8 +77,13 @@ private:
   
 
   edm::InputTag tag_secondaryVertexTagInfo_;   
+  edm::InputTag tag_genParticles_;   
   std::string outputLabel_;
   float jetPtCut_;
+  int debug_;
+  bool isSignalMC_;
+  bool doGenMatch_;
+
       
       //virtual void beginRun(edm::Run const&, edm::EventSetup const&) override;
       //virtual void endRun(edm::Run const&, edm::EventSetup const&) override;
@@ -112,8 +121,12 @@ DisplacedTagsToVertices::DisplacedTagsToVertices(const edm::ParameterSet& iConfi
    //now do what ever other initialization is needed
 
   tag_secondaryVertexTagInfo_ = iConfig.getUntrackedParameter<edm::InputTag>("secondaryVertexTagInfo");
+  tag_genParticles_ = iConfig.getUntrackedParameter<edm::InputTag>("genParticleTag");
   jetPtCut_ = iConfig.getUntrackedParameter<double>("jetPtCut");
   outputLabel_ = iConfig.getUntrackedParameter<std::string>("outputLabel");
+  isSignalMC_    =   iConfig.getUntrackedParameter<bool>("isSignalMC");
+  doGenMatch_    =   iConfig.getUntrackedParameter<bool>("doGenMatch");
+  debug_    =   iConfig.getUntrackedParameter<int>("debug");
 
   produces<reco::VertexCollection>(outputLabel_);  
 }
@@ -150,16 +163,58 @@ DisplacedTagsToVertices::produce(edm::Event& iEvent, const edm::EventSetup& iSet
    for(; svinfo != sv.end(); ++svinfo){
 
      // apply a jet threshold
-     if (svinfo->jet()->pt()  > jetPtCut_){
-      continue;
-     }
+     // if (svinfo->jet()->pt()  > jetPtCut_){
+     //  continue;
+     // }
+
+     edm::Handle<reco::GenParticleCollection> genParticles;
+
+     bool keepSV = false;
+     // generator matching to truely displaced jets
+     if (isSignalMC_ && doGenMatch_) {
+       iEvent.getByLabel("genParticles", genParticles);    
+
+       // get the jet attributes 
+       float calopt = svinfo->jet()->pt();
+       float caloeta = svinfo->jet()->eta();
+       float calophi = svinfo->jet()->phi();
+
+       if(debug_ > 0 && calopt > 40.0) { 
+	   std::cout << "[SV DEBUG JET]"  << " pt " << calopt << " eta " << caloeta  <<  " phi " << calophi << std::endl;      	 
+       }
+
+       // check all gen particles for a match to the jet
+       for(size_t pp = 0; pp < genParticles->size(); ++pp) {
+	 const reco::GenParticle & part = (*genParticles)[pp];
+	 int id = part.pdgId();
+	 int st = part.status();  
+	 
+	 if (st != 3 || fabs(id) > 6 ) continue;     
+	 
+	 // const reco::Candidate * mom = part.mother();
+	 double genpt = part.pt(), geneta = part.eta(), genphi = part.phi();
+	 float dr = reco::deltaR( geneta, genphi, caloeta, calophi);
+	 float dpt = fabs(calopt - genpt) / genpt;
+	 
+	 // found a match
+	 if (dr < .5 && dpt < .5) {
+	   std::cout << "[SV GEN MATCHED JET] id " << id << " status " << st << " pt " << genpt << " eta " << geneta  <<  " phi " << genphi << std::endl;      
+	   if (debug_ > 0 ) std::cout << "[SV GEN MATCHED DEBUG] NUMBER OF SV: " << svinfo->nVertices() << std::endl;
+	   keepSV = true;
+	   break;
+	 }
+       } // end loop over gen particles
+     } // end if statement for gen match
 
     int nSV = svinfo->nVertices();     
+
 
     // loop over each SVvertex that jet has
     for(int vv = 0; vv < nSV; vv++) {
      reco::Vertex svVertex = svinfo->secondaryVertex(vv);       
-     displacedSvVertexCollection.push_back(svVertex);                                                                                                                                            
+     if (keepSV){
+       if (debug_ > 0) std::cout << "[SV DEBUG] STORING SV" << std::endl;
+       displacedSvVertexCollection.push_back(svVertex);                                                                    }
     }
    }
 

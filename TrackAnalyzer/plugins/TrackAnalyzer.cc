@@ -175,6 +175,8 @@ private:
   ///////////////////// GEN MATCHED ////////////////////
 
   Int_t genMatch[MAX_JETS];
+  Int_t genMatchTrack[MAX_TRACKS];
+
   Float_t genPt[MAX_JETS];
   Float_t genEta[MAX_JETS];
   Float_t genPhi[MAX_JETS];
@@ -716,6 +718,8 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     liJetEta[nLiJets] = liinfo->jet()->eta();
     liJetPhi[nLiJets] = liinfo->jet()->phi();        
 
+    bool is_matched = genMatch[nLiJets];
+
     for(int tt = 0; tt < n_liTracks; tt++){            
       reco::btag::TrackIPData data = liinfo->impactParameterData()[tt];  
       const reco::Track litrack = *(liTracks[tt]);
@@ -733,6 +737,10 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       liTrackJetID[nLiTracks] = jetid;
       liJetTrackDR[nLiTracks] = reco::deltaR( litrack.eta(), litrack.phi(),
 				   liinfo->jet()->eta(), liinfo->jet()->phi());
+
+      // mark the track as part of a gen matched jet
+      genMatchTrack[nLiTracks] = 0;
+      if (is_matched) genMatchTrack[nLiTracks] = 1;
 
       //ip info tags
       liTrackIP3D[nLiTracks] = data.ip3d.value();
@@ -1150,6 +1158,7 @@ TrackAnalyzer::beginJob()
   ////////////////////////////// GEN MATCHING /////////////////////
 
   trackTree_->Branch("genMatch", &genMatch, "genMatch[nCaloJets]/I");  
+  trackTree_->Branch("genMatchTrack", &genMatchTrack, "genMatchTrack[nTracks]/I");  
   trackTree_->Branch("genPt", &genPt, "genPt[nCaloJets]/I");  
   trackTree_->Branch("genEta", &genEta, "genEta[nCaloJets]/I");  
   trackTree_->Branch("genPhi", &genPhi, "genPhi[nCaloJets]/I");  
@@ -1198,23 +1207,29 @@ TrackAnalyzer::beginJob()
 
   ////////////////////////////// LIFETIME Jet tags////////////////////////
 
-  //lifetime jets
+  // lifetime jets
   trackTree_->Branch("liJetID", &liJetID, "liJetID[nLiJets]/I");
   trackTree_->Branch("liJetPt", &liJetPt, "liJetPt[nLiJets]/F");
   trackTree_->Branch("liJetPhi", &liJetPhi, "liJetPhi[nLiJets]/F");
   trackTree_->Branch("liJetEta", &liJetEta, "liJetEta[nLiJets]/F");
   trackTree_->Branch("liJetNSelTracks", &liJetNSelTracks, "liJetNSelTracks[nLiJets]/I");  
 
-  //lifetime ip tag info
-  trackTree_->Branch("liTrackIP2D", &liTrackIP2D, "liTrackIP2D[nTracks]/F");
-  trackTree_->Branch("liTrackIPSig2D", &liTrackIPSig2D, "liTrackIPSig2D[nTracks]/F");
-  trackTree_->Branch("liTrackIP3D", &liTrackIP3D, "liTrackIP3D[nTracks]/F");
-  trackTree_->Branch("liTrackIPSig3D", &liTrackIPSig3D, "liTrackIPSig3D[nTracks]/F");
-  trackTree_->Branch("liTrackDistanceJetAxis", &liTrackDistanceJetAxis, "liTrackDistanceJetAxis[nTracks]/F");
-  trackTree_->Branch("liTrackDistanceJetAxisSig", &liTrackDistanceJetAxisSig, "liTrackDistanceJetAxisSig[nTracks]/F");
+  // lifetime track info
+  trackTree_->Branch("nLiTracks", &nLiTracks, "nLiTracks/I");
+  trackTree_->Branch("liTrackEta", &liTrackEta, "liTrackEta[nLiTracks]/F");
+  trackTree_->Branch("liTrackPhi", &liTrackPhi, "liTrackPhi[nLiTracks]/F");
+  trackTree_->Branch("liTrackPt", &liTrackPt, "liTrackPt[nLiTracks]/F");
+  trackTree_->Branch("liTrackJetID", &liTrackJetID, "liTrackJetID[nLiTracks]/I");  
+  trackTree_->Branch("liJetTrackDR", &liJetTrackDR, "liJetTrackDR[nLiTracks]/F");  
 
-  trackTree_->Branch("liTrackJetID", &liTrackJetID, "liTrackJetID[nTracks]/I");  
-  trackTree_->Branch("liJetTrackDR", &liJetTrackDR, "liJetTrackDR[nTracks]/F");  
+  // lifetime ip tag info
+  trackTree_->Branch("liTrackIP2D", &liTrackIP2D, "liTrackIP2D[nLiTracks]/F");
+  trackTree_->Branch("liTrackIPSig2D", &liTrackIPSig2D, "liTrackIPSig2D[nLiTracks]/F");
+  trackTree_->Branch("liTrackIP3D", &liTrackIP3D, "liTrackIP3D[nLiTracks]/F");
+  trackTree_->Branch("liTrackIPSig3D", &liTrackIPSig3D, "liTrackIPSig3D[nLiTracks]/F");
+  trackTree_->Branch("liTrackDistanceJetAxis", &liTrackDistanceJetAxis, "liTrackDistanceJetAxis[nLiTracks]/F");
+  trackTree_->Branch("liTrackDistanceJetAxisSig", &liTrackDistanceJetAxisSig, "liTrackDistanceJetAxisSig[nLiTracks]/F");
+
 
   //////////////////////////////SV Jet tags////////////////////////
 

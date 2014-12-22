@@ -12,5 +12,5 @@ djtagging = cms.Sequence( displacedImpactParameterTagInfos +
                           trackCountingDJTags + 
                           displacedOfflinePrimaryVertices + 
                           displacedLifetimeTagInfos + 
-                          displacedSecondaryVertexTagInfos +
+                          displacedSecondaryVertexTagInfos+
                           displacedTagsToVertices ) 

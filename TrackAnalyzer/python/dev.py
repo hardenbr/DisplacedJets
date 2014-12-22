@@ -2,7 +2,7 @@ import FWCore.ParameterSet.Config as cms
 
 
 isMC = True
-isSignalMC = False
+isSignalMC = True
 
 process = cms.Process("ANA")
 proc_label = "RECO"
@@ -71,14 +71,14 @@ if 'GlobalTag' in process.__dict__:
     process.GlobalTag.RefreshEachRun = cms.untracked.bool( False )
     process.GlobalTag.ReconnectEachRun = cms.untracked.bool( False )
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(200) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(20) )
 
 process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring(
 #        'file:/afs/cern.ch/work/h/hardenbr/QCD_Pt-50to80_Tune4C_13TeV_pythia8_AOD.root'
 #        'file:/afs/cern.ch/work/h/hardenbr/HTo2LongLivedTo4L_MH_700_MFF_300_CTau30_TSG_PU40BX25_AODSIM.root'
-#        'file:/afs/cern.ch/work/h/hardenbr/HTo2LongLivedTo4L_MH_700_MFF_300_CTau30_TSG_PU40BX25_AODSIM_v6.root'
-        'file:/afs/cern.ch/work/h/hardenbr/QCD_470_600_AOD_40bx25.root'
+        'file:/afs/cern.ch/work/h/hardenbr/HTo2LongLivedTo4L_MH_700_MFF_300_CTau30_TSG_PU40BX25_AODSIM_v6.root'
+#        'file:/afs/cern.ch/work/h/hardenbr/QCD_470_600_AOD_40bx25.root'
 #        'file:/afs/cern.ch/work/h/hardenbr/TEST_FILES/HTo2LongLivedTo4L_MH_700_MFF_300_CTau30_TSG_PU40BX25_AODSIM_10ev.root'
     )
 )
@@ -165,7 +165,13 @@ process.test_output = cms.OutputModule( "PoolOutputModule",
 
 #run the displaced jet tags
 process.load('DisplacedJets.Configuration.RecoDJTag_cff')
-process.p = cms.Path(process.djtagging + process.analyzer)
+
+#config gen matching for the output displaced vertices 
+#if isSignalMC:
+#    process.displacedTagsToVertices.isSignalMC = cms.untracked.bool(True)
+#    process.displacedTagsToVertices.doGenMatch = cms.untracked.bool(True)
+
+process.p = cms.Path(process.djtagging) #+ process.analyzer)
 
 #run the analyzer and the output
-#process.btag_output = cms.EndPath( process.test_output)
+process.btag_output = cms.EndPath( process.test_output)

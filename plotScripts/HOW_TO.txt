@@ -32,6 +32,6 @@ python plot2D.py -f sig2D.list -v "jetSvNTrack:jetSvLxySig" -c "1" -t jets --xmi
 python plot1D.py -f tags.list -v "metric" -c "metricID==20" -t jets --xmin -10 --xmax 20 --nbins 50 --xlabel "Displaced Jet Discriminator" -o test.root --genmatch 
 
 
-python tag_analyzer.py -s signal.root -b small_qcd.root -t jets -o tags.root
+python tag_analyzer.py -s signal.root -b qcd.root -t jets -o tags.root --gidout GID.txt 
 
 

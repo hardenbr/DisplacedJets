@@ -9,7 +9,7 @@ import ROOT as rt
 import rootlogon
 rootlogon.style()
 
-N_BEST_ROC_POINTS = 30
+N_BEST_ROC_POINTS = 20
 MIN_BEST = .6
 MAX_BEST = 1.0
 parser = OptionParser()
@@ -30,10 +30,14 @@ parser.add_option("-o", "--output", dest="output",
                   help="output file ",default="jets",
                   action="store",type="string")
 
-
 parser.add_option( "--roc", dest="do_roc",
                   help="build the roc curves ",default=False,
                   action="store_true")
+
+parser.add_option( "--gidout", dest="output_GID",
+                  help="name of output file to give combinations of weights ",
+                  action="store", type="string", default="GID.txt")
+
 
 
 (options, args) = parser.parse_args()
@@ -44,12 +48,14 @@ class analysis:
         self.bkg_file = bkg_file
         self.disc_list = [] 
         self.all_roc_curves = []
+        self.nGID = 0
 
     def fill_discriminant(self, disc, metric_weight_space):
         self.disc_list.append(disc)
         self.signal_jets.fill_discriminant(disc, metric_weight_space)
         self.bkg_jets.fill_discriminant(disc, metric_weight_space)
-
+        self.nGID = len(metric_weight_space.grid)
+        
     def get_trees(self):
         sig_tree = self.signal_jets.build_grid_tree("sig")
         bkg_tree = self.bkg_jets.build_grid_tree("bkg")
@@ -102,7 +108,6 @@ class analysis:
         first_graph.SetFillColor(0)
         first_graph.SetLineWidth(2)
 
-
         first_graph.GetXaxis().SetTitle("Displaced Jet Efficiency")
         first_graph.GetXaxis().SetRangeUser(.2,1)
         first_graph.GetYaxis().SetTitle("QCD Jet Rejection")
@@ -116,6 +121,8 @@ class analysis:
 
             graph.Draw("same")
             color+=1
+            if color > 100:
+                color = 0
 
         #leg = self.canvas.BuildLegend()
         #leg.SetFillColor(0)
@@ -151,7 +158,7 @@ class analysis:
         return self.tgraphs
 
     def build_roc_curves(self, sig_tree, bkg_tree, xmin, xmax, npoints):
-        print "-- building roc curves --" 
+        print "-- Building ROC curves" 
 
         scan_points = list(np.linspace(xmin, xmax, npoints))
 
@@ -163,7 +170,11 @@ class analysis:
             nbkg_tot = bkg_tree.GetEntries(" %sID == 1" % disc)        
 
             # one curve per grid ID
-            for gid in range(1,125+1):
+            for gid in range(1, self.nGID+1):
+
+                if gid % 25 == 0:
+                    print "-- %s, GID =  %i" % (disc, gid)
+                
                 curve = roc_curve(disc, gid)
 
                 # one point per threshold
@@ -188,8 +199,9 @@ class weight_range:
         self.wmin = float(wmin)
         self.wmax = float(wmax)
         self.npoints = int(npoints)
+        self.scale = scale
 
-        self.vector = np.linspace(wmin / scale, wmax / scale, npoints)
+        self.vector = np.linspace(wmin / float(scale), wmax / float(scale), npoints)
 
 #container for the outer product of weight ranges    
 class weight_space:
@@ -198,7 +210,8 @@ class weight_space:
     def __init__(self, discname, nweights, tuple_of_weight_ranges):
         self.discname = discname
         self.nweights = nweights
-        self.tuple_of_weight_ranges = tuple_of_weight_ranges
+        self.tuple_of_weight_ranges = tuple_of_weight_ranges 
+        self.tuple_of_array_ranges = map( lambda x: x.vector, tuple_of_weight_ranges)
 
         #sanity check on the weight ranges
         if int(nweights) != len(tuple_of_weight_ranges):
@@ -206,8 +219,32 @@ class weight_space:
               
         # build a direct product of the parameters
         print tuple_of_weight_ranges
-        self.grid  = list(itertools.product(*tuple_of_weight_ranges))
+        self.grid  = list(itertools.product(*self.tuple_of_array_ranges))
 
+
+    def write_output(self, name):
+        
+        outfile = open(name, "w")
+
+        labels = ""
+        scales = []
+        for range_var in self.tuple_of_weight_ranges:
+            labels += (range_var.name + "\t" )
+            scales.append(range_var.scale)
+
+        outfile.write(labels + "\n")
+
+        gid = 1
+        for point in self.grid:
+            value_string = "GID: %i " % gid
+
+            for ii in range(len(list(point))):
+                val = list(point)[ii]
+                value_string +=  str(val * scales[ii]) + "\t" 
+            
+            outfile.write(value_string + "\n")
+            gid +=1           
+            
 class roc_curve:
     def __init__(self, disc, gridID):
         self.disc = disc
@@ -258,7 +295,7 @@ class jet_collection:
         tree = rt.TTree(tree_name, tree_name)    
     
             # Create a struct for the run information
-        line_to_process = "struct MyStruct{ Int_t id;Int_t genmatch;Float_t pt;Float_t eta;Float_t phi;Float_t ipsiglog;Float_t ipelog;Float_t ipmed;Int_t genmatch; Int_t nGrid; Int_t evNum;"
+        line_to_process = "struct MyStruct{ Int_t id;Int_t genmatch;Float_t pt;Float_t eta;Float_t phi;Float_t ipsiglog;Float_t ipelog;Float_t ipmed;Int_t genmatch; Int_t nGrid; Int_t evNum; Int_t svntrack; Float_t svlxy; Float_t svlxysig; Float_t svmass;"
 
         for disc in self.disc_list:
             line_to_process += " Float_t %s[1000];" % disc
@@ -288,6 +325,12 @@ class jet_collection:
         tree.Branch("ipelog",rt.AddressOf(s,"ipelog"),"ipelog/F")
         tree.Branch("genMatch",rt.AddressOf(s,"genmatch"),"genMatch/I")
 
+        # sv information
+        tree.Branch("svlxy",rt.AddressOf(s,"svlxy"),"svlxy/F")
+        tree.Branch("svlxysig",rt.AddressOf(s,"svlxysig"),"svlxysig/F")
+        tree.Branch("svmass",rt.AddressOf(s,"svmass"),"svmass/F")
+        tree.Branch("svntrack",rt.AddressOf(s,"svntrack"),"svntrack/I")
+
         # add a branch for each discriminator
         for disc in self.disc_list:
             tree.Branch(disc, eval("s.%s" % disc) ,"%s[nGrid]/F" % disc )
@@ -308,6 +351,10 @@ class jet_collection:
             s.id = jet.jetvars["jetID"] 
             s.genmatch = jet.jetvars["genMatch"]
             s.evNum = jet.jetvars["evNum"]
+            s.jetSvLxySig = jet.jetvars["jetSvLxySig"] 
+            s.jetSvLxy = jet.jetvars["jetSvLxy"] 
+            s.jetSvNTrack = jet.jetvars["jetSvNTrack"]
+            s.jetSvMass = jet.jetvars["jetSvMass"] 
 
             for disc in self.disc_list:            
 
@@ -372,7 +419,10 @@ class jet_collection:
                 jetvars["jetID"] = tree.jetID[jj]
                 jetvars["genMatch"] = tree.genMatch[jj]
                 jetvars["evNum"] = tree.evNum
-
+                jetvars["jetSvLxySig"] = tree.jetSvLxySig[jj]
+                jetvars["jetSvLxy"] = tree.jetSvLxy[jj]
+                jetvars["jetSvNTrack"] = tree.jetSvNTrack[jj]
+                jetvars["jetSvMass"] = tree.jetSvMass[jj]
                 thisJet = jet(tree.jetID[jj], jetvars)
 
                 #add it to the list of jets
@@ -395,13 +445,14 @@ class jet:
 
     # most naive descriminant 
     def calc_metric_val1(self, pars):
-        (w1, w2, w3) = pars
+        (w1, w2, w3, w4) = pars
 
         x1 = self.jetvars["jetELogIPSig2D"]
         x2 = self.jetvars["jetMedianIPSig2D"]
         x3 = self.jetvars["jetIPSigLogSum2D"]
+        x4 = self.jetvars["jetSvLxySig"]
 
-        return w1*x1 + w2*x2 + w3*x3
+        return w1*(x1) + w2*(x2) + w3*(x3) + w4*(x4)
 
     # most naive descriminant 
     def calc_metric_val2(self, pars):
@@ -429,11 +480,15 @@ ana = analysis(options.sig_file, options.bkg_file)
 ana.build_jetcollections()
 
 #build the space for the metric
-w1_range = weight_range("elogipsig", 0, 1, 5, 4.)
-w2_range = weight_range("jetmedianipsig", 0, 1, 5, .05)
-w3_range = weight_range("ipsiglogsum", 0, 1, 5, 10.)
-metric_weight_space = weight_space("metric", 3, (w1_range.vector, w2_range.vector, w3_range.vector))
+w1_range = weight_range("elogipsig", 0, 1, 4, 4.)
+w2_range = weight_range("jetmedianipsig", 0, 1, 4, .05)
+w3_range = weight_range("ipsiglogsum", 0, 1, 4, 10.)
+w4_range = weight_range("svlxysig", 0, 1, 4, 10)
+
+metric_weight_space = weight_space("metric", 4, (w1_range, w2_range, w3_range, w4_range))
 ana.fill_discriminant("metric", metric_weight_space)
+
+metric_weight_space.write_output(options.output_GID)
 
 # w1_range2 = weight_range("elogipsig", 0, 1, 5, 4.)
 # w2_range2 = weight_range("jetmedianipsig", 0, 1, 5, .05)
@@ -449,7 +504,7 @@ bkg_tree.Write()
 
 if options.do_roc:
 
-    ana.build_roc_curves(sig_tree, bkg_tree, -1, 5, 100)
+    ana.build_roc_curves(sig_tree, bkg_tree, 0, 50, 40)
     tgraphs = ana.generate_tgraphs() 
     output_file.cd()
 

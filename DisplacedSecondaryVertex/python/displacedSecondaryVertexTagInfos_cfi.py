@@ -12,7 +12,7 @@ displacedSecondaryVertexTagInfos = cms.EDProducer("SecondaryVertexProducer",
 	vertexRecoBlock,
 	constraint = cms.string("None"), #displaced  -> None
 	trackIPTagInfos = cms.InputTag("displacedLifetimeTagInfos"), #displaced 
-	minimumTrackWeight = cms.double(0.5),
+	minimumTrackWeight = cms.double(0.9), #displaced .5 -> .9
 	usePVError = cms.bool(True), #displacd True -> True
 	trackSort = cms.string('sip2dSig'), #displaced sip3dSig -> sip2dSig
         beamSpotTag = cms.InputTag('offlineBeamSpot'),                                        

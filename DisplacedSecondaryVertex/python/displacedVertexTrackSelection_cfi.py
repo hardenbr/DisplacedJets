@@ -6,7 +6,7 @@ vertexTrackSelectionBlock = cms.PSet(
 	trackSelection = cms.PSet(
                 variableJTAPars,
 		totalHitsMin = cms.uint32(0), #displaced 8->0
-		jetDeltaRMax = cms.double(0.6), #displaced .3 -> .5
+		jetDeltaRMax = cms.double(0.3), #displaced .3 -> .5
 		qualityClass = cms.string('any'),
 		pixelHitsMin = cms.uint32(0), #dispalced 2 -> 0 no pixel hits
 		maxDistToAxis = cms.double(10.0), #displaced .2 -> infty
@@ -16,7 +16,7 @@ vertexTrackSelectionBlock = cms.PSet(
 		sip2dValMax = cms.double(99999.9),
 		ptMin = cms.double(1.0),
 		sip2dSigMax = cms.double(99999.9),
-		sip2dSigMin = cms.double(5.0), #displaced -99999.0 -> 5.0
+		sip2dSigMin = cms.double(10.0), #displaced -99999.0 -> 5.0
 		sip3dValMax = cms.double(99999.9),
 		sip3dValMin = cms.double(-99999.9),
 		sip2dValMin = cms.double(0.1), #displaced -99999.0 -> 0.1

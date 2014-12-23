@@ -50,6 +50,11 @@ parser.add_option( "--genmatch", dest="genmatch",
 		                    help="Do generator matching for the signal MC",
 		                    action="store_true", default=False)
 
+parser.add_option( "--genmatchtrack", dest="genmatchtrack",
+		                    help="Do generator matching for the signal MC track collections",
+		                    action="store_true", default=False)
+
+
 parser.add_option( "--xmin", dest="xmin",
 		                    help="minimum x for variable",
 		                    action="store",type="float",default=0)
@@ -156,6 +161,9 @@ for key in stacks.keys():
         if samp.isSignal and options.genmatch:
             print samp.file_name, isSignal
             thisCut = "(" + options.cut + ") && ( genMatch > 0 )" 
+        if samp.isSignal and options.genmatchtrack:
+            print samp.file_name, isSignal
+            thisCut = "(" + options.cut + ") && ( genMatchTrack > 0 )" 
 
         print "Sample: ", samp.file_name,  "Cut: ", thisCut
 

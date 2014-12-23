@@ -372,6 +372,7 @@ private:
 
   // SV information
   Int_t jetNSv[MAX_JETS];
+  Float_t jetSvMass[MAX_JETS];
   Float_t jetSvLxy[MAX_JETS];
   Float_t jetSvLxySig[MAX_JETS];
   Float_t jetSvLxyz[MAX_JETS];
@@ -1086,6 +1087,7 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       if (jetNSv[jj] == 0) continue;
 
       // SV information
+      jetSvMass[jj] = svMass[bestSV];
       jetSvLxy[jj] = svFlight2D[bestSV];
       jetSvLxySig[jj] = svFlight2D[bestSV] / svFlight2DErr[bestSV];
       jetSvLxyz[jj] = svFlight[bestSV];
@@ -1392,6 +1394,7 @@ TrackAnalyzer::beginJob()
   // SV Information
   jetTree_->Branch("jetNSv", &jetNSv, "jetNSv[nCaloJets]/I");
   jetTree_->Branch("jetSvNTrack", &jetSvNTrack, "jetSvNTrack[nCaloJets]/I");
+  jetTree_->Branch("jetSvMass", &jetSvMass, "jetSvMass[nCaloJets]/F");
   jetTree_->Branch("jetSvLxy", &jetSvLxy, "jetSvLxy[nCaloJets]/F");
   jetTree_->Branch("jetSvLxySig", &jetSvLxySig, "jetSvLxySig[nCaloJets]/F");
   jetTree_->Branch("jetSvLxyz", &jetSvLxyz, "jetSvLxyz[nCaloJets]/F");

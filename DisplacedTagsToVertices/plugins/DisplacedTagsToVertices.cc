@@ -212,7 +212,7 @@ DisplacedTagsToVertices::produce(edm::Event& iEvent, const edm::EventSetup& iSet
     // loop over each SVvertex that jet has
     for(int vv = 0; vv < nSV; vv++) {
      reco::Vertex svVertex = svinfo->secondaryVertex(vv);       
-     if (keepSV){
+     if (keepSV || !doGenMatch_){
        if (debug_ > 0) std::cout << "[SV DEBUG] STORING SV" << std::endl;
        displacedSvVertexCollection.push_back(svVertex);                                                                    }
     }

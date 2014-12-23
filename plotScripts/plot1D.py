@@ -162,8 +162,8 @@ for key in stacks.keys():
         #fill each histogram 
         draw_string = "%s>>%s" % (options.var, samp.hist_name)
         print draw_string
-        thisTree.Draw(draw_string , thisCut)
-        nevents = thisTree.GetEntries(thisCut)
+        nevents = thisTree.Draw(draw_string , thisCut)
+        #nevents = thisTree.GetEntries(thisCut)
         samp.hist.Scale( float(options.lumi) * float(samp.xsec) / float(nevents))
         samp.hist.GetXaxis().SetTitle(options.xlabel)
         samp.hist.GetYaxis().SetTitle(options.ylabel)

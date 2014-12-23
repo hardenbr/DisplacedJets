@@ -234,6 +234,6 @@ raw_input("RAW INPUT")
 
 split_var = options.var.split(":") 
 
-plot_name = "%s_$s.pdf" % split_var
+plot_name = "%s_%s_%s.pdf" % (options.file, split_var[0], split_var[1])
 
 canvas.Print(plot_name)

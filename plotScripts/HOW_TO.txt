@@ -20,6 +20,13 @@ python plot2D.py -f sig2D.list -v "jetIPSigLogSum2D:jetMedianIPSig2D" -c "1" -t 
 
 python plot2D.py -f sig2D.list -v "jetEIPSig2D:jetMedianIPSig2D" -c "1" -t jets --xmin 0 --xmax 4 --nxbins 25  --xlabel "Jet Median 2DIP_{sig}" --ymin 0 --ymax 40 --nybins 30 --ylabel "2DIP_{sig} weighted sum track p_{t}" -o test.root --genmatch
 
+python plot2D.py -f sig2D.list -v "jetIPSigLogSum2D:jetSvLxySig" -c "1" -t jets --xmin 0 --xmax 300 --nxbins 30  --xlabel "Jet Secondary Vertex L_{xy} Sig." --ymin -10 --ymax 100 --nybins 25 --ylabel "Jet Sum over Log(IP_{sig})" -o test.root --genmatch
+
+python plot2D.py -f sig2D.list -v "jetIPSigLogSum2D:jetSvNTrack" -c "1" -t jets --xmin 0 --xmax 15 --nxbins 15  --xlabel "SV Track Multiplicty" --ymin -10 --ymax 100 --nybins 25 --ylabel "Jet Sum over Log(IP_{sig})" -o test.root --genmatch
+
+python plot2D.py -f sig2D.list -v "jetSvNTrack:jetSvLxySig" -c "1" -t jets --xmin 0 --xmax 300 --nxbins 30  --xlabel "Jet Secondary Vertex L_{xy} Sig." --ymin 0 --ymax 20 --nybins 20 --ylabel "SV Track Multiplicity" -o test.root --genmatch
+
+
 ### PLOT TAGGING VARIABLES
 
 python plot1D.py -f tags.list -v "metric" -c "metricID==20" -t jets --xmin -10 --xmax 20 --nbins 50 --xlabel "Displaced Jet Discriminator" -o test.root --genmatch 

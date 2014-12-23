@@ -5,7 +5,7 @@ displacedTagsToVertices = cms.EDProducer("DisplacedTagsToVertices",
         genParticleTag = cms.untracked.InputTag("genParticles","","RECO"),        
         outputLabel = cms.untracked.string('displacedSecondaryVertices'),
         jetPtCut = cms.untracked.double(40.0),
-        isSignalMC = cms.untracked.bool(True),
-        doGenMatch = cms.untracked.bool(True),
+        isSignalMC = cms.untracked.bool(False),
+        doGenMatch = cms.untracked.bool(False),
         debug = cms.untracked.int32(2)
 )

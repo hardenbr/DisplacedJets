@@ -39,7 +39,6 @@ parser.add_option( "--gidout", dest="output_GID",
                   action="store", type="string", default="GID.txt")
 
 
-
 (options, args) = parser.parse_args()
 
 class analysis:
@@ -48,6 +47,7 @@ class analysis:
         self.bkg_file = bkg_file
         self.disc_list = [] 
         self.all_roc_curves = []
+        self.signal_jets = self.bkg_jets = None 
         self.nGID = 0
 
     def fill_discriminant(self, disc, metric_weight_space):
@@ -67,8 +67,7 @@ class analysis:
         self.signal_jets = jet_collection(self.signal_file)
         self.bkg_jets = jet_collection(self.bkg_file)
 
-    def build_best_roc(self):
-        
+    def build_best_roc(self):        
         # build a new histogram with the best possible points
         best_roc = rt.TH1F("best_roc", "best_roc", N_BEST_ROC_POINTS, MIN_BEST, MAX_BEST)        
         for curve in self.all_roc_curves:
@@ -89,7 +88,6 @@ class analysis:
         y_ar = array.array("d", y)
         
         tgraph = rt.TGraph(len(x), x_ar, y_ar)
-
         tgraph.SetTitle("combination ROC")
         tgraph.SetName("best_roc")
         tgraph.GetXaxis().SetTitle("Displaced Jet Efficiency")
@@ -157,10 +155,13 @@ class analysis:
 
         return self.tgraphs
 
-    def build_roc_curves(self, sig_tree, bkg_tree, xmin, xmax, npoints):
+    def build_roc_curves(self, sig_tree, bkg_tree, xmin, xmax, npoints, explicit_array=None):
         print "-- Building ROC curves" 
 
         scan_points = list(np.linspace(xmin, xmax, npoints))
+
+        if explicit_array !=  None:
+            scan_points = explicit_array 
 
         #roc curve for each discriminant
         for disc in self.disc_list:
@@ -173,7 +174,7 @@ class analysis:
             for gid in range(1, self.nGID+1):
 
                 if gid % 25 == 0:
-                    print "-- %s, GID =  %i" % (disc, gid)
+                    print "-- %s, GID =  %i of %s" % (disc, gid, self.nGID)
                 
                 curve = roc_curve(disc, gid)
 
@@ -192,9 +193,32 @@ class analysis:
                     
                 self.all_roc_curves.append(curve)
 
+    def get_fischer_weights(self, tuple_of_weight_ranges):
+        print "-- building fischer weights --" 
+
+        #get array indexed by (jet1, jet2, ---) with jet1 = ( var1, var2, var3...)
+        signal_vars = self.signal_jets.get_jet_var_index(tuple_of_weight_ranges)
+        bkg_vars = self.bkg_jets.get_jet_var_index(tuple_of_weight_ranges)
+            
+        class1 = np.array(signal_vars, dtype=np.float)
+        class2 = np.array(bkg_vars, dtype=np.float)
+        
+        mean1 = np.mean(class1, axis=0)
+        mean2 = np.mean(class2, axis=0)
+    
+        #calculate variance within class
+        class1_dot = np.dot((class1-mean1).T , class1-mean1) 
+        class2_dot = np.dot((class2-mean2).T , class2-mean2) 
+        Sw = class1_dot + class2_dot
+
+        #calculate weights which maximize linear separation
+        w = np.dot(np.linalg.inv(Sw), (mean2-mean1))
+    
+        return w
+    
 #container for a range of weights to be scaned 
 class weight_range:
-    def __init__(self, name, wmin, wmax, npoints, scale):
+    def __init__(self, name, wmin, wmax, npoints, scale, explicit=None):
         self.name = name
         self.wmin = float(wmin)
         self.wmax = float(wmax)
@@ -202,6 +226,14 @@ class weight_range:
         self.scale = scale
 
         self.vector = np.linspace(wmin / float(scale), wmax / float(scale), npoints)
+
+        if explicit != None:
+            print "EXPLICIT RANGE SPECIFIED -- ", name, explicit
+            self.vector = explicit
+            self.npoints = len(explicit)
+            self.wmin = min(explicit)
+            self.wmax = max(explicit)
+            self.scale = 1.0
 
 #container for the outer product of weight ranges    
 class weight_space:
@@ -228,6 +260,9 @@ class weight_space:
 
         labels = ""
         scales = []
+
+        print "SCALES: ", scales 
+
         for range_var in self.tuple_of_weight_ranges:
             labels += (range_var.name + "\t" )
             scales.append(range_var.scale)
@@ -235,11 +270,13 @@ class weight_space:
         outfile.write(labels + "\n")
 
         gid = 1
-        for point in self.grid:
-            value_string = "GID: %i " % gid
 
-            for ii in range(len(list(point))):
-                val = list(point)[ii]
+        for point in self.grid:
+            value_string = "GID: %i -- " % gid
+            plist = list(point)
+
+            for ii in range(len(plist)):
+                val = plist[ii]
                 value_string +=  str(val * scales[ii]) + "\t" 
             
             outfile.write(value_string + "\n")
@@ -251,7 +288,7 @@ class roc_curve:
         self.eff_dict = {} 
         self.gridID = gridID 
         
-        name = disc + "_" + str(gridID)
+        name = disc + "__" + str(gridID)
         
         self.sig_hist = rt.TH1F(name, name, N_BEST_ROC_POINTS, MIN_BEST, MAX_BEST)        
 
@@ -287,9 +324,44 @@ class jet_collection:
     def __init__(self, filename):
         self.filename = filename
         self.jetlist = []
-        self.build_jets()     
         self.disc_list = []
-        
+        self.njets = 0
+
+        self.build_jets()
+
+    def get_variable_array(self, var):
+        temp = []
+
+        for jet in self.jetlist:
+            temp.append(jet.jetvars[var])
+
+        return temp
+
+    #indexed by (jet1, jet2, ...) with jet1 = (var1, var2, var3...)
+    def get_jet_var_index(self, tuple_of_weight_ranges):
+        names_to_fill = []
+        result = []
+        nvars = len(tuple_of_weight_ranges)
+
+        #fill in the blanks
+        for ii in range(self.njets):
+            result.append([])
+            for jj in range(nvars):
+                result[ii].append([])
+
+        for rr in tuple_of_weight_ranges:
+            names_to_fill.append(rr.name)            
+
+        for jj in range(len(self.jetlist)):
+            thisJet = self.jetlist[jj]
+            for name in names_to_fill:
+                index = names_to_fill.index(name)                
+                result[jj][index] = thisJet.jetvars[name]
+
+        print result[:4]
+
+        return result
+
     def build_grid_tree(self, tree_name):
         
         tree = rt.TTree(tree_name, tree_name)    
@@ -351,10 +423,10 @@ class jet_collection:
             s.id = jet.jetvars["jetID"] 
             s.genmatch = jet.jetvars["genMatch"]
             s.evNum = jet.jetvars["evNum"]
-            s.jetSvLxySig = jet.jetvars["jetSvLxySig"] 
-            s.jetSvLxy = jet.jetvars["jetSvLxy"] 
-            s.jetSvNTrack = jet.jetvars["jetSvNTrack"]
-            s.jetSvMass = jet.jetvars["jetSvMass"] 
+            s.svlxysig = jet.jetvars["jetSvLxySig"] 
+            s.svlxy = jet.jetvars["jetSvLxy"] 
+            s.svntrack = jet.jetvars["jetSvNTrack"]
+            s.svmass = jet.jetvars["jetSvMass"] 
 
             for disc in self.disc_list:            
 
@@ -386,7 +458,6 @@ class jet_collection:
 
         for jet in self.jetlist:
             jet.fill_disc(disc, weight_space)
-
         
     def build_jets(self):
 
@@ -407,6 +478,8 @@ class jet_collection:
             entry = itlist.Next()
             tree.GetEntry(entry)                                                
             
+            self.njets += tree.nCaloJets 
+
             for jj in range(tree.nCaloJets):
                 jetvars = {}
                 jetID = tree.jetID[jj]
@@ -442,33 +515,21 @@ class jet:
     def get_disc_val(self, disc, wvector):
 
         return disc_dict[disc, wvector]
-
+    
     # most naive descriminant 
     def calc_metric_val1(self, pars):
-        (w1, w2, w3, w4) = pars
+        (w1, w2, w3, w4, w5) = pars
 
         x1 = self.jetvars["jetELogIPSig2D"]
         x2 = self.jetvars["jetMedianIPSig2D"]
         x3 = self.jetvars["jetIPSigLogSum2D"]
-        x4 = self.jetvars["jetSvLxySig"]
+        x4 = self.jetvars["jetSvMass"]
+        x5 = self.jetvars["jetSvLxySig"]
 
-        return w1*(x1) + w2*(x2) + w3*(x3) + w4*(x4)
+        return w1*(x1) + w2*(x2) + w3*(x3) + w4*x4 + w5*x5 #+ (self.jetvars["jetSvNTrack"] - 2)
 
-    # most naive descriminant 
-    def calc_metric_val2(self, pars):
-        (w1, w2, w3) = pars
-
-        x1 = self.jetvars["jetELogIPSig2D"]
-        x2 = self.jetvars["jetMedianIPSig2D"]
-        x3 = self.jetvars["jetIPSigLogSum2D"]
-
-        return w1*x1 + w2*(x2*x2*x2) + w3*x3
-
-
-    def fill_disc(self, disc, weight_space):
-        
+    def fill_disc(self, disc, weight_space):        
         wgrid = weight_space.grid
-
         #go over each point in the weight space            
         for wvector in wgrid:            
             self.disc_dict[disc, wvector] = self.calc_metric_val1(wvector)
@@ -480,12 +541,17 @@ ana = analysis(options.sig_file, options.bkg_file)
 ana.build_jetcollections()
 
 #build the space for the metric
-w1_range = weight_range("elogipsig", 0, 1, 4, 4.)
-w2_range = weight_range("jetmedianipsig", 0, 1, 4, .05)
-w3_range = weight_range("ipsiglogsum", 0, 1, 4, 10.)
-w4_range = weight_range("svlxysig", 0, 1, 4, 10)
 
-metric_weight_space = weight_space("metric", 4, (w1_range, w2_range, w3_range, w4_range))
+#Fischer Weights:  [  2.84935102e-10  -1.24688990e-04  -2.62891452e-05  -1.58321962e-04]
+w1_range = weight_range("jetELogIPSig2D", 0, 1, 2, 1, explicit=[-2.8e-10])
+w2_range = weight_range("jetMedianIPSig2D", 0, 1, 2, 1, explicit=[1.24e-04])
+w3_range = weight_range("jetIPSigLogSum2D", 0, 1, 2, 1, explicit=[2.6e-05])
+w4_range = weight_range("jetSvMass", 0, 1, 2, 1, explicit=[-1.58e-04])
+w5_range = weight_range("jetSvLxySig", 0, 1, 2, 1, explicit=[-1.58e-04])
+
+tuple_range = (w1_range, w2_range, w3_range, w4_range, w5_range)
+
+metric_weight_space = weight_space("metric", 5, tuple_range)
 ana.fill_discriminant("metric", metric_weight_space)
 
 metric_weight_space.write_output(options.output_GID)
@@ -496,15 +562,18 @@ metric_weight_space.write_output(options.output_GID)
 # metric2_weight_space = weight_space("metric2", 3, (w1_range2.vector, w2_range2.vector, w3_range2.vector))
 # ana.fill_discriminant("metric2", metric2_weight_space)
 
-(sig_tree, bkg_tree) = ana.get_trees()
+print "-- Building Weights --"
+fweights = ana.get_fischer_weights(tuple_range)
+print "Fischer Weights: ", fweights 
+
+(sig_tree, bkg_tree) = ana.get_trees() 
 
 output_file.cd()
 sig_tree.Write()
 bkg_tree.Write()
-
+#--xmin -.001 --xmax .005 
 if options.do_roc:
-
-    ana.build_roc_curves(sig_tree, bkg_tree, 0, 50, 40)
+    ana.build_roc_curves(sig_tree, bkg_tree, -.001, .005 , 1000)
     tgraphs = ana.generate_tgraphs() 
     output_file.cd()
 
@@ -513,24 +582,22 @@ if options.do_roc:
     output_file.cd()
     roc_canvas.Write()
 
-    print "-- Building Best ROC -- "
-    best_roc = ana.build_best_roc()
-    output_file.cd()
-    best_roc.Write()
+    # print "-- Building Best ROC -- "
+    # best_roc = ana.build_best_roc()
+    # output_file.cd()
+    # best_roc.Write()
 
-    print "-- Building Best ROC Cavnas -- "
-    best_roc_canvas = rt.TCanvas("best_roc_canvas","cavnas")
-    best_roc.SetLineWidth(3)
-    best_roc.Draw()
-    CMS_lumi.CMS_lumi(best_roc_canvas, 4, 0)            
+    # print "-- Building Best ROC Cavnas -- "
+    # best_roc_canvas = rt.TCanvas("best_roc_canvas","cavnas")
+    # best_roc.SetLineWidth(3)
+    # best_roc.Draw()
+    # CMS_lumi.CMS_lumi(best_roc_canvas, 4, 0)            
 
-    output_file.cd()
-    best_roc_canvas.Write()
+    # output_file.cd()
+    # best_roc_canvas.Write()
     
-    print "-- Writing tgraphs --"
+    #print "-- Writing tgraphs --"
     #for graph in tgraphs:
     #    graph.Write()
-
-
 
 output_file.Close()

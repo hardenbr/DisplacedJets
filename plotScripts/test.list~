@@ -1,4 +1,0 @@
-#sample | isSignal | xSec | fillcolor | fillstyle | lineWidth | label 
-	
-qcd.root | 0 | 1 | kRed | 1 | 2 | QCD 
-signal.root | 1 | 1 | kBlue | 1 | 2 | QCD 

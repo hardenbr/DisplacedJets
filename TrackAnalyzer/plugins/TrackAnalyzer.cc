@@ -105,6 +105,8 @@ private:
 
   //methods
   virtual Float_t getJetMedian(Float_t daArray[], int size, int jetid, bool is_signed);
+  //  virtual Float_t getJetMax(Float_t daArray[], int size, int jetid, bool is_signed);
+  //virtual Float_t getJetTopQ(Float_t daArray[], int size, int jetid, bool is_signed);
   virtual Float_t getJetVariance(Float_t values[], Float_t mean, int size, int jetid, bool is_signed);
   virtual void beginJob() override;
   virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
@@ -151,6 +153,10 @@ private:
 #endif 
  
   //bookkeeping
+  Int_t run = -1;
+  Int_t lumi = -1;
+  Int_t event = -1;
+
   int evNum = 0;
   Int_t jetid = 0;
 
@@ -335,6 +341,11 @@ private:
   // IP significance log sums
   Float_t jetIPSigLogSum2D[MAX_JETS];
   Float_t jetIPSigLogSum3D[MAX_JETS];
+  Float_t jetIPSigLogSumP052D[MAX_JETS];
+  Float_t jetIPSigLogSumP053D[MAX_JETS];
+
+  Float_t jetIPLogSum2D[MAX_JETS];
+  Float_t jetIPLogSum3D[MAX_JETS];
 
   // IP signed significance sums
   Float_t jetIPSignedSigSum2D[MAX_JETS];
@@ -506,7 +517,11 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   // RAW Compatible
 
   // All Formats Compatible
-  
+
+  run = iEvent.id().run();
+  lumi = iEvent.id().luminosityBlock();
+  event = iEvent.id().event();
+    
   
   //////////////////////////////////
   // Calculate Variables
@@ -579,7 +594,7 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	float dpt = fabs(calopt - genpt) / genpt;
 
 	// found a match
-	if (dr < .5 && dpt < .5) {
+	if (dr < .5 && dpt < .25) {
 	  std::cout << "[GEN MATCHED] id " << id << " status " << st << " pt " << genpt << " eta " << geneta  <<  " phi " << genphi << std::endl;      
 	  genMatch[jj]++; 
 	  genPt[jj] = genpt;
@@ -915,6 +930,14 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     jetIPSigLogSum2D[jj] = 0;
     jetIPSigLogSum3D[jj] = 0;
 
+    jetIPSigLogSumP052D[jj] = 0;
+    jetIPSigLogSumP053D[jj] = 0;
+
+    jetIPLogSum2D[jj] = 0;
+    jetIPLogSum3D[jj] = 0;
+
+
+
     // IP signed significance sums
     jetIPSignedSigSum2D[jj] = 0;
     jetIPSignedSigSum3D[jj] = 0;
@@ -990,6 +1013,18 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       // ip significance log sum
       jetIPSigLogSum2D[jj] += (ip2ds ? log(fabs(ip2ds)) : 0);
       jetIPSigLogSum3D[jj] += (ip3ds ? log(fabs(ip3ds)) : 0);
+
+      if (ip2d > .05) {
+	jetIPSigLogSumP052D[jj] += (ip2ds ? log(fabs(ip2ds)) : 0);
+      }
+
+      if (ip3d > .05) {
+	jetIPSigLogSumP053D[jj] += (ip3ds ? log(fabs(ip3ds)) : 0);     
+      }
+
+      jetIPLogSum2D[jj] += (ip2ds ? log(fabs(ip2d)) : 0);
+      jetIPLogSum3D[jj] += (ip3ds ? log(fabs(ip3d)) : 0);
+
 
       // unsigned averages
       jetMeanIPSig2D[jj] += fabs(ip2ds) / float(liJetNSelTracks[jj]);
@@ -1141,6 +1176,10 @@ TrackAnalyzer::beginJob()
 
   trackTree_->Branch("evNum", &evNum, "evNum/I");
 
+  trackTree_->Branch("run", &run, "run/I");
+  trackTree_->Branch("lumi", &lumi, "lumi/I");
+  trackTree_->Branch("event", &event, "event/I");
+
   ////////////////////////////// Calo Jet Information////////////////////////
   
   //jet kinematics
@@ -1286,6 +1325,10 @@ TrackAnalyzer::beginJob()
   //////// Everything is either a flat number or indexed by nCaloJets //////////////
 
   //book keeping
+  jetTree_->Branch("run", &run, "run/I");
+  jetTree_->Branch("lumi", &lumi, "lumi/I");
+  jetTree_->Branch("event", &event, "event/I");
+
   jetTree_->Branch("nCaloJets", &nCaloJets, "nCaloJets/I");
   jetTree_->Branch("nTracks", &nTracks, "nTracks/I");
   jetTree_->Branch("evNum", &evNum, "evNum/I");
@@ -1360,6 +1403,12 @@ TrackAnalyzer::beginJob()
   //ip sig log sums  -- sum(log(|IPsig|))
   jetTree_->Branch("jetIPSigLogSum2D", &jetIPSigLogSum2D, "jetIPSigLogSum2D[nCaloJets]/F");
   jetTree_->Branch("jetIPSigLogSum3D", &jetIPSigLogSum3D, "jetIPSigLogSum3D[nCaloJets]/F");
+
+  jetTree_->Branch("jetIPSigLogSumP052D", &jetIPSigLogSumP052D, "jetIPSigLogSumP052D[nCaloJets]/F");
+  jetTree_->Branch("jetIPSigLogSumP053D", &jetIPSigLogSumP053D, "jetIPSigLogSumP053D[nCaloJets]/F");
+
+  jetTree_->Branch("jetIPLogSum2D", &jetIPLogSum2D, "jetIPLogSum2D[nCaloJets]/F");
+  jetTree_->Branch("jetIPLogSum3D", &jetIPLogSum3D, "jetIPLogSum3D[nCaloJets]/F");
 
   // ip sig averages 
   jetTree_->Branch("jetMeanIPSig2D", &jetMeanIPSig2D, "jetMeanIPSig2D[nCaloJets]/F");

@@ -1,0 +1,32 @@
+ jetid           = 10
+ nGrid           = 1
+ evNum           = 2
+ pt              = 101.813
+ eta             = 0.779716
+ phi             = -2.81946
+ ipsiglog        = 34.3814
+ ipmed           = 1.40363
+ ipelog          = 11.1907
+ genMatch        = 0
+ svlxy           = 2.35693
+ svlxysig        = 52.391
+ svmass          = 1.62234
+ svntrack        = 2
+ metric          = 0.00147744
+ metricID        = 1
+
+
+python ../plotScripts/plot1D.py -f tags.list -v "ipsiglog" -c "metricID==1 && metric > .0006" -t jets --xmin -20 --xmax 100 --nbins 50 --xlabel "Jet Sum over Log(IP_{sig})" -o test.root --genmatch 
+
+python ../plotScripts/plot1D.py -f tags.list -v "ipelog" -c "metricID==1 && metric > .0006" -t jets --xmin -20 --xmax 100 --nbins 50 --xlabel "Jet Log(IP_{sig}) Weighted Sum Pt" -o test.root --genmatch 
+
+python ../plotScripts/plot1D.py -f tags.list -v "svlxysig" -c "metricID==1 && metric > .0006" -t jets --xmin -20 --xmax 100 --nbins 50 --xlabel "Jet SV L_{xy} Sig." -o test.root --genmatch 
+
+python ../plotScripts/plot1D.py -f tags.list -v "metric" -c "metricID==1" -t jets --xmin -100 --xmax 100 --nbins 50 --xlabel "Displaced Jet Discriminator" -o test.root --genmatch 
+
+python ../plotScripts/plot1D.py -f tags.list -v "metric" -c "metricID==1" -t jets --xmin -.001 --xmax .005 --nbins 50 --xlabel "Linear Fischer Discriminator" -o test.root --genmatch 
+
+
+python tag_analyzer.py -s signal.root -b qcd.root -t jets -o tags.root 
+
+

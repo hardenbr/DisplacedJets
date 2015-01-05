@@ -98,7 +98,7 @@ class analysis:
     def build_roc_canvas(self):
 
         self.canvas = rt.TCanvas("roc_curves","roc curves")
-        
+
         color = 0
 
         first_graph = self.tgraphs[0]
@@ -111,6 +111,9 @@ class analysis:
         first_graph.GetYaxis().SetTitle("QCD Jet Rejection")
         first_graph.GetYaxis().SetRangeUser(.1,1)
         first_graph.Draw()
+
+        self.canvas.SetGridy(1)
+        self.canvas.SetGridx(1)
 
         for graph in self.tgraphs[1:]:
             graph.SetLineColor(color)
@@ -172,7 +175,6 @@ class analysis:
 
             # one curve per grid ID
             for gid in range(1, self.nGID+1):
-
                 if gid % 25 == 0:
                     print "-- %s, GID =  %i of %s" % (disc, gid, self.nGID)
                 
@@ -367,7 +369,7 @@ class jet_collection:
         tree = rt.TTree(tree_name, tree_name)    
     
             # Create a struct for the run information
-        line_to_process = "struct MyStruct{ Int_t id;Int_t genmatch;Float_t pt;Float_t eta;Float_t phi;Float_t ipsiglog;Float_t ipelog;Float_t ipmed;Int_t genmatch; Int_t nGrid; Int_t evNum; Int_t svntrack; Float_t svlxy; Float_t svlxysig; Float_t svmass;"
+        line_to_process = "struct MyStruct{ Int_t id;Int_t genmatch;Float_t pt;Float_t eta;Float_t phi;Float_t ipsiglog;Float_t ipelog;Float_t ipmed;Int_t genmatch; Int_t nGrid; Int_t evNum; Int_t svntrack; Float_t svlxy; Float_t svlxysig; Float_t svmass; Int_t event; Int_t lumi; Int_t run;"
 
         for disc in self.disc_list:
             line_to_process += " Float_t %s[1000];" % disc
@@ -385,6 +387,10 @@ class jet_collection:
         tree.Branch("jetid",rt.AddressOf(s,"id"),"jetid/I")
         tree.Branch("nGrid",rt.AddressOf(s,"nGrid"),"nGrid/I")
         tree.Branch("evNum",rt.AddressOf(s,"evNum"),"evNum/I")
+
+        tree.Branch("event",rt.AddressOf(s,"event"),"event/I")
+        tree.Branch("run",rt.AddressOf(s,"run"),"run/I")
+        tree.Branch("lumi",rt.AddressOf(s,"lumi"),"lumi/I")
 
         # kinematics
         tree.Branch("pt",rt.AddressOf(s,"pt"),"pt/F")
@@ -411,6 +417,7 @@ class jet_collection:
         # fill  the information common to every discriminant
         s.id = s.genmatch = s.pt = s.eta = s.phi = 0
         s.ipsiglog = s.ipmed = s.ipelog = 0
+        s.run = s.ls = s.event = -1
 
         #fill the tree in terms of jets
         for jet in self.jetlist:
@@ -428,8 +435,11 @@ class jet_collection:
             s.svntrack = jet.jetvars["jetSvNTrack"]
             s.svmass = jet.jetvars["jetSvMass"] 
 
-            for disc in self.disc_list:            
+            s.run = jet.jetvars["run"]
+            s.event = jet.jetvars["event"]
+            s.lumi = jet.jetvars["lumi"]
 
+            for disc in self.disc_list:            
                 jet_dict = jet.disc_dict                
                 s.nGrid = len(jet_dict)
                 
@@ -496,6 +506,10 @@ class jet_collection:
                 jetvars["jetSvLxy"] = tree.jetSvLxy[jj]
                 jetvars["jetSvNTrack"] = tree.jetSvNTrack[jj]
                 jetvars["jetSvMass"] = tree.jetSvMass[jj]
+                jetvars["event"] = tree.event
+                jetvars["run"] = tree.run
+                jetvars["lumi"] = tree.lumi
+
                 thisJet = jet(tree.jetID[jj], jetvars)
 
                 #add it to the list of jets
@@ -518,7 +532,7 @@ class jet:
     
     # most naive descriminant 
     def calc_metric_val1(self, pars):
-        (w1, w2, w3, w4, w5) = pars
+        (w1, w2, w3) = pars #, w4, w5) = pars
 
         x1 = self.jetvars["jetELogIPSig2D"]
         x2 = self.jetvars["jetMedianIPSig2D"]
@@ -526,7 +540,7 @@ class jet:
         x4 = self.jetvars["jetSvMass"]
         x5 = self.jetvars["jetSvLxySig"]
 
-        return w1*(x1) + w2*(x2) + w3*(x3) + w4*x4 + w5*x5 #+ (self.jetvars["jetSvNTrack"] - 2)
+        return w1*(x1) + w2*(x2) + w3*(x3) #+ w4*x4 + w5*x5 #+ (self.jetvars["jetSvNTrack"] - 2)
 
     def fill_disc(self, disc, weight_space):        
         wgrid = weight_space.grid
@@ -541,17 +555,17 @@ ana = analysis(options.sig_file, options.bkg_file)
 ana.build_jetcollections()
 
 #build the space for the metric
+#Fischer Weights:  [  1.19274430e-12  -1.28832998e-04  -2.59223894e-05  -2.16202371e-04  1.02119652e-06]
+#Fischer Weights:  [  1.82221547e-10  -1.15562473e-04  -2.77406473e-05]
+w1_range = weight_range("jetELogIPSig2D", 0, 1, 2, 1, explicit=[-1.822e-10])
+w2_range = weight_range("jetMedianIPSig2D", 0, 1, 2, 1, explicit=[1.155e-04])
+w3_range = weight_range("jetIPSigLogSum2D", 0, 1, 2, 1, explicit=[2.77e-05])
+w4_range = weight_range("jetSvMass", 0, 1, 2, 1, explicit=[2.16e-04])
+w5_range = weight_range("jetSvLxySig", 0, 1, 2, 1, explicit=[1.02e-06])
 
-#Fischer Weights:  [  2.84935102e-10  -1.24688990e-04  -2.62891452e-05  -1.58321962e-04]
-w1_range = weight_range("jetELogIPSig2D", 0, 1, 2, 1, explicit=[-2.8e-10])
-w2_range = weight_range("jetMedianIPSig2D", 0, 1, 2, 1, explicit=[1.24e-04])
-w3_range = weight_range("jetIPSigLogSum2D", 0, 1, 2, 1, explicit=[2.6e-05])
-w4_range = weight_range("jetSvMass", 0, 1, 2, 1, explicit=[-1.58e-04])
-w5_range = weight_range("jetSvLxySig", 0, 1, 2, 1, explicit=[-1.58e-04])
+tuple_range = (w1_range, w2_range, w3_range) #, w4_range, w5_range)
 
-tuple_range = (w1_range, w2_range, w3_range, w4_range, w5_range)
-
-metric_weight_space = weight_space("metric", 5, tuple_range)
+metric_weight_space = weight_space("metric", 3, tuple_range)
 ana.fill_discriminant("metric", metric_weight_space)
 
 metric_weight_space.write_output(options.output_GID)
@@ -571,6 +585,7 @@ print "Fischer Weights: ", fweights
 output_file.cd()
 sig_tree.Write()
 bkg_tree.Write()
+
 #--xmin -.001 --xmax .005 
 if options.do_roc:
     ana.build_roc_curves(sig_tree, bkg_tree, -.001, .005 , 1000)

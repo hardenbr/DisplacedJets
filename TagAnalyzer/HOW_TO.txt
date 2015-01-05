@@ -30,3 +30,5 @@ python ../plotScripts/plot1D.py -f tags.list -v "metric" -c "metricID==1" -t jet
 python tag_analyzer.py -s signal.root -b qcd.root -t jets -o tags.root 
 
 
+python jet_counter.py -f counter.list  -o test.root --genmatch 
+

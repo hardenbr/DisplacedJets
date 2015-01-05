@@ -1,9 +1,9 @@
 import FWCore.ParameterSet.Config as cms
 
+isSignalMC = True
 isMC = True
-isSignalMC = False
 doedm = False
-nevents = 500
+nevents = 100
 
 input_file = None
 if isSignalMC:

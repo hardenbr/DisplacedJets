@@ -6,7 +6,7 @@ vertexRecoBlock = cms.PSet(
 		primcut = cms.double(1.8),
 		smoothing = cms.bool(False),
 		finder = cms.string('avr'),
-		minweight = cms.double(0.5),
+		minweight = cms.double(0.0), #displaced .5 -> 0 
 		weightthreshold = cms.double(0.001)
 	)
 )

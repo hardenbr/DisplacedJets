@@ -936,8 +936,6 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     jetIPLogSum2D[jj] = 0;
     jetIPLogSum3D[jj] = 0;
 
-
-
     // IP signed significance sums
     jetIPSignedSigSum2D[jj] = 0;
     jetIPSignedSigSum3D[jj] = 0;
@@ -1025,7 +1023,6 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       jetIPLogSum2D[jj] += (ip2ds ? log(fabs(ip2d)) : 0);
       jetIPLogSum3D[jj] += (ip3ds ? log(fabs(ip3d)) : 0);
 
-
       // unsigned averages
       jetMeanIPSig2D[jj] += fabs(ip2ds) / float(liJetNSelTracks[jj]);
       jetMeanIPSig3D[jj] += fabs(ip3ds) / float(liJetNSelTracks[jj]);          
@@ -1094,23 +1091,25 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     // loop over all SV in the event and find the one with highest number of tracks
     // and assign it to the jet
     for(int vvv = 0; vvv < nSV; vvv++) {
-      // check the jet ids match between the SV and current jet	
-      if (svVertexJetID[vvv] != jetJetID[jj]) continue;
+      float sv_ntracks = svNTracks[vvv];
 
-      // counter the number of SV collected
+      // check the jet ids match between the SV and current jet	
+      // require at least 2 tracks in the SV
+      if (svVertexJetID[vvv] != jetJetID[jj] || sv_ntracks < 2) continue;
+
+      // counter the number of SV collected      
       jetNSv[jj]++;
       //float sv_pt = svPt[vvv];
-      float sv_ntracks = svNTracks[vvv];
 	
       if (sv_ntracks > highestSum) {
 	bestSV = vvv;
 	highestSum = sv_ntracks;
-	if(debug > 1) std::cout << "[JETS] -------- highest sum Pt PV: " << highestSum << " index " << vvv << std::endl;
+	if(debug > 1) std::cout << "[JETS] -------- highest # tracks PV: " << highestSum << " index " << vvv << std::endl;
       }
     } // end vertex loop
 
       // no SV, nothing to do
-    if (jetNSv[jj] == 0) continue;
+    if (bestSV == -1) continue;
 
     // SV information
     jetSvMass[jj] = svMass[bestSV];
@@ -1133,9 +1132,7 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     jetSvChi2[jj] = svChi2[bestSV];
     jetSvNChi2[jj] = svNChi2[bestSV];
     jetSvNDof[jj] = svNDof[bestSV];
-    jetSvIsValid[jj] = svIsValid[bestSV];            
-      
-
+    jetSvIsValid[jj] = svIsValid[bestSV];                  
 
   } // end loop over jets
 

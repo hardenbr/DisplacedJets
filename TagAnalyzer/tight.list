@@ -1,0 +1,3 @@
+#sample |tree| isSignal | metricID | metric_cut | xSec | fillcolor | fillstyle | lineWidth | stack | label 
+tags.root |bkg| 0 | 1 | .001 | 1 | kRed | 3004 | 3 | 3 | QCD Tight WP
+tags.root |sig| 1 | 1 | .001 | 1 | kBlue | 3004 | 2 | 4 | m_{X} = 300 c#tau = 3cm Tight WP

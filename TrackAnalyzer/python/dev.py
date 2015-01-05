@@ -2,7 +2,7 @@ import FWCore.ParameterSet.Config as cms
 
 isMC = True
 isSignalMC = False
-doedm = True
+doedm = False
 nevents = 500
 
 input_file = None
@@ -99,7 +99,10 @@ process.source = cms.Source("PoolSource",
 process.analyzer = cms.EDAnalyzer('TrackAnalyzer')
 
 #output configuration
-process.analyzer.outputFileName = cms.untracked.string('trackOutput.root')
+if isSignalMC:
+    process.analyzer.outputFileName = cms.untracked.string('signal.root')
+else:
+    process.analyzer.outputFileName = cms.untracked.string('qcd.root')
 process.analyzer.isMC =  cms.untracked.bool(isMC)
 process.analyzer.isSignalMC =  cms.untracked.bool(isSignalMC)
 

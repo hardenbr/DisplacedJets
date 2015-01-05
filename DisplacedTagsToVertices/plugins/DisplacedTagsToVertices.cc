@@ -197,7 +197,7 @@ DisplacedTagsToVertices::produce(edm::Event& iEvent, const edm::EventSetup& iSet
 	 float dpt = fabs(calopt - genpt) / genpt;
 	 
 	 // found a match
-	 if (dr < .5 && dpt < .5) {
+	 if (dr < .5 && dpt < .2) {
 	   std::cout << "[SV GEN MATCHED JET] id " << id << " status " << st << " pt " << genpt << " eta " << geneta  <<  " phi " << genphi << std::endl;      
 	   if (debug_ > 0 ) std::cout << "[SV GEN MATCHED DEBUG] NUMBER OF SV: " << svinfo->nVertices() << std::endl;
 	   keepSV = true;
@@ -219,7 +219,7 @@ DisplacedTagsToVertices::produce(edm::Event& iEvent, const edm::EventSetup& iSet
    }
 
    *displacedSvVertexCollectionResult = displacedSvVertexCollection;
-   iEvent.put(displacedSvVertexCollectionResult, outputLabel_);//, "displacedSVertexCollection");            
+   iEvent.put(displacedSvVertexCollectionResult, outputLabel_);
 
 /* This is an event example
    //Read 'ExampleData' from the Event

@@ -782,7 +782,7 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   reco::SecondaryVertexTagInfoCollection::const_iterator svinfo = sv.begin();
   jj = 0;
   jetid -= nLiJets; //reset the jetid counter
-  nSvJets = 0;
+  nSvJets = 0; //number of jets in sv jet tag info collection
   nSV = 0; // global event counter fo SV
   for(; svinfo != sv.end(); ++svinfo, jj++){    
 
@@ -1065,86 +1065,77 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     jetMedianIPSig3D[jj] = TrackAnalyzer::getJetMedian(liTrackIP3D, nLiTracks, jetJetID[jj], false);
     jetVarianceIPSig2D[jj] = TrackAnalyzer::getJetVariance(liTrackIP2D, jetMeanIPSig2D[jj], nLiTracks, jetJetID[jj], false);
     jetVarianceIPSig3D[jj] = TrackAnalyzer::getJetVariance(liTrackIP3D, jetMeanIPSig3D[jj], nLiTracks, jetJetID[jj], false);    
-
-    // loop over all secondary vertices in the event
-    for(int vv = 0; vv < nSV; vv++){    
-
-      //skip low pt jets
-      //if (svinfo2->jet()->pt() < cut_jetPt) continue;    
-      // make sure the svinfo jet matches the jet we are looping on
-      //if(debug > 1) std::cout << "[JETS] --------  svVertexJetID: " << svJetID[vv] << " jetjetid: " << jetJetID[jj] << std::endl;
-      if (svVertexJetID[vv] != jetJetID[jj]) continue;
       
-      // SV information
-      jetSvLxy[jj] = 0;
-      jetSvLxySig[jj] = 0;
-      jetSvLxyz[jj] = 0;
-      jetSvLxyzSig[jj] = 0;
-      jetSvNTrack[jj] = 0; //vertex track multiplicty
+    // set best SV information
+    jetSvLxy[jj] = 0;
+    jetSvLxySig[jj] = 0;
+    jetSvLxyz[jj] = 0;
+    jetSvLxyzSig[jj] = 0;
+    jetSvNTrack[jj] = 0; //vertex track multiplicty
 
-      // SV position
-      jetSvX[jj] = 0;
-      jetSvY[jj] = 0;
-      jetSvZ[jj] = 0;
-      // error
-      jetSvZErr[jj] = 0;
-      jetSvYErr[jj] = 0;
-      jetSvXErr[jj] = 0;
+    // SV position
+    jetSvX[jj] = 0;
+    jetSvY[jj] = 0;
+    jetSvZ[jj] = 0;
+    // error
+    jetSvZErr[jj] = 0;
+    jetSvYErr[jj] = 0;
+    jetSvXErr[jj] = 0;
 
-      //SV quality
-      jetSvChi2[jj] = 0;
-      jetSvNChi2[jj] = 0;
-      jetSvNDof[jj] = 0;
-      jetSvIsValid[jj] = 0;
-           
-      // find the vertex with the highest sum(p_t) in the full event list corresponding to the current jet
-      jetNSv[jj] = 0;
+    //SV quality
+    jetSvChi2[jj] = 0;
+    jetSvNChi2[jj] = 0;
+    jetSvNDof[jj] = 0;
+    jetSvIsValid[jj] = 0;           
+    jetNSv[jj] = 0;
 
-      int bestSV = 0;
-      int highestSum = -1;	
-      for(int vvv = 0; vvv < nSV; vvv++) {
-	// check the jet ids match between the SV and current jet	
-	if (svVertexJetID[vvv] != jetJetID[jj]) continue;
+    int bestSV = -1;
+    int highestSum = -1;	
+    // loop over all SV in the event and find the one with highest number of tracks
+    // and assign it to the jet
+    for(int vvv = 0; vvv < nSV; vvv++) {
+      // check the jet ids match between the SV and current jet	
+      if (svVertexJetID[vvv] != jetJetID[jj]) continue;
 
-	// counter the number of SV collected
-	jetNSv[jj]++;
-	//float sv_pt = svPt[vvv];
-	float sv_ntracks = svNTracks[vvv];
+      // counter the number of SV collected
+      jetNSv[jj]++;
+      //float sv_pt = svPt[vvv];
+      float sv_ntracks = svNTracks[vvv];
 	
-	if (sv_ntracks > highestSum) {
-	  bestSV = vv;
-	  highestSum = sv_ntracks;
-	  if(debug > 1) std::cout << "[JETS] -------- highest sum Pt PV: " << highestSum << " index " << vv << std::endl;
-	}
-      } // end vertex loop
+      if (sv_ntracks > highestSum) {
+	bestSV = vvv;
+	highestSum = sv_ntracks;
+	if(debug > 1) std::cout << "[JETS] -------- highest sum Pt PV: " << highestSum << " index " << vvv << std::endl;
+      }
+    } // end vertex loop
 
       // no SV, nothing to do
-      if (jetNSv[jj] == 0) continue;
+    if (jetNSv[jj] == 0) continue;
 
-      // SV information
-      jetSvMass[jj] = svMass[bestSV];
-      jetSvLxy[jj] = svFlight2D[bestSV];
-      jetSvLxySig[jj] = svFlight2D[bestSV] / svFlight2DErr[bestSV];
-      jetSvLxyz[jj] = svFlight[bestSV];
-      jetSvLxyzSig[jj] =  svFlight[bestSV] / svFlightErr[bestSV];
-      jetSvNTrack[jj] = svNTracks[bestSV]; //vertex track multiplicty
+    // SV information
+    jetSvMass[jj] = svMass[bestSV];
+    jetSvLxy[jj] = svFlight2D[bestSV];
+    jetSvLxySig[jj] = svFlight2D[bestSV] / svFlight2DErr[bestSV];
+    jetSvLxyz[jj] = svFlight[bestSV];
+    jetSvLxyzSig[jj] =  svFlight[bestSV] / svFlightErr[bestSV];
+    jetSvNTrack[jj] = svNTracks[bestSV]; //vertex track multiplicty
 
-      // SV position and error
-      jetSvX[jj] = svX[bestSV];
-      jetSvY[jj] = svY[bestSV];
-      jetSvZ[jj] = svZ[bestSV];
+    // SV position and error
+    jetSvX[jj] = svX[bestSV];
+    jetSvY[jj] = svY[bestSV];
+    jetSvZ[jj] = svZ[bestSV];
 
-      jetSvZErr[jj] = svXErr[bestSV];
-      jetSvYErr[jj] = svYErr[bestSV];
-      jetSvXErr[jj] = svZErr[bestSV];
+    jetSvZErr[jj] = svXErr[bestSV];
+    jetSvYErr[jj] = svYErr[bestSV];
+    jetSvXErr[jj] = svZErr[bestSV];
 
-      //SV quality
-      jetSvChi2[jj] = svChi2[bestSV];
-      jetSvNChi2[jj] = svNChi2[bestSV];
-      jetSvNDof[jj] = svNDof[bestSV];
-      jetSvIsValid[jj] = svIsValid[bestSV];            
+    //SV quality
+    jetSvChi2[jj] = svChi2[bestSV];
+    jetSvNChi2[jj] = svNChi2[bestSV];
+    jetSvNDof[jj] = svNDof[bestSV];
+    jetSvIsValid[jj] = svIsValid[bestSV];            
       
-    } // end svtag (jet) loop
+
 
   } // end loop over jets
 
@@ -1279,9 +1270,6 @@ TrackAnalyzer::beginJob()
   trackTree_->Branch("svJetEta", &svJetEta, "svJetEta[nSvJets]/F");
   trackTree_->Branch("svJetPhi", &svJetPhi, "svJetPhi[nSvJets]/F");
   trackTree_->Branch("svJetID", &svJetID, "svJetID[nSvJets]/I");
-
-  // vertex
-  trackTree_->Branch("svVertexJetID", &svVertexJetID, "svVertexJetID[nSV]/I");
 
   // quality
   trackTree_->Branch("svChi2", &svChi2, "svChi2[nSV]/F");

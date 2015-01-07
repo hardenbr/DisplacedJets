@@ -93,6 +93,8 @@ stacks = {}
 #ignore the first line for labels
 for line in lines[1:]:
     print line.split("|")
+
+    #fill all the configuration info and build the sample class
     (file_name, tree_name, isSignal, metricID, metricCut, xSec, fillColor, fillStyle, lineWidth, stack, label) = line.split("|")
     samples[file_name] = sample(file_name, tree_name, isSignal, metricID, metricCut, xSec, fillColor, fillStyle, lineWidth, stack, label)
 
@@ -140,17 +142,16 @@ for key in stacks.keys():
                     samp.eventDict[evTuple] += 1
             else:
                 if evTuple not in samp.eventDict.keys():
-                    print "no tags!"
                     samp.eventDict[evTuple] = 0
-                    
-                    
-        print samp.file_name, samp.tree_name, samp.eventDict
+                                        
+        #print samp.file_name, samp.tree_name, samp.eventDict
         #loop over the event dict and fill the histogram with number of tags
         for key in samp.eventDict.keys():
-            norm = options.lumi * samp.xsec / float(len(samp.eventDict))
             ntags = samp.eventDict[key]
-            samp.hist.Fill(ntags, norm)
+            samp.hist.Fill(ntags, 1)
 
+        samp.hist.Sumw2()
+        samp.hist.Scale(samp.xsec * options.lumi / float(len(samp.eventDict)))
         
 output.cd()
 #build the canvas
@@ -177,7 +178,7 @@ for key in stacks.keys():
                 print "appending", samp.hist_name
                 draw_rest.append(samp.hist)
 
-draw_first.Draw()
+draw_first.Draw("E")
 draw_first.GetXaxis().SetTitle(options.xlabel)
 draw_first.GetYaxis().SetTitle(options.ylabel)
 draw_first.GetYaxis().SetRangeUser(.0001,1)

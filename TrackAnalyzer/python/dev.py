@@ -1,13 +1,13 @@
 import FWCore.ParameterSet.Config as cms
 
-isSignalMC = True
+isSignalMC = False
 isMC = True
 doedm = False
-nevents = 100
+nevents = -1
 
 input_file = None
 if isSignalMC:
-    input_file = 'file:/afs/cern.ch/work/h/hardenbr/HTo2LongLivedTo4L_MH_700_MFF_300_CTau30_TSG_PU40BX25_AODSIM_v6.root'
+    input_file = 'file:/afs/cern.ch/work/h/hardenbr/2015/DIJET/GEN_SIGNAL_TEST/dijet_700_300_ctau30.root'
 else:
     input_file =  'file:/afs/cern.ch/work/h/hardenbr/QCD_470_600_AOD_40bx25.root'
 

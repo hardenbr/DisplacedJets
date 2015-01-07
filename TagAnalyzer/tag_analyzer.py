@@ -555,13 +555,14 @@ ana = analysis(options.sig_file, options.bkg_file)
 ana.build_jetcollections()
 
 #build the space for the metric
-#Fischer Weights:  [  1.19274430e-12  -1.28832998e-04  -2.59223894e-05  -2.16202371e-04  1.02119652e-06]
+
+#Fsicher Weights [  3.74524639e-10  -5.10701610e-05  -1.10238882e-05]
 #Fischer Weights:  [  1.82221547e-10  -1.15562473e-04  -2.77406473e-05]
-w1_range = weight_range("jetELogIPSig2D", 0, 1, 2, 1, explicit=[-1.822e-10])
-w2_range = weight_range("jetMedianIPSig2D", 0, 1, 2, 1, explicit=[1.155e-04])
-w3_range = weight_range("jetIPSigLogSum2D", 0, 1, 2, 1, explicit=[2.77e-05])
-w4_range = weight_range("jetSvMass", 0, 1, 2, 1, explicit=[2.16e-04])
-w5_range = weight_range("jetSvLxySig", 0, 1, 2, 1, explicit=[1.02e-06])
+w1_range = weight_range("jetELogIPSig2D", 0, 1, 2, 1, explicit=[-3.74524639e-10])
+w2_range = weight_range("jetMedianIPSig2D", 0, 1, 2, 1, explicit=[5.1070161e-05])
+w3_range = weight_range("jetIPSigLogSum2D", 0, 1, 2, 1, explicit=[1.10238882e-05])
+#w4_range = weight_range("jetSvMass", 0, 1, 2, 1, explicit=[2.16e-04])
+#w5_range = weight_range("jetSvLxySig", 0, 1, 2, 1, explicit=[1.02e-06])
 
 tuple_range = (w1_range, w2_range, w3_range) #, w4_range, w5_range)
 

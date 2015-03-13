@@ -24,11 +24,11 @@ python ../plotScripts/plot1D.py -f tags.list -v "svlxysig" -c "metricID==1 && me
 
 python ../plotScripts/plot1D.py -f tags.list -v "metric" -c "metricID==1" -t jets --xmin -100 --xmax 100 --nbins 50 --xlabel "Displaced Jet Discriminator" -o test.root --genmatch 
 
-python ../plotScripts/plot1D.py -f tags.list -v "metric" -c "metricID==1" -t jets --xmin -.001 --xmax .005 --nbins 50 --xlabel "Linear Fischer Discriminator" -o test.root --genmatch 
+python ../plotScripts/plot1D.py -f tags.list -v "metric" -c "metricID==1" -t jets --xmin -.001 --xmax .0015 --nbins 100 --xlabel "Linear Fischer Discriminator" -o test.root --genmatch 
 
 
 python tag_analyzer.py -s signal.root -b qcd.root -t jets -o tags.root 
 
 
-python jet_counter.py -f counter.list  -o test.root --genmatch 
+python jet_counter.py -f tight.list  -o test.root --genmatch 
 

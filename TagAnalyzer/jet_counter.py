@@ -51,7 +51,7 @@ parser.add_option("-l", "--lumi", dest="lumi",
 
 
 class sample:
-    def __init__(self, file_name, tree_name, isSignal, metricID, metricCut, xsec, fillColor, fillStyle, lineWidth, stack, label):
+    def __init__(self, file_name, tree_name, isSignal, metricID, metricCut, xsec, fillColor, fillStyle, lineStyle, lineWidth, stack, label):
 
         # set configuration
         self.file_name = file_name 
@@ -59,6 +59,7 @@ class sample:
         self.xsec = float(xsec)
         self.fillColor = fillColor
         self.fillStyle = fillStyle
+        self.lineStyle = lineStyle
         self.lineWidth = lineWidth 
         self.stack = stack
         self.label = label
@@ -71,8 +72,8 @@ class sample:
         self.eventDict = {}
         #build the corresponding histogram
         self.hist = rt.TH1F(self.hist_name, self.label, 8, -.5, 7.5)
-
-        eval("self.hist.SetFillColor(rt.%s)" % fillColor)
+        if int(fillStyle) != 0:
+            eval("self.hist.SetFillColor(rt.%s)" % fillColor)
         eval("self.hist.SetFillStyle(%s)" % fillStyle)
         eval("self.hist.SetLineColor(rt.%s)" % fillColor)
         self.hist.SetLineWidth(int(lineWidth))        
@@ -95,8 +96,8 @@ for line in lines[1:]:
     print line.split("|")
 
     #fill all the configuration info and build the sample class
-    (file_name, tree_name, isSignal, metricID, metricCut, xSec, fillColor, fillStyle, lineWidth, stack, label) = line.split("|")
-    samples[file_name] = sample(file_name, tree_name, isSignal, metricID, metricCut, xSec, fillColor, fillStyle, lineWidth, stack, label)
+    (file_name, tree_name, isSignal, metricID, metricCut, xSec, fillColor, fillStyle, lineStyle, lineWidth, stack, label) = line.split("|")
+    samples[file_name] = sample(file_name, tree_name, isSignal, metricID, metricCut, xSec, fillColor, fillStyle, lineStyle, lineWidth, stack, label)
 
     #check if the stack already exists
     if stack not in stacks:
@@ -135,7 +136,6 @@ for key in stacks.keys():
             pass_genmatch = genMatch > 0 or not options.genmatch
             evTuple = (run, ls, event)
             if metric > samp.metricCut and (not samp.isSignal or pass_genmatch):
-                print samp.tree_name, metric
                 if evTuple not in samp.eventDict.keys():
                     samp.eventDict[evTuple] = 1
                 else:
@@ -150,7 +150,7 @@ for key in stacks.keys():
             ntags = samp.eventDict[key]
             samp.hist.Fill(ntags, 1)
 
-        samp.hist.Sumw2()
+        #        samp.hist.Sumw2()
         samp.hist.Scale(samp.xsec * options.lumi / float(len(samp.eventDict)))
         
 output.cd()
@@ -178,7 +178,7 @@ for key in stacks.keys():
                 print "appending", samp.hist_name
                 draw_rest.append(samp.hist)
 
-draw_first.Draw("E")
+draw_first.Draw("")
 draw_first.GetXaxis().SetTitle(options.xlabel)
 draw_first.GetYaxis().SetTitle(options.ylabel)
 draw_first.GetYaxis().SetRangeUser(.0001,1)

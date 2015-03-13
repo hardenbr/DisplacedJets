@@ -6,6 +6,7 @@ from DisplacedJets.DisplacedImpactParameter.impactParameter_cff import *
 #re-produce primary vertices, lifetime, and secondary vertex tags
 from DisplacedJets.DisplacedSecondaryVertex.displacedSecondaryVertex_cff import *
 
+#produce the vertex collections with matching tracks for showing in event displays
 from DisplacedJets.DisplacedTagsToVertices.displacedTagsToVertices_cff import *
 
 djtagging = cms.Sequence( displacedImpactParameterTagInfos + 

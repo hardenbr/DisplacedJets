@@ -594,7 +594,7 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	float dpt = fabs(calopt - genpt) / genpt;
 
 	// found a match
-	if (dr < .5 && dpt < .25) {
+	if (dr < .7 && dpt < .20) {
 	  std::cout << "[GEN MATCHED] id " << id << " status " << st << " pt " << genpt << " eta " << geneta  <<  " phi " << genphi << std::endl;      
 	  genMatch[jj]++; 
 	  genPt[jj] = genpt;
@@ -1453,6 +1453,7 @@ TrackAnalyzer::beginJob()
 void 
 TrackAnalyzer::endJob() 
 {
+  outputFile_->cd();
   jetTree_->Write();
   trackTree_->Write();
   outputFile_->Close();

@@ -99,7 +99,7 @@ else:
     varbins = makebins(options.xmin, options.xmax, .1, .3)
 
 class sample:
-    def __init__(self, file_name, tree_name, isSignal, xsec, fillColor, fillStyle, lineWidth, stack, label):
+    def __init__(self, file_name, tree_name, isSignal, xsec, fillColor, fillStyle, lineStyle, lineWidth, stack, label):
 
         # set configuration
         self.file_name = file_name 
@@ -107,6 +107,7 @@ class sample:
         self.xsec = xsec 
         self.fillColor = fillColor
         self.fillStyle = fillStyle
+        self.lineStyle = lineStyle
         self.lineWidth = lineWidth 
         self.stack = stack
         self.label = label
@@ -120,9 +121,12 @@ class sample:
         else:
             self.hist = rt.TH1F(self.hist_name, self.label, array.array("d",varsbins))
 
-        eval("self.hist.SetFillColor(rt.%s)" % fillColor)
+        if int(fillStyle) != 0:
+            eval("self.hist.SetFillColor(rt.%s)" % fillColor)
+
         eval("self.hist.SetFillStyle(%s)" % fillStyle)
         eval("self.hist.SetLineColor(rt.%s)" % fillColor)
+        eval("self.hist.SetLineStyle(%s)" % lineStyle)
         self.hist.SetLineWidth(int(lineWidth))        
 
     
@@ -137,9 +141,8 @@ stacks = {}
 
 #ignore the first line for labels
 for line in lines[1:]:
-    print line.split("|")
-    (file_name, tree_name, isSignal, xSec, fillColor, fillStyle, lineWidth, stack, label) = line.split("|")
-    samples[file_name] = sample(file_name, tree_name, isSignal, xSec, fillColor, fillStyle, lineWidth, stack, label)
+    (file_name, tree_name, isSignal, xSec, fillColor, fillStyle, lineStyle, lineWidth, stack, label) = line.split("|")
+    samples[file_name] = sample(*line.split("|"))
 
     #check if the stack already exists
     if stack not in stacks:
@@ -172,9 +175,12 @@ for key in stacks.keys():
         print draw_string
         nevents = thisTree.Draw(draw_string , thisCut)
         #nevents = thisTree.GetEntries(thisCut)
+        #samp.hist.Sumw2()
         samp.hist.Scale( float(options.lumi) * float(samp.xsec) / float(nevents))
         samp.hist.GetXaxis().SetTitle(options.xlabel)
         samp.hist.GetYaxis().SetTitle(options.ylabel)
+        samp.hist.SetMarkerStyle(4)
+        eval("samp.hist.SetMarkerColor(rt.%s)" % samp.fillColor)
 
 output.cd()
 #build the canvas
@@ -204,7 +210,7 @@ for key in stacks.keys():
 
 
 print "length of draw_rest", len(draw_rest)
-draw_first.Draw()
+draw_first.Draw("")
 
 for ii in draw_rest: ii.Draw("same")
 

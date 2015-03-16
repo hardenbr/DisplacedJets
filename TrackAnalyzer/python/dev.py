@@ -2,8 +2,8 @@ import FWCore.ParameterSet.Config as cms
 
 isSignalMC = True
 isMC = True
-doedm = False
-nevents = -1
+doedm = True
+nevents = 20
 
 input_file = None
 
@@ -12,8 +12,8 @@ if isSignalMC:
 #    input_file = 'file:/afs/cern.ch/work/h/hardenbr/2015/DIJET/GEN_SIGNAL_TEST/dijet_700_300_ctau30.root'
 #    input_file = 'file:/afs/cern.ch/work/h/hardenbr/2015/DIJET/GEN_SIGNAL_TEST/dijet_700_300_ctau300.root'
 #   input_file = 'file:/afs/cern.ch/work/h/hardenbr/2015/DIJET/GEN_SIGNAL_TEST/dijet_700_300_ctau3000.root'
-#   input_file = 'file:/afs/cern.ch/work/h/hardenbr/2015/DIJET/GEN_SIGNAL_TEST/dijet_700_300_ctau3.root'
-   input_file = 'file:/afs/cern.ch/user/t/tkolberg/public/hepmcreco_RAW2DIGI_RECO.root'
+   input_file = 'file:/afs/cern.ch/work/h/hardenbr/2015/DIJET/GEN_SIGNAL_TEST/dijet_700_300_ctau3.root'
+#   input_file = 'file:/afs/cern.ch/user/t/tkolberg/public/hepmcreco_RAW2DIGI_RECO.root'
 else:
     input_file =  'file:/afs/cern.ch/work/h/hardenbr/QCD_470_600_AOD_40bx25.root'
 
@@ -287,6 +287,7 @@ if isMC:
 #         )
 #                                           )
 
+
 #output anything produced in the ANA process
 process.test_output = cms.OutputModule( "PoolOutputModule",
     fileName = cms.untracked.string( "/afs/cern.ch/work/h/hardenbr/edmoutput.root" ),
@@ -306,8 +307,8 @@ if isSignalMC:
     process.displacedTagsToVertices.isSignalMC = cms.untracked.bool(True)
     process.displacedTagsToVertices.doGenMatch = cms.untracked.bool(False)
 
-if not doedm:
-    process.p = cms.Path(process.djtagging + process.analyzer)
-else:
+if doedm:
     process.p = cms.Path(process.djtagging)    
     process.btag_output = cms.EndPath( process.test_output)
+else:
+    process.p = cms.Path(process.djtagging + process.analyzer)

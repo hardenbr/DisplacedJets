@@ -9,9 +9,13 @@ from DisplacedJets.DisplacedSecondaryVertex.displacedSecondaryVertex_cff import 
 #produce the vertex collections with matching tracks for showing in event displays
 from DisplacedJets.DisplacedTagsToVertices.displacedTagsToVertices_cff import *
 
+#use the adaptive vertex finder
+from DisplacedJets.DisplacedAdaptiveVertexFinder.displacedInclusiveVertexing_cff import *
+
 djtagging = cms.Sequence( displacedImpactParameterTagInfos + 
                           trackCountingDJTags + 
                           displacedOfflinePrimaryVertices + 
+                          displacedInclusiveVertexing +
                           displacedLifetimeTagInfos + 
                           displacedSecondaryVertexTagInfos+
-                          displacedTagsToVertices ) 
+                          displacedTagsToVertices  ) 

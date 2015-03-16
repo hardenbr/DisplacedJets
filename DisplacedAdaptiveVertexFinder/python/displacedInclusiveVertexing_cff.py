@@ -4,8 +4,8 @@ from DisplacedJets.DisplacedAdaptiveVertexFinder.displacedInclusiveVertexFinder_
 from DisplacedJets.DisplacedAdaptiveVertexFinder.displacedVertexMerger_cfi import *
 from DisplacedJets.DisplacedAdaptiveVertexFinder.displacedTrackVertexArbitrator_cfi import *
 
-dispalcedInclusiveSecondaryVertices = vertexMerger.clone()
-displacedInclusiveSecondaryVertices.secondaryVertices = cms.InputTag("trackVertexArbitrator")
+displacedInclusiveSecondaryVertices = displacedVertexMerger.clone()
+displacedInclusiveSecondaryVertices.secondaryVertices = cms.InputTag("displacedTrackVertexArbitrator")
 displacedInclusiveSecondaryVertices.maxFraction = 0.2
 displacedInclusiveSecondaryVertices.minSignificance = 10.
 

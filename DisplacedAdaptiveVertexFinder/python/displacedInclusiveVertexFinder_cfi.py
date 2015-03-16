@@ -1,26 +1,26 @@
 import FWCore.ParameterSet.Config as cms
 
-inclusiveVertexFinder  = cms.EDProducer("InclusiveVertexFinder",
+displacedInclusiveVertexFinder  = cms.EDProducer("InclusiveVertexFinder",
        beamSpot = cms.InputTag("offlineBeamSpot"),
        primaryVertices = cms.InputTag("offlinePrimaryVertices"),
        tracks = cms.InputTag("generalTracks"),
-       minHits = cms.uint32(8),
-       maximumLongitudinalImpactParameter = cms.double(0.3),
-       minPt = cms.double(0.8),
-       maxNTracks = cms.uint32(30),
+       minHits = cms.uint32(5), #djet 8 -> 5
+       maximumLongitudinalImpactParameter = cms.double(9999), #djet  .3 -> infty
+       minPt = cms.double(1.0), #djet .8 -> 1 
+       maxNTracks = cms.uint32(9999), #djet 30 -> infty
 
        clusterizer = cms.PSet(
            seedMax3DIPSignificance = cms.double(9999.),
            seedMax3DIPValue = cms.double(9999.),
-           seedMin3DIPSignificance = cms.double(1.2),
+           seedMin3DIPSignificance = cms.double(9999), #djet 1.2 -> infty
            seedMin3DIPValue = cms.double(0.005),
-           clusterMaxDistance = cms.double(0.05), #500um
-           clusterMaxSignificance = cms.double(4.5), #4.5 sigma
+           clusterMaxDistance = cms.double(99999), #500um #djet .05 -> infty
+           clusterMaxSignificance = cms.double(99999), #4.5 sigma  #djet  4.5 ---> infty
            distanceRatio = cms.double(20), # was cluster scale = 1 / density factor =0.05 
-           clusterMinAngleCosine = cms.double(0.5), # only forward decays
+           clusterMinAngleCosine = cms.double(-99999), # only forward decays   #djet accept backward decays (unboosted topologies) .5 -> -9999
        ),
 
-       vertexMinAngleCosine = cms.double(0.95), # scalar prod direction of tracks and flight dir
+       vertexMinAngleCosine = cms.double(-9999), # scalar prod direction of tracks and flight dir  #djet accept backward decays .95 -> -9999
        vertexMinDLen2DSig = cms.double(2.5), #2.5 sigma
        vertexMinDLenSig = cms.double(0.5), #0.5 sigma
        fitterSigmacut =  cms.double(3),

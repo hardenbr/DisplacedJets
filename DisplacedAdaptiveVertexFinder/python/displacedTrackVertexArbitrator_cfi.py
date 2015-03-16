@@ -1,10 +1,10 @@
 import FWCore.ParameterSet.Config as cms
 
-trackVertexArbitrator = cms.EDProducer("TrackVertexArbitrator",
+displacedTrackVertexArbitrator = cms.EDProducer("TrackVertexArbitrator",
        beamSpot = cms.InputTag("offlineBeamSpot"),
        primaryVertices = cms.InputTag("offlinePrimaryVertices"),
        tracks = cms.InputTag("generalTracks"),
-       secondaryVertices = cms.InputTag("vertexMerger"),
+       secondaryVertices = cms.InputTag("displacedVertexMerger"),
        dLenFraction = cms.double(0.333),
        dRCut = cms.double(0.4),
        distCut = cms.double(0.04),
@@ -14,7 +14,7 @@ trackVertexArbitrator = cms.EDProducer("TrackVertexArbitrator",
        fitterRatio = cms.double(0.25),
        trackMinLayers = cms.int32(4),
        trackMinPt = cms.double(0.4),
-       trackMinPixels = cms.int32(1)
+       trackMinPixels = cms.int32(0) #djet 1 -> 0
 
 )
 

@@ -41,4 +41,4 @@ ak4JTA = cms.Sequence(ak4JetTracksAssociatorAtVertex*
                       ak4JetTracksAssociatorAtCaloFace*ak4JetExtender)
 
 
-ak4JTAExplicit = cms.Sequence(ak4JetTracksAssociatorExplicit)
+#ak4JTAExplicit = cms.Sequence(ak4JetTracksAssociatorExplicit)

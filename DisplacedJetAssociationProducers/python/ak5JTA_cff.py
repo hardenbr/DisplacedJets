@@ -40,4 +40,4 @@ ak5JetExtender = cms.EDProducer("JetExtender",
 ak5JTA_noPF = cms.Sequence(ak5JetTracksAssociatorAtVertex*
                       ak5JetTracksAssociatorAtCaloFace*ak5JetExtender)
 
-ak5JTAExplicit = cms.Sequence(ak5JetTracksAssociatorExplicit)
+#ak5JTAExplicit = cms.Sequence(ak5JetTracksAssociatorExplicit)

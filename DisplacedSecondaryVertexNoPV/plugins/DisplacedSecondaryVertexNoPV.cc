@@ -50,7 +50,6 @@
 
 using namespace reco;
 
-
 GlobalVector flightDirection(const reco::Vertex & pv, const reco::Vertex & sv) {
 return  GlobalVector(sv.x() - pv.x(), sv.y() - pv.y(),sv.z() - pv.z());
 }
@@ -66,7 +65,7 @@ template <class IPTI,class VTX>
 class DisplacedSecondaryVertexNoPV : public edm::EDProducer {
 public:
   //type declarations
-  typedef std::vector<TemplatedSecondaryVertexTagInfo<IPTI,VTX> > Product;
+  typedef std::vector<TemplatedSecondaryVertexTagInfo<IPTI,VTX> > SVTagInfoCollection;
   typedef TemplatedSecondaryVertex<VTX> SecondaryVertex;
   typedef typename std::vector<reco::btag::IndexedTrackData> TrackDataVector;
   typedef typename IPTI::input_container input_container;
@@ -80,13 +79,21 @@ private:
   virtual void beginJob() override;
   virtual void produce(edm::Event&, const edm::EventSetup&) override;
   virtual void endJob() override;
-      
-  reco::btag::SortCriteria	sortCriterium;
+
+  //tokens to get
   edm::EDGetTokenT<reco::BeamSpot> token_BeamSpot;
   edm::EDGetTokenT<std::vector<IPTI> > token_trackIPTagInfo;
-  edm::ParameterSet		vtxRecoPSet;
-  VertexSorting<SecondaryVertex>	vertexSorting;
 
+  //track sorting
+  reco::btag::SortCriteria	sortCriterium;
+
+  //vertex reconstruction parameters
+  edm::ParameterSet		vtxRecoPSet;
+
+  //sv vertex ordering criterium 
+  VertexSorting<SecondaryVertex>	vertexSorting; 
+ 
+  //one parameter function which takes a transient vertex and returns a secondary vertex
   struct SVBuilder :
     public std::unary_function<const VTX&, SecondaryVertex> {
     
@@ -99,33 +106,14 @@ private:
       minTrackWeight(minTrackWeight) {}
     SecondaryVertex operator () (const TransientVertex &sv) const;
     
-		SecondaryVertex operator () (const VTX &sv) const
+    SecondaryVertex operator () (const VTX &sv) const
     { return SecondaryVertex(pv, sv, direction, withPVError); }
-    
-    
-		const Vertex		&pv;
+        
+    const Vertex	&pv;
     const GlobalVector	&direction;
-    bool			withPVError;
-    double 			minTrackWeight;
-  };
-  
-  struct SVFilter :
-    // defined to take a secondary vertex and return a boolean (if it is filtered or not)
-    public std::unary_function<const SecondaryVertex&, bool> {
-
-    SVFilter(const VertexFilter &filter, const Vertex &pv,
-	     const GlobalVector &direction) :
-      filter(filter), pv(pv), direction(direction) {}
-    
-    inline bool operator () (const SecondaryVertex &sv) const
-    { return !filter(pv, sv, direction); }
-    
-    const VertexFilter	&filter;
-    const Vertex		&pv;
-    const GlobalVector	&direction;
-  };
-  
-  
+    bool		withPVError; // not currently used
+    double 		minTrackWeight; // not currently used
+  };    
 
   //virtual void beginRun(edm::Run const&, edm::EventSetup const&) override;
   //virtual void endRun(edm::Run const&, edm::EventSetup const&) override;
@@ -153,19 +141,7 @@ DisplacedSecondaryVertexNoPV::DisplacedSecondaryVertexNoPV(const edm::ParameterS
   vertexSorting(iConfig.getParameter<edm::ParameterSet>("vertexSelection"))
 {
 
-
-   //register your products
-/* Examples
-   produces<ExampleData2>();
-
-   //if do put with a label
-   produces<ExampleData2>("label");
- 
-   //if you want to put into the Run
-   produces<ExampleData2,InRun>();
-*/
-   //now do what ever other initialization is needed
-  
+  produces<SVTagInfoCollection>
 }
 
 template <class IPTI,class VTX>
@@ -192,7 +168,7 @@ void DisplacedSecondaryVertexNoPV::produce(edm::Event& iEvent, const edm::EventS
    iSetup.get<TransientTrackRecord>().get("TransientTrackBuilder",
 	                                   trackBuilder);
    // tag infos from jets
-   edm::Handle<std::vector<IPTI> > trackIPTagInfos;
+   edm::Handle<std::vector<IPTI>> trackIPTagInfos;
    iEvent.getByToken(token_trackIPTagInfo, trackIPTagInfos);
 
    std::auto_ptr<ConfigurableVertexReconstructor> vertexReco;
@@ -201,7 +177,7 @@ void DisplacedSecondaryVertexNoPV::produce(edm::Event& iEvent, const edm::EventS
    event.getByToken(token_BeamSpot,beamSpot);
 
    // product to put into the event 
-   std::auto_ptr<Product> tagInfos(new Product);
+   std::auto_ptr<SVTagInfoCollection> tagInfos(new SVTagInfoCollection);
 
    //loop over each jet contained in the tag infos
    for(typename std::vector<IPTI>::const_iterator iterJets = trackIPTagInfos->begin(); 
@@ -256,14 +232,6 @@ void DisplacedSecondaryVertexNoPV::produce(edm::Event& iEvent, const edm::EventS
      for(int ss = 0; ss < fitedSVs.size(); ss++ ) {
        SVs.push_back(DisplacedSecondaryVertexNoPV::SVBuilder(fittedSVs[ss])
      }
-
-     // SVBuilder svBuilder(pv, jetDir, false, 0); // pv, jetdir, withPVerror, mintrackweight
-     // std::remove_copy_if(boost::make_transform_iterator(
-     // 							fittedSVs.begin(), svBuilder),
-     // 			 boost::make_transform_iterator(
-     // 							fittedSVs.end(), svBuilder),
-     // 			 std::back_inserter(SVs),
-     // 			 SVFilter(vertexFilter, pv, jetDir));
      
      //collect the sv data
 
@@ -291,7 +259,6 @@ void DisplacedSecondaryVertexNoPV::produce(edm::Event& iEvent, const edm::EventS
    }
 
    event.put(tagInfos);
-
 } 
 
 

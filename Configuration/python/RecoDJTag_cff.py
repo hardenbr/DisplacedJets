@@ -1,5 +1,8 @@
 import FWCore.ParameterSet.Config as cms
 
+#jet track associator at calo face
+from DispalcedJets.DisplacedJetAssociationProducers.ak5JTA_cff import *
+
 #impact parameter and track counting
 from DisplacedJets.DisplacedImpactParameter.impactParameter_cff import *
 
@@ -11,6 +14,7 @@ from DisplacedJets.DisplacedTagsToVertices.displacedTagsToVertices_cff import *
 
 #use the adaptive vertex finder
 from DisplacedJets.DisplacedAdaptiveVertexFinder.displacedInclusiveVertexing_cff import *
+
 
 djtagging = cms.Sequence( displacedImpactParameterTagInfos + 
                           trackCountingDJTags + 

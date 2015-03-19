@@ -11,7 +11,7 @@ displacedSecondaryVertexTagInfos = cms.EDProducer("SecondaryVertexProducer",
 	vertexCutsBlock,
 	vertexRecoBlock,
 	constraint = cms.string("None"), #dijet  -> None
-	trackIPTagInfos = cms.InputTag("dijetLifetimeTagInfos"), #dijet 
+	trackIPTagInfos = cms.InputTag("displacedLifetimeTagInfos"), #dijet 
 	minimumTrackWeight = cms.double(0.0), #dijet .5 -> 0
 	usePVError = cms.bool(True), #displacd True -> True
 	trackSort = cms.string('sip2dSig'), #dijet sip3dSig -> sip2dSig

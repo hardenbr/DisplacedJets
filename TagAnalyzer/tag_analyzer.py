@@ -532,7 +532,7 @@ class jet:
     
     # most naive descriminant 
     def calc_metric_val1(self, pars):
-        (w1, w2, w3) = pars #, w4, w5) = pars
+        (w1, w2, w3, w5) = pars #, w4, w5) = pars
 
         x1 = self.jetvars["jetELogIPSig2D"]
         x2 = self.jetvars["jetMedianIPSig2D"]
@@ -540,7 +540,7 @@ class jet:
         x4 = self.jetvars["jetSvMass"]
         x5 = self.jetvars["jetSvLxySig"]
 
-        return w1*(x1) + w2*(x2) + w3*(x3) #+ w4*x4 + w5*x5 #+ (self.jetvars["jetSvNTrack"] - 2)
+        return w1*(x1) + w2*(x2) + w3*(x3) + w5*x5
 
     def fill_disc(self, disc, weight_space):        
         wgrid = weight_space.grid
@@ -556,17 +556,18 @@ ana.build_jetcollections()
 
 #build the space for the metric
 
+#Fischer Weights:  [ -2.65724514e-07  -2.73809119e-04  -2.77321187e-05   2.27288656e-07]
 #Fsicher Weights [  3.74524639e-10  -5.10701610e-05  -1.10238882e-05]
 #Fischer Weights:  [  1.82221547e-10  -1.15562473e-04  -2.77406473e-05]
-w1_range = weight_range("jetELogIPSig2D", 0, 1, 2, 1, explicit=[-3.74524639e-10])
-w2_range = weight_range("jetMedianIPSig2D", 0, 1, 2, 1, explicit=[5.1070161e-05])
-w3_range = weight_range("jetIPSigLogSum2D", 0, 1, 2, 1, explicit=[1.10238882e-05])
+w1_range = weight_range("jetELogIPSig2D", 0, 1, 2, 1, explicit=[2.65724514e-07])
+w2_range = weight_range("jetMedianIPSig2D", 0, 1, 2, 1, explicit=[2.73809119e-04])
+w3_range = weight_range("jetIPSigLogSum2D", 0, 1, 2, 1, explicit=[2.77321187e-05])
+w5_range = weight_range("jetSvLxySig", 0, 1, 2, 1, explicit=[2.27288656e-07])
 #w4_range = weight_range("jetSvMass", 0, 1, 2, 1, explicit=[2.16e-04])
-#w5_range = weight_range("jetSvLxySig", 0, 1, 2, 1, explicit=[1.02e-06])
 
-tuple_range = (w1_range, w2_range, w3_range) #, w4_range, w5_range)
+tuple_range = (w1_range, w2_range, w3_range, w5_range) #, w4_range, w5_range)
 
-metric_weight_space = weight_space("metric", 3, tuple_range)
+metric_weight_space = weight_space("metric", 4, tuple_range)
 ana.fill_discriminant("metric", metric_weight_space)
 
 metric_weight_space.write_output(options.output_GID)

@@ -5,3 +5,4 @@ signal30.root   |jets| 1 | 1 | kAzure+8 | 0    | 2 | 3 | 2 | m_{X} = 300 c#tau =
 signal100.root  |jets| 1 | 1 | kBlue-10 | 0    | 2 | 3 | 2 | m_{X} = 300 c#tau = 10cm
 signal300.root  |jets| 1 | 1 | kRed-9   | 0    | 2 | 3 | 2 | m_{X} = 300 c#tau = 30cm
 signal1000.root |jets| 1 | 1 | kRed     | 0    | 2 | 3 | 2 | m_{X} = 300 c#tau = 100cm
+signal_newSV.root   |jets| 1 | 1 | kGreen | 0    | 2 | 3 | 2 | NEW SV m_{X} = 300 c#tau = 3cm

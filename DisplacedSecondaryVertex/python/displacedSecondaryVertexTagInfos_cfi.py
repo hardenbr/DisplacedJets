@@ -16,7 +16,7 @@ displacedSecondaryVertexTagInfos = cms.EDProducer("SecondaryVertexProducer",
 	usePVError = cms.bool(True), #displacd True -> True
 	trackSort = cms.string('sip2dSig'), #dijet sip3dSig -> sip2dSig
         beamSpotTag = cms.InputTag('offlineBeamSpot'),                                        
-        useExternalSV       = cms.bool(False), #djet false
-        extSVCollection     = cms.InputTag('secondaryVertices'),
-        extSVDeltaRToJet    = cms.double(.3), 
+        useExternalSV       = cms.bool(True), #djet True
+        extSVCollection     = cms.InputTag('displacedOfflinePrimaryVertices'), #djet secondaryVertices -> offlineDisplacedVertices 
+        extSVDeltaRToJet    = cms.double(.7), 
 )

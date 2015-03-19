@@ -3,7 +3,7 @@ import FWCore.ParameterSet.Config as cms
 isSignalMC = True
 isMC = True
 doedm = True
-nevents = 20
+nevents = 5
 
 input_file = None
 

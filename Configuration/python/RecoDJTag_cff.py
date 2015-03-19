@@ -15,7 +15,8 @@ from DisplacedJets.DisplacedAdaptiveVertexFinder.displacedInclusiveVertexing_cff
 djtagging = cms.Sequence( displacedImpactParameterTagInfos + 
                           trackCountingDJTags + 
                           displacedOfflinePrimaryVertices + 
-                          displacedInclusiveVertexing +
                           displacedLifetimeTagInfos + 
                           displacedSecondaryVertexTagInfos+
                           displacedTagsToVertices  ) 
+
+#                          displacedInclusiveVertexing +

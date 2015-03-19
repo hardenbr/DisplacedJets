@@ -1,6 +1,0 @@
-#sample | isSignal | xSec | fillcolor | fillstyle | lineWidth | stack | label 
-tags30.root   |bkg| 0 | 1 | kBlack   | 0    | 1 | 2 | 1 | QCD 470 < p_{t} < 600
-tags3.root    |sig| 1 | 1 | kBlue    | 0    | 2 | 3 | 3 | m_{X} = 300 c#tau = .3cm
-tags30.root   |sig| 1 | 1 | kAzure+8 | 0    | 2 | 3 | 2 | m_{X} = 300 c#tau = 3cm
-tags300.root  |sig| 1 | 1 | kRed-9   | 0    | 2 | 3 | 2 | m_{X} = 300 c#tau = 30cm
-tags1000.root |sig| 1 | 1 | kRed     | 0    | 2 | 3 | 2 | m_{X} = 300 c#tau = 100cm

@@ -10,13 +10,13 @@ displacedSecondaryVertexTagInfos = cms.EDProducer("SecondaryVertexProducer",
 	vertexSelectionBlock,
 	vertexCutsBlock,
 	vertexRecoBlock,
-	constraint = cms.string("None"), #displaced  -> None
-	trackIPTagInfos = cms.InputTag("displacedLifetimeTagInfos"), #displaced 
-	minimumTrackWeight = cms.double(0.0), #displaced .5 -> 0
+	constraint = cms.string("None"), #dijet  -> None
+	trackIPTagInfos = cms.InputTag("dijetLifetimeTagInfos"), #dijet 
+	minimumTrackWeight = cms.double(0.0), #dijet .5 -> 0
 	usePVError = cms.bool(True), #displacd True -> True
-	trackSort = cms.string('sip2dSig'), #displaced sip3dSig -> sip2dSig
+	trackSort = cms.string('sip2dSig'), #dijet sip3dSig -> sip2dSig
         beamSpotTag = cms.InputTag('offlineBeamSpot'),                                        
-        useExternalSV       = cms.bool(False),
+        useExternalSV       = cms.bool(False), #djet false
         extSVCollection     = cms.InputTag('secondaryVertices'),
-        extSVDeltaRToJet    = cms.double(2.0), #displaced .3 -> 2.0
+        extSVDeltaRToJet    = cms.double(.3), 
 )

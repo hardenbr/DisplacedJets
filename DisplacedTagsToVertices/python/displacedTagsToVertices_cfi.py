@@ -7,5 +7,5 @@ displacedTagsToVertices = cms.EDProducer("DisplacedTagsToVertices",
         jetPtCut = cms.untracked.double(40.0),
         isSignalMC = cms.untracked.bool(False),
         doGenMatch = cms.untracked.bool(False),
-        debug = cms.untracked.int32(0)
+        debug = cms.untracked.int32(100)
 )

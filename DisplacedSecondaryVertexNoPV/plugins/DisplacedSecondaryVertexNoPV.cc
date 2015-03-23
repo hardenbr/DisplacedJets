@@ -93,6 +93,9 @@ private:
   //sv vertex ordering criterium 
   VertexSorting<SecondaryVertex>	vertexSorting; 
  
+  //method for marking tracks used in the vertex fit
+  void markUsedTracks(TrackDataVector & trackData, const input_container & trackRefs, const SecondaryVertex & sv,size_t idx);
+
   //one parameter function which takes a transient vertex and returns a secondary vertex
   struct SVBuilder :
     public std::unary_function<const VTX&, SecondaryVertex> {
@@ -137,6 +140,7 @@ private:
 //
 template <class IPTI,class VTX>
 DisplacedSecondaryVertexNoPV::DisplacedSecondaryVertexNoPV(const edm::ParameterSet& iConfig):
+  sortCriterium(TrackSorting::getCriterium(iConfig.getParameter<std::string>("trackSort"))),
   vtxRecoPSet(iConfig.getParameter<edm::ParameterSet>("vertexReco")),
   vertexSorting(iConfig.getParameter<edm::ParameterSet>("vertexSelection"))
 {
@@ -159,22 +163,21 @@ DisplacedSecondaryVertexNoPV::~DisplacedSecondaryVertexNoPV()
 //
 
 // ------------ method called to produce the data  ------------
-template <class IPTI,class VTX>w
+template <class IPTI,class VTX>
 void DisplacedSecondaryVertexNoPV::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
    using namespace edm;
 
    edm::ESHandle<TransientTrackBuilder> trackBuilder;
-   iSetup.get<TransientTrackRecord>().get("TransientTrackBuilder",
-	                                   trackBuilder);
+   iSetup.get<TransientTrackRecord>().get("TransientTrackBuilder",trackBuilder);
+
    // tag infos from jets
    edm::Handle<std::vector<IPTI>> trackIPTagInfos;
    iEvent.getByToken(token_trackIPTagInfo, trackIPTagInfos);
 
    std::auto_ptr<ConfigurableVertexReconstructor> vertexReco;
-
    edm::Handle<BeamSpot> beamSpot;
-   event.getByToken(token_BeamSpot,beamSpot);
+   event.getByToken(token_BeamSpot, beamSpot);
 
    // product to put into the event 
    std::auto_ptr<SVTagInfoCollection> tagInfos(new SVTagInfoCollection);
@@ -198,6 +201,8 @@ void DisplacedSecondaryVertexNoPV::produce(edm::Event& iEvent, const edm::EventS
 
      // extract ip information
      const std::vector<reco::btag::TrackIPData> &ipData = iterJets->impactParameterData();
+     std::vector<std::size_t> indices = iterJets->sortedIndexes(sortCriterium);
+
      input_container trackRefs = iterJets->sortedTracks(indices);
 
      //transient track containers 
@@ -211,9 +216,9 @@ void DisplacedSecondaryVertexNoPV::produce(edm::Event& iEvent, const edm::EventS
        typedef typename TemplatedSecondaryVertexTagInfo<IPTI,VTX>::IndexedTrackData IndexedTrackData;
        
        //const input_item &trackRef = trackRefs[tt]; //normally used for the track selection
-
        trackData.push_back(IndexedTrackData());
        trackData.back().first = indices[tt];
+
        // every matched track is currently used for the vertex fit 
        trackData.back().second.svStatus = TemplatedSecondaryVertexTagInfo<IPTI,VTX>::TrackData::trackUsedForVertexFit;
      }
@@ -234,7 +239,6 @@ void DisplacedSecondaryVertexNoPV::produce(edm::Event& iEvent, const edm::EventS
      }
      
      //collect the sv data
-
      std::vector<unsigned int> vtxIndices = vertexSorting(SVs);
      std::vector<typename TemplatedSecondaryVertexTagInfo<IPTI, VTX>::VertexData> svData;
      svData.resize(vtxIndices.size());
@@ -252,12 +256,10 @@ void DisplacedSecondaryVertexNoPV::produce(edm::Event& iEvent, const edm::EventS
      // final tagInfos push back
      tagInfos->push_back(
 			 TemplatedSecondaryVertexTagInfo<IPTI, VTX>(
-								   trackData, svData, SVs.size(),
-								   edm::Ref<std::vector<IPTI> >(trackIPTagInfos,
-												iterJets - trackIPTagInfos->begin())));
-
+								    trackData, svData, SVs.size(),
+								    edm::Ref<std::vector<IPTI> >(trackIPTagInfos, iterJets - trackIPTagInfos->begin())));
    }
-
+     
    event.put(tagInfos);
 } 
 

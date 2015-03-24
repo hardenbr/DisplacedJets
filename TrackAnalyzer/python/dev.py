@@ -1,9 +1,9 @@
 import FWCore.ParameterSet.Config as cms
 
-isSignalMC = True
+isSignalMC = False
 isMC = True
-doedm = True
-nevents = 5
+doedm = False
+nevents = 1000
 
 input_file = None
 
@@ -236,7 +236,7 @@ process.analyzer.ak5CaloJets =  cms.untracked.InputTag('ak5CaloJets', '', proc_l
 process.analyzer.genParticles =  cms.untracked.InputTag('genParticles', '', proc_label)
 
 process.analyzer.trackIPTagInfoCollection = cms.untracked.InputTag('displacedImpactParameterTagInfos', '', 'ANA')
-process.analyzer.secondaryVertexTagInfo = cms.untracked.InputTag('displacedSecondaryVertexTagInfos', '', 'ANA')
+process.analyzer.secondaryVertexTagInfo = cms.untracked.InputTag('displacedSecondaryVertexTagInfosNoPV', '', 'ANA')
 process.analyzer.lifetimeIPTagInfo = cms.untracked.InputTag('displacedLifetimeTagInfos', '', 'ANA')
 
 #cuts

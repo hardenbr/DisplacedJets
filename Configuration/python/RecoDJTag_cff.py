@@ -7,7 +7,8 @@ from DisplacedJets.DisplacedJetAssociationProducers.ak5JTA_cff import *
 from DisplacedJets.DisplacedImpactParameter.impactParameter_cff import *
 
 #re-produce primary vertices, lifetime, and secondary vertex tags
-from DisplacedJets.DisplacedSecondaryVertex.displacedSecondaryVertex_cff import *
+#from DisplacedJets.DisplacedSecondaryVertex.displacedSecondaryVertex_cff import *
+from DisplacedJets.DisplacedSecondaryVertexNoPV.displacedSecondaryVertex_cff import *
 
 #produce the vertex collections with matching tracks for showing in event displays
 from DisplacedJets.DisplacedTagsToVertices.displacedTagsToVertices_cff import *
@@ -21,7 +22,7 @@ djtagging = cms.Sequence( ak5JTA_noPF +
                           trackCountingDJTags + 
                           displacedOfflinePrimaryVertices + 
                           displacedLifetimeTagInfos + 
-                          displacedSecondaryVertexTagInfos+
-                          displacedTagsToVertices  ) 
+                          displacedSecondaryVertexTagInfosNoPV +
+                          displacedTagsToVerticesNoPV  ) 
 
 #                          displacedInclusiveVertexing +

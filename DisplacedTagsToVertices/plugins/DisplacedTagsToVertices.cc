@@ -108,17 +108,6 @@ private:
 //
 DisplacedTagsToVertices::DisplacedTagsToVertices(const edm::ParameterSet& iConfig)
 {
-   //register your products
-/* Examples
-   produces<ExampleData2>();
-
-   //if do put with a label
-   produces<ExampleData2>("label");
- 
-   //if you want to put into the Run
-   produces<ExampleData2,InRun>();
-*/
-   //now do what ever other initialization is needed
 
   tag_secondaryVertexTagInfo_ = iConfig.getUntrackedParameter<edm::InputTag>("secondaryVertexTagInfo");
   tag_genParticles_ = iConfig.getUntrackedParameter<edm::InputTag>("genParticleTag");

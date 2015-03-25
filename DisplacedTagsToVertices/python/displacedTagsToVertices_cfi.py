@@ -1,9 +1,9 @@
 import FWCore.ParameterSet.Config as cms
 
-displacedTagsToVerticesNoPV = cms.EDProducer("DisplacedTagsToVertices",
-        secondaryVertexTagInfo = cms.untracked.InputTag("displacedSecondaryVertexTagInfosNoPV","","ANA"),        
+displacedTagsToVertices = cms.EDProducer("DisplacedTagsToVertices",
+        secondaryVertexTagInfo = cms.untracked.InputTag("displacedSecondaryVertexTagInfos","","ANA"),        
         genParticleTag = cms.untracked.InputTag("genParticles","","RECO"),        
-        outputLabel = cms.untracked.string('displacedSecondaryVerticesNoPV'),
+        outputLabel = cms.untracked.string('displacedSecondaryVertices'),
         jetPtCut = cms.untracked.double(40.0),
         isSignalMC = cms.untracked.bool(False),
         doGenMatch = cms.untracked.bool(False),

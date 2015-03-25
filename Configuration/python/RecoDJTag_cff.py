@@ -12,17 +12,24 @@ from DisplacedJets.DisplacedSecondaryVertexNoPV.displacedSecondaryVertex_cff imp
 
 #produce the vertex collections with matching tracks for showing in event displays
 from DisplacedJets.DisplacedTagsToVertices.displacedTagsToVertices_cff import *
-
 #use the adaptive vertex finder
 from DisplacedJets.DisplacedAdaptiveVertexFinder.displacedInclusiveVertexing_cff import *
 
-
-djtagging = cms.Sequence( ak5JTA_noPF +
+djtagging = cms.Sequence( #track matching for ak5 jets 
+                          ak5JTA_noPF +                          
                           displacedImpactParameterTagInfos + 
                           trackCountingDJTags + 
                           displacedOfflinePrimaryVertices + 
+                          #vertex matched tracks
                           displacedLifetimeTagInfos + 
-                          displacedSecondaryVertexTagInfosNoPV +
-                          displacedTagsToVerticesNoPV  ) 
-
-#                          displacedInclusiveVertexing +
+                          displacedSecondaryVertexTagInfos +
+                          displacedTagsToVerticesNoPV +
+                          displacedTagsToVertices +
+                          #calo face matched trackssequence
+                          displacedLifetimeTagInfosCaloFace + 
+                          displacedSecondaryVertexTagInfosNoPVCaloFace +
+                          displacedSecondaryVertexTagInfosCaloFace +
+                          displacedTagsToVerticesNoPVCaloFace +
+                          #inclusive vertexing
+                          displacedInclusiveVertexing 
+) 

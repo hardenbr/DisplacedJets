@@ -1,6 +1,6 @@
 import FWCore.ParameterSet.Config as cms
 
-displacedLifetimeTagInfos = cms.EDProducer( "TrackIPProducer",
+displacedLifetimeTagInfosCaloFace = cms.EDProducer( "TrackIPProducer",
     maximumTransverseImpactParameter = cms.double( 999999.0 ), #displaced .2 -> infinity
     minimumNumberOfHits = cms.int32( 0 ), #displaced 8 -> 0
     minimumTransverseMomentum = cms.double( 1.0 ), 
@@ -8,7 +8,7 @@ displacedLifetimeTagInfos = cms.EDProducer( "TrackIPProducer",
     maximumLongitudinalImpactParameter = cms.double( 999999.0 ), #displaced 17 -> infinity
     computeGhostTrack = cms.bool( False ),
     ghostTrackPriorDeltaR = cms.double( 0.03 ),
-    jetTracks = cms.InputTag( "ak5JetTracksAssociatorAtVertex" ), #displaced  hltFastPixelBLifetimeL3Associator -> jetTracks
+    jetTracks = cms.InputTag( "ak5JetTracksAssociatorAtCaloFace" ), #displaced  hltFastPixelBLifetimeL3Associator -> jetTracks
     jetDirectionUsingGhostTrack = cms.bool( False ),
     minimumNumberOfPixelHits = cms.int32( 0 ), #displaced 2 -> 0 AOD PROBLEMS
     jetDirectionUsingTracks = cms.bool( False ),

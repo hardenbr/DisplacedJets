@@ -151,10 +151,10 @@ DisplacedTagsToVertices::produce(edm::Event& iEvent, const edm::EventSetup& iSet
    // loop over each jet 
    for(; svinfo != sv.end(); ++svinfo){
 
-     // apply a jet threshold
-     // if (svinfo->jet()->pt()  > jetPtCut_){
-     //  continue;
-     // }
+     //apply a jet threshold
+     if ( svinfo->jet()->pt()  < jetPtCut_){
+      continue;
+     }
 
      edm::Handle<reco::GenParticleCollection> genParticles;
 

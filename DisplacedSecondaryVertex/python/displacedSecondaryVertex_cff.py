@@ -5,7 +5,9 @@ from DisplacedJets.DisplacedPrimaryVertexProducer.displacedOfflinePrimaryVertice
 
 #lifetime jet tags
 from DisplacedJets.DisplacedSecondaryVertex.displacedLifetimeTagInfos_cfi import * 
+from DisplacedJets.DisplacedSecondaryVertex.displacedLifetimeTagInfosCaloFace_cfi import * 
 
 #secondary vertex tag info
 from DisplacedJets.DisplacedSecondaryVertex.displacedSecondaryVertexTagInfos_cfi import * 
+from DisplacedJets.DisplacedSecondaryVertex.displacedSecondaryVertexTagInfosCaloFace_cfi import * 
 

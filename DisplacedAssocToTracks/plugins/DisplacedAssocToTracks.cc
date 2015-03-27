@@ -56,6 +56,8 @@
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
 
 
+#include "DataFormats/BTauReco/interface/JTATagInfo.h"
+
 //
 // class declaration
 //
@@ -131,47 +133,60 @@ DisplacedAssocToTracks::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
 {
    using namespace edm;
 
-
-   // Handle<reco::SecondaryVertexTagInfoCollection> secondaryVertexTagInfo;
-   // iEvent.getByLabel(tag_secondaryVertexTagInfo_, secondaryVertexTagInfo);
-
    edm::Handle<reco::JetTracksAssociationCollection> jetTracksAssociation;
    iEvent.getByLabel(tag_jetTracksAssociation_, jetTracksAssociation);
 
    std::auto_ptr<reco::TrackCollection > jetTrackCollectionResult(new reco::TrackCollection);
    reco::TrackCollection jetTrackCollection;                                                                                      
 
+   //loop over each jet, tracks pair
    if (debug_ > 0) std::cout << "[DAssoc2Tracks] starting jet tracks iterator" << std::endl;
+   int jetCount = 0;
+   for(reco::JetTracksAssociationCollection::const_iterator it = jetTracksAssociation->begin(); it != jetTracksAssociation->end(); 
+       ++it){
 
-   for(reco::JetTracksAssociationCollection::const_iterator it = jetTracksAssociation->begin();
-       it != jetTracksAssociation->end(); ++it){
-     const reco::Jet * jet = &*it->first; 
+     // Handle<reco::SecondaryVertexTagInfoCollection> secondaryVertexTagInfo;
+     // iEvent.getByLabel(tag_secondaryVertexTagInfo_, secondaryVertexTagInfo);
+     edm::Ref<reco::JetTracksAssociationCollection> jtaRef(jetTracksAssociation, jetCount);
+     reco::JTATagInfo tagInfo(jtaRef);
+
+     const reco::Jet * jet = &*tagInfo.jet();
      
      //expect only calo jets for track assocations
-     if (debug_ > 0) std::cout << "[DAssoc2Tracks] Casting jet to calojet" << std::endl;
-
      reco::CaloJet const * pCaloJet = dynamic_cast<reco::CaloJet const *>(jet);
      if ( pCaloJet == 0 ) {
-       throw cms::Exception("InvalidInput") << "Expecting calo jets only in JetTracksAssociationXtrpCalo";
+       throw cms::Exception("InvalidInput") << "Expecting calo jets only in";
      }
 
-     float pt = pCaloJet->detectorP4().pt();
-     if (debug_ > 0) std::cout << "[DAssoc2Tracks] pt cut" << std::endl;
-     if (debug_ > 0) std::cout << "[DAssoc2Tracks] jet pt " << pt << std::endl;
-     if (pt < jetPtCut_ ) continue;
+     float  pt	= pCaloJet->detectorP4().pt();
+     float  eta = pCaloJet->detectorP4().eta();
+     float  phi = pCaloJet->detectorP4().phi();
 
-     if (it->second.isNull()) { continue; }
-     std::vector<reco::Track> tracks = *it->second.product();     
-     if (debug_ > 0) std::cout << "[DAssoc2Tracks] Track Iteration" << std::endl;
-     for(std::vector<reco::Track>::const_iterator tt = tracks.begin(); tt != tracks.end(); tt++ ){
-       jetTrackCollection.push_back(*tt);
+
+     // make sure the jet is high enough pt and there are tracks matched
+     if (pt < jetPtCut_ || !tagInfo.hasTracks()) {
+       jetCount++;
+       continue;
      }
+     if (debug_ > 0) std::cout << "[DAssoc2Tracks] jet pt " << pt << " eta" << eta << " phi " << phi << std::endl;
+
+     reco::TrackRefVector tracks = tagInfo.tracks();
+
+     if (debug_ > 0) std::cout << "[DAssoc2Tracks] Track Size" <<  tracks.size() << std::endl;
+     for(reco::TrackRefVector::const_iterator tt = tracks.begin(); tt != tracks.end(); tt++ ){
+       float	pt  = (*tt)->pt();
+       float	eta = (*tt)->eta();
+       float	phi = (*tt)->phi();
+       
+       if (debug_ > 0) std::cout << "[DAssoc2Tracks] Track pt" << pt << " eta " << eta << " phi " << phi << std::endl;
+       jetTrackCollection.push_back(**tt);
+     }
+
+     jetCount++;
    }
    
-   if (debug_ > 0) std::cout << "[DAssoc2Tracks] Cast" << std::endl;
    *jetTrackCollectionResult = jetTrackCollection;
 
-   if (debug_ > 0) std::cout << "[DAssoc2Tracks] Final Put" << std::endl;
    iEvent.put(jetTrackCollectionResult, outputLabel_);
 }
 

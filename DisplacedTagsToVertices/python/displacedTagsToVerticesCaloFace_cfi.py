@@ -7,5 +7,5 @@ displacedTagsToVerticesCaloFace = cms.EDProducer("DisplacedTagsToVertices",
         jetPtCut = cms.untracked.double(70.0),
         isSignalMC = cms.untracked.bool(False),
         doGenMatch = cms.untracked.bool(False),
-        debug = cms.untracked.int32(100)
+        debug = cms.untracked.int32(0)
 )

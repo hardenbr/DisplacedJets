@@ -16,8 +16,14 @@ from DisplacedJets.DisplacedTagsToVertices.displacedTagsToVertices_cff import *
 #use the adaptive vertex finder
 from DisplacedJets.DisplacedAdaptiveVertexFinder.displacedInclusiveVertexing_cff import *
 
+#saving only the tracks matched to certain high pt jets
+from DisplacedJets.DisplacedAssocToTracks.displacedAssocToTracks_cff import *
+
 djtagging = cms.Sequence( #track matching for ak5 jets 
-                          ak5JTA_noPF +                          
+                          ak5JTA_noPF +                 
+                          #make the track collections for tracks matched to the jets
+                          displacedAssocToTracks + 
+                          displacedAssocToTracksCaloFace + 
                           #impact parameter info
                           displacedImpactParameterTagInfos + 
                           trackCountingDJTags + 

@@ -143,21 +143,21 @@ private:
   TTree* trackTree_;   
   TTree* jetTree_;   
 
-  static const Int_t MAX_TRACKS = 9999;
-  static const Int_t MAX_JETS = 999;
-  static const Int_t MAX_VTX = 999;
-  static const Int_t debug = 0; 
+  static const Int_t	MAX_TRACKS = 9999;
+  static const Int_t	MAX_JETS   = 999;
+  static const Int_t	MAX_VTX	   = 999;
+  static const Int_t	debug	   = 0; 
 
 #ifdef DEBUG
   debug = 2; 
 #endif 
  
   //bookkeeping
-  Int_t run = -1;
-  Int_t lumi = -1;
+  Int_t run   = -1;
+  Int_t lumi  = -1;
   Int_t event = -1;
 
-  int evNum = 0;
+  int	evNum = 0;
   Int_t jetid = 0;
 
   //tree variables
@@ -679,7 +679,7 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       }
             
       //kinematics
-      trackPt[nTracks] = ptrack.pt();
+      trackPt[nTracks]	= ptrack.pt();
       trackPhi[nTracks] = ptrack.phi();
       trackEta[nTracks] = ptrack.eta();
 
@@ -689,11 +689,11 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 				   ipinfo->jet()->eta(), ipinfo->jet()->phi());
 
       //ip info tags
-      trackIP3D[nTracks] = data.ip3d.value();
-      trackIPSig3D[nTracks] = data.ip3d.significance();
-      trackIP2D[nTracks] = data.ip2d.value();
-      trackIPSig2D[nTracks] = data.ip2d.significance();
-      trackDistanceJetAxis[nTracks] = data.distanceToJetAxis.value();
+      trackIP3D[nTracks]	       = data.ip3d.value();
+      trackIPSig3D[nTracks]	       = data.ip3d.significance();
+      trackIP2D[nTracks]	       = data.ip2d.value();
+      trackIPSig2D[nTracks]	       = data.ip2d.significance();
+      trackDistanceJetAxis[nTracks]    = data.distanceToJetAxis.value();
       trackDistanceJetAxisSig[nTracks] = data.distanceToJetAxis.significance();
 
       //track quality
@@ -759,11 +759,11 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       if (is_matched) genMatchTrack[nLiTracks] = 1;
 
       //ip info tags
-      liTrackIP3D[nLiTracks] = data.ip3d.value();
-      liTrackIPSig3D[nLiTracks] = data.ip3d.significance();
-      liTrackIP2D[nLiTracks] = data.ip2d.value();
-      liTrackIPSig2D[nLiTracks] = data.ip2d.significance();
-      liTrackDistanceJetAxis[nLiTracks] = data.distanceToJetAxis.value();
+      liTrackIP3D[nLiTracks]		   = data.ip3d.value();
+      liTrackIPSig3D[nLiTracks]		   = data.ip3d.significance();
+      liTrackIP2D[nLiTracks]		   = data.ip2d.value();
+      liTrackIPSig2D[nLiTracks]		   = data.ip2d.significance();
+      liTrackDistanceJetAxis[nLiTracks]	   = data.distanceToJetAxis.value();
       liTrackDistanceJetAxisSig[nLiTracks] = data.distanceToJetAxis.significance();
 
       //track quality
@@ -964,47 +964,47 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       // only look at tracks that correspond to the current jet
       if( liTrackJetID[tt] != jetJetID[jj]) { continue; }
 
-      float pt = liTrackPt[tt];
-      float ip2d = liTrackIP2D[tt];
-      float ip3d = liTrackIP3D[tt];
+      float pt	  = liTrackPt[tt];
+      float ip2d  = liTrackIP2D[tt];
+      float ip3d  = liTrackIP3D[tt];
       float ip2ds = liTrackIPSig2D[tt];
       float ip3ds = liTrackIPSig3D[tt];
 
       // ip weighted track pt sums
-      jetEIPSig2D[jj] += fabs(ip2ds) * pt;
-      jetEIPSig3D[jj] += fabs(ip3ds) * pt;
-      jetEIP2D[jj] += fabs(ip2d) * pt;
-      jetEIP3D[jj] += fabs(ip3d) * pt;
+      jetEIPSig2D[jj] += fabs(ip2ds) *	pt;
+      jetEIPSig3D[jj] += fabs(ip3ds) *	pt;
+      jetEIP2D[jj]    += fabs(ip2d)  *	pt;
+      jetEIP3D[jj]    += fabs(ip3d)  *	pt;
 
       // ip log weighted track pt sums
       jetELogIPSig2D[jj] += (ip2ds ? log(fabs(ip2ds)) * pt : 0);
       jetELogIPSig3D[jj] += (ip3ds ? log(fabs(ip3ds)) * pt : 0);
-      //jetELogIP2D[jj] += (ip2d ? log(fabs(ip2d)) * pt : 0);
-      //jetELogIP3D[jj] += (ip3d ? log(fabs(ip3d)) * pt : 0);
+      //jetELogIP2D[jj]	 += (ip2d ? log(fabs(ip2d)) * pt : 0);
+      //jetELogIP3D[jj]	 += (ip3d ? log(fabs(ip3d)) * pt : 0);
 
-      jetEIPSignedSig2D[jj] += (ip2ds) * pt;
-      jetEIPSignedSig3D[jj] += (ip3ds) * pt;
-      jetEIPSigned2D[jj] += (ip2d) * pt;
-      jetEIPSigned3D[jj] += (ip3d) * pt; 
+      jetEIPSignedSig2D[jj] += (ip2ds) *    pt;
+      jetEIPSignedSig3D[jj] += (ip3ds) *    pt;
+      jetEIPSigned2D[jj]    += (ip2d)  *    pt;
+      jetEIPSigned3D[jj]    += (ip3d)  *    pt; 
 
       // absolute ip averages
       // unsigned
-      jetIPSum2D[jj] += fabs(ip2d);
-      jetIPSum3D[jj] += fabs(ip3d);
+      jetIPSum2D[jj]	   += fabs(ip2d);
+      jetIPSum3D[jj]	   += fabs(ip3d);
       //signed
       jetIPSignedSum2D[jj] += ip2d;
       jetIPSignedSum3D[jj] += ip3d;
 
       // ip significance sums
       // unsigned 
-      jetIPSigSum2D[jj] += fabs(ip2ds);
-      jetIPSigSum3D[jj] += fabs(ip3ds);
+      jetIPSigSum2D[jj]	   += fabs(ip2ds);
+      jetIPSigSum3D[jj]	   += fabs(ip3ds);
       jetIPSigInvSum2D[jj] += (ip2ds ? 1.0 / fabs(ip2ds): 0);
       jetIPSigInvSum3D[jj] += (ip3ds ? 1.0 / fabs(ip3ds): 0);
 
       // signed
-      jetIPSignedSigSum2D[jj] += (ip2ds);
-      jetIPSignedSigSum3D[jj] += (ip3ds);
+      jetIPSignedSigSum2D[jj]	 += (ip2ds);
+      jetIPSignedSigSum3D[jj]	 += (ip3ds);
       jetIPSignedSigInvSum2D[jj] += 1.0 / (ip2ds);
       jetIPSignedSigInvSum3D[jj] += 1.0 / (ip3ds);
 
@@ -1037,54 +1037,54 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     // do the average for the IP weighted
     jetEIPSig2D[jj] /= (has_track ? jetIPSigSum2D[jj] : 1);
     jetEIPSig3D[jj] /= (has_track ? jetIPSigSum3D[jj] : 1);
-    jetEIP2D[jj] /= (has_track ?  jetIPSum2D[jj]: 1);
-    jetEIP3D[jj] /= (has_track ?  jetIPSum3D[jj]: 1);
+    jetEIP2D[jj]    /= (has_track ? jetIPSum2D[jj]: 1);
+    jetEIP3D[jj]    /= (has_track ? jetIPSum3D[jj]: 1);
 
     // do the average for the IP weighted
     jetELogIPSig2D[jj] /= (has_track ? jetIPSigLogSum2D[jj] : 1);
     jetELogIPSig3D[jj] /= (has_track ? jetIPSigLogSum3D[jj] : 1);
-    //jetELogIP2D[jj] /= (has_track ?  jetIPLogSum2D[jj]: 1);
-    //jetELogIP3D[jj] /= (has_track ?  jetIPLogSum3D[jj]: 1);
+    //jetELogIP2D[jj]  /= (has_track ?  jetIPLogSum2D[jj]: 1);
+    //jetELogIP3D[jj]  /= (has_track ?  jetIPLogSum3D[jj]: 1);
 
     // averages for the signed values as well
     jetEIPSignedSig2D[jj] /= (has_track ?  jetIPSignedSum2D[jj]: 1);
     jetEIPSignedSig3D[jj] /= (has_track ?  jetIPSignedSum3D[jj]: 1);
-    jetEIPSigned2D[jj] /= (has_track ?  jetIPSignedSigSum2D[jj]: 1);
-    jetEIPSigned3D[jj] /= (has_track ?  jetIPSignedSigSum3D[jj]: 1);
+    jetEIPSigned2D[jj]	  /= (has_track ?  jetIPSignedSigSum2D[jj]: 1);
+    jetEIPSigned3D[jj]	  /= (has_track ?  jetIPSignedSigSum3D[jj]: 1);
 
     // compute combination variables
-    jetMedianIPSignedSig2D[jj] = TrackAnalyzer::getJetMedian(liTrackIP2D, nLiTracks, jetJetID[jj], true);
-    jetMedianIPSignedSig3D[jj] = TrackAnalyzer::getJetMedian(liTrackIP3D, nLiTracks, jetJetID[jj], true);
+    jetMedianIPSignedSig2D[jj]	 = TrackAnalyzer::getJetMedian(liTrackIP2D, nLiTracks, jetJetID[jj], true);
+    jetMedianIPSignedSig3D[jj]	 = TrackAnalyzer::getJetMedian(liTrackIP3D, nLiTracks, jetJetID[jj], true);
     jetVarianceIPSignedSig2D[jj] = TrackAnalyzer::getJetVariance(liTrackIP2D, jetMeanIPSignedSig2D[jj], nLiTracks, jetJetID[jj], true);
     jetVarianceIPSignedSig3D[jj] = TrackAnalyzer::getJetVariance(liTrackIP3D, jetMeanIPSignedSig3D[jj], nLiTracks, jetJetID[jj], true);    
 
-    jetMedianIPSig2D[jj] = TrackAnalyzer::getJetMedian(liTrackIP2D, nLiTracks, jetJetID[jj], false);
-    jetMedianIPSig3D[jj] = TrackAnalyzer::getJetMedian(liTrackIP3D, nLiTracks, jetJetID[jj], false);
+    jetMedianIPSig2D[jj]   = TrackAnalyzer::getJetMedian(liTrackIP2D, nLiTracks, jetJetID[jj], false);
+    jetMedianIPSig3D[jj]   = TrackAnalyzer::getJetMedian(liTrackIP3D, nLiTracks, jetJetID[jj], false);
     jetVarianceIPSig2D[jj] = TrackAnalyzer::getJetVariance(liTrackIP2D, jetMeanIPSig2D[jj], nLiTracks, jetJetID[jj], false);
     jetVarianceIPSig3D[jj] = TrackAnalyzer::getJetVariance(liTrackIP3D, jetMeanIPSig3D[jj], nLiTracks, jetJetID[jj], false);    
       
     // set best SV information
-    jetSvLxy[jj] = 0;
-    jetSvLxySig[jj] = 0;
-    jetSvLxyz[jj] = 0;
+    jetSvLxy[jj]     = 0;
+    jetSvLxySig[jj]  = 0;
+    jetSvLxyz[jj]    = 0;
     jetSvLxyzSig[jj] = 0;
-    jetSvNTrack[jj] = 0; //vertex track multiplicty
+    jetSvNTrack[jj]  = 0;	//vertex track multiplicty
 
     // SV position
-    jetSvX[jj] = 0;
-    jetSvY[jj] = 0;
-    jetSvZ[jj] = 0;
+    jetSvX[jj]	  = 0;
+    jetSvY[jj]	  = 0;
+    jetSvZ[jj]	  = 0;
     // error
     jetSvZErr[jj] = 0;
     jetSvYErr[jj] = 0;
     jetSvXErr[jj] = 0;
 
     //SV quality
-    jetSvChi2[jj] = 0;
-    jetSvNChi2[jj] = 0;
-    jetSvNDof[jj] = 0;
+    jetSvChi2[jj]    = 0;
+    jetSvNChi2[jj]   = 0;
+    jetSvNDof[jj]    = 0;
     jetSvIsValid[jj] = 0;           
-    jetNSv[jj] = 0;
+    jetNSv[jj]	     = 0;
 
     int bestSV = -1;
     int highestSum = -1;	
@@ -1104,6 +1104,7 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       if (sv_ntracks > highestSum) {
 	bestSV = vvv;
 	highestSum = sv_ntracks;
+
 	if(debug > 1) std::cout << "[JETS] -------- highest # tracks PV: " << highestSum << " index " << vvv << std::endl;
       }
     } // end vertex loop
@@ -1112,12 +1113,12 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     if (bestSV == -1) continue;
 
     // SV information
-    jetSvMass[jj] = svMass[bestSV];
-    jetSvLxy[jj] = svFlight2D[bestSV];
-    jetSvLxySig[jj] = svFlight2D[bestSV] / svFlight2DErr[bestSV];
-    jetSvLxyz[jj] = svFlight[bestSV];
-    jetSvLxyzSig[jj] =  svFlight[bestSV] / svFlightErr[bestSV];
-    jetSvNTrack[jj] = svNTracks[bestSV]; //vertex track multiplicty
+    jetSvMass[jj]    = svMass[bestSV];
+    jetSvLxy[jj]     = svFlight2D[bestSV];
+    jetSvLxySig[jj]  = svFlight2D[bestSV] / svFlight2DErr[bestSV];
+    jetSvLxyz[jj]    = svFlight[bestSV];
+    jetSvLxyzSig[jj] = svFlight[bestSV] / svFlightErr[bestSV];
+    jetSvNTrack[jj]  = svNTracks[bestSV];   //vertex track multiplicty
 
     // SV position and error
     jetSvX[jj] = svX[bestSV];
@@ -1129,9 +1130,9 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     jetSvXErr[jj] = svZErr[bestSV];
 
     //SV quality
-    jetSvChi2[jj] = svChi2[bestSV];
-    jetSvNChi2[jj] = svNChi2[bestSV];
-    jetSvNDof[jj] = svNDof[bestSV];
+    jetSvChi2[jj]    = svChi2[bestSV];
+    jetSvNChi2[jj]   = svNChi2[bestSV];
+    jetSvNDof[jj]    = svNDof[bestSV];
     jetSvIsValid[jj] = svIsValid[bestSV];                  
 
   } // end loop over jets

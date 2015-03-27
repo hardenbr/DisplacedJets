@@ -41,7 +41,7 @@ process.load("Configuration.StandardSequences.Reconstruction_cff")
 #process.GlobalTag.globaltag = 'MCRUN2_72_V1A::All'
 
 process.GlobalTag = cms.ESSource( "PoolDBESSource",
-    globaltag = cms.string( "GR_H_V39" ),
+    globaltag = cms.string( "auto:run2_mc_GRun" ),
     RefreshEachRun = cms.untracked.bool( True ),
     RefreshOpenIOVs = cms.untracked.bool( False ),
     toGet = cms.VPSet( 
@@ -88,6 +88,16 @@ process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(nevents))
 
 process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring(
+        'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/user/mwalker/SIGNAL/Displaced/LL_sbottom_500_100.0mm/step2_LL_sbottom_500_100.0mm_0.root',
+        'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/user/mwalker/SIGNAL/Displaced/LL_sbottom_500_100.0mm/step2_LL_sbottom_500_100.0mm_1.root',
+        'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/user/mwalker/SIGNAL/Displaced/LL_sbottom_500_100.0mm/step2_LL_sbottom_500_100.0mm_2.root',
+        'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/user/mwalker/SIGNAL/Displaced/LL_sbottom_500_100.0mm/step2_LL_sbottom_500_100.0mm_3.root',
+        'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/user/mwalker/SIGNAL/Displaced/LL_sbottom_500_100.0mm/step2_LL_sbottom_500_100.0mm_4.root',
+        'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/user/mwalker/SIGNAL/Displaced/LL_sbottom_500_100.0mm/step2_LL_sbottom_500_100.0mm_5.root',
+        'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/user/mwalker/SIGNAL/Displaced/LL_sbottom_500_100.0mm/step2_LL_sbottom_500_100.0mm_6.root',
+        'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/user/mwalker/SIGNAL/Displaced/LL_sbottom_500_100.0mm/step2_LL_sbottom_500_100.0mm_7.root',
+        'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/user/mwalker/SIGNAL/Displaced/LL_sbottom_500_100.0mm/step2_LL_sbottom_500_100.0mm_8.root',
+        'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/user/mwalker/SIGNAL/Displaced/LL_sbottom_500_100.0mm/step2_LL_sbottom_500_100.0mm_9.root'
       # 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/group/phys_susy/razor/josh/RAZOR_DIJET/DIJET_MH700_MX300_CTAU100_40BX25_AOD/dijet_700_300_ctau100_100_1_NtX.root',
       # 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/group/phys_susy/razor/josh/RAZOR_DIJET/DIJET_MH700_MX300_CTAU100_40BX25_AOD/dijet_700_300_ctau100_101_1_j8l.root',
       # 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/group/phys_susy/razor/josh/RAZOR_DIJET/DIJET_MH700_MX300_CTAU100_40BX25_AOD/dijet_700_300_ctau100_102_1_wex.root',
@@ -206,7 +216,7 @@ process.source = cms.Source("PoolSource",
       # 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/group/phys_susy/razor/josh/RAZOR_DIJET/DIJET_MH700_MX300_CTAU100_40BX25_AOD/dijet_700_300_ctau100_97_1_W9n.root',
       # 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/group/phys_susy/razor/josh/RAZOR_DIJET/DIJET_MH700_MX300_CTAU100_40BX25_AOD/dijet_700_300_ctau100_99_1_j4a.root',
       # 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/group/phys_susy/razor/josh/RAZOR_DIJET/DIJET_MH700_MX300_CTAU100_40BX25_AOD/dijet_700_300_ctau100_9_1_egE.root'
-      input_file
+#      input_file
       #        'file:/afs/cern.ch/work/h/hardenbr/QCD_Pt-50to80_Tune4C_13TeV_pythia8_AOD.root'
       #        'file:/afs/cern.ch/work/h/hardenbr/HTo2LongLivedTo4L_MH_700_MFF_300_CTau30_TSG_PU40BX25_AODSIM.root'
       #       'file:/afs/cern.ch/work/h/hardenbr/HTo2LongLivedTo4L_MH_700_MFF_300_CTau30_TSG_PU40BX25_AODSIM_v6.root'

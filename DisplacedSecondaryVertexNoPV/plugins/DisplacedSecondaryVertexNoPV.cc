@@ -265,7 +265,7 @@ void DisplacedSecondaryVertexNoPV<IPTI,VTX>::produce(edm::Event& iEvent, const e
 
      SVBuilder svBuilder(pv, jetDir, false, 0); // pv, jetdir, withPVError, minTrackWeight
      // converted the transient vertex into a secondary vertex object (keep everything)
-     for(int vv = 0; vv < fittedSVs.size(); vv++ ) {
+     for(unsigned int vv = 0; vv < fittedSVs.size(); vv++ ) {
        SVs.push_back(svBuilder(fittedSVs[vv]));
      }
      

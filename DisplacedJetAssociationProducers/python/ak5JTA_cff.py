@@ -5,7 +5,7 @@ from TrackPropagation.SteppingHelixPropagator.SteppingHelixPropagatorAlong_cfi i
 from RecoJets.JetAssociationProducers.j2tParametersCALO_cfi import *
 from RecoJets.JetAssociationProducers.j2tParametersVX_cfi import *
 ak5JetTracksAssociatorAtVertex = cms.EDProducer("JetTracksAssociatorAtVertex",
-    j2tParametersVX.clone(coneSize = cms.double(0.5)),
+    j2tParametersVX.clone(coneSize = cms.double(0.7)),
     jets = cms.InputTag("ak5CaloJets")
 )
 
@@ -21,7 +21,7 @@ ak5JetTracksAssociatorAtVertex = cms.EDProducer("JetTracksAssociatorAtVertex",
 # )
 
 ak5JetTracksAssociatorAtCaloFace = cms.EDProducer("JetTracksAssociatorAtCaloFace",
-    j2tParametersCALO.clone(coneSize = cms.double(0.5)),
+    j2tParametersCALO.clone(coneSize = cms.double(0.7)), #djet .5 -> .7
     jets = cms.InputTag("ak5CaloJets")
 )
 

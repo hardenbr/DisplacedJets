@@ -8,10 +8,10 @@ from DisplacedJets.DisplacedAdaptiveVertexFinder.displacedInclusiveVertexFinderJ
 
 displacedInclusiveSecondaryVertices = displacedVertexMerger.clone()
 displacedInclusiveSecondaryVertices.secondaryVertices = cms.InputTag("displacedTrackVertexArbitrator")
-displacedInclusiveSecondaryVertices.maxFraction = 0.2
+displacedInclusiveSecondaryVertices.maxFraction = 0.05 #djet .2 -> .05
 displacedInclusiveSecondaryVertices.minSignificance = 10.
 
 #displacedInclusiveVertexing = cms.Sequence(displacedInclusiveVertexFinder * displacedVertexMerger * displacedTrackVertexArbitrator * displacedInclusiveSecondaryVertices * displacedInclusiveVertexFinderJetMatchedTracks * displacedInclusiveVertexFinderJetMatchedTracksCaloFace )
 
-displacedInclusiveVertexing = cms.Sequence(displacedInclusiveVertexFinder * displacedInclusiveVertexFinderJetMatchedTracks * displacedInclusiveVertexFinderJetMatchedTracksCaloFace )
+displacedInclusiveVertexing = cms.Sequence(displacedInclusiveVertexFinder * displacedInclusiveVertexFinderJetMatchedTracks * displacedInclusiveVertexFinderJetMatchedTracksCaloFace * displacedVertexMerger * displacedTrackVertexArbitrator * displacedInclusiveSecondaryVertices )
 

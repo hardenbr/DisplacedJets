@@ -520,8 +520,7 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   run = iEvent.id().run();
   lumi = iEvent.id().luminosityBlock();
-  event = iEvent.id().event();
-    
+  event = iEvent.id().event();    
   
   //////////////////////////////////
   // Calculate Variables
@@ -609,12 +608,10 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   if(debug > 1 ) std::cout << "[DEBUG] Begin Extracting Tag Info" << std::endl;
 
   //extract the collection from the handle
-  const reco::TrackIPTagInfoCollection & ip = *(trackIPTagInfoCollection.product()); 
-  const reco::TrackIPTagInfoCollection & lifetime = *(lifetimeIPTagInfo.product()); 
-  const reco::SecondaryVertexTagInfoCollection & sv = *(secondaryVertexTagInfo.product()); 
+  const reco::TrackIPTagInfoCollection &	    ip	     = *(trackIPTagInfoCollection.product()); 
+  const reco::TrackIPTagInfoCollection &	    lifetime = *(lifetimeIPTagInfo.product()); 
+  const reco::SecondaryVertexTagInfoCollection &    sv	     = *(secondaryVertexTagInfo.product()); 
 
-  //  std::auto_ptr<reco::VertexCollection> displacedSvVertexCollectionResult(new reco::VertexCollection);
-  //  reco::VertexCollection displacedSvVertexCollection;
   if (debug > 1) {
     std::cout << "-- Found " << ip.size() << " IP TagInfo" << std::endl;
     std::cout << "-- Found " << lifetime.size() << " Lifetime TagInfo" << std::endl;

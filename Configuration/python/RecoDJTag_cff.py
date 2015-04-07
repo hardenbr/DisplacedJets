@@ -40,8 +40,8 @@ djtagging = cms.Sequence( #track matching for ak5 jets
                           displacedSecondaryVertexTagInfosNoPVCaloFace + #noPV 
                           displacedTagsToVerticesNoPVCaloFace + #noPV 
                           displacedSecondaryVertexTagInfosCaloFace +
-                          displacedTagsToVerticesCaloFace +
+                          displacedTagsToVerticesCaloFace
                           #inclusive vertexing
-                          displacedInclusiveVertexing 
+#                         displacedInclusiveVertexing 
 )
  

@@ -114,6 +114,9 @@ private:
   
   //file configuration tags
   std::string outputFileName_;
+  std::string jetTreeName_;
+  std::string trackTreeName_;
+
   TFile *outputFile_;
   bool isMC_;
   bool isSignalMC_;
@@ -335,14 +338,10 @@ private:
   // IP significance sums
   Float_t jetIPSigSum2D[MAX_JETS];
   Float_t jetIPSigSum3D[MAX_JETS];
-  Float_t jetIPSigInvSum2D[MAX_JETS];
-  Float_t jetIPSigInvSum3D[MAX_JETS];
 
   // IP significance log sums
   Float_t jetIPSigLogSum2D[MAX_JETS];
   Float_t jetIPSigLogSum3D[MAX_JETS];
-  Float_t jetIPSigLogSumP052D[MAX_JETS];
-  Float_t jetIPSigLogSumP053D[MAX_JETS];
 
   Float_t jetIPLogSum2D[MAX_JETS];
   Float_t jetIPLogSum3D[MAX_JETS];
@@ -350,8 +349,6 @@ private:
   // IP signed significance sums
   Float_t jetIPSignedSigSum2D[MAX_JETS];
   Float_t jetIPSignedSigSum3D[MAX_JETS];
-  Float_t jetIPSignedSigInvSum2D[MAX_JETS];
-  Float_t jetIPSignedSigInvSum3D[MAX_JETS];
 
   // IP significance averages
   Float_t jetMeanIPSig2D[MAX_JETS];
@@ -428,24 +425,24 @@ private:
 TrackAnalyzer::TrackAnalyzer(const edm::ParameterSet& iConfig)
 {
   //output configuration
-  outputFileName_    =   iConfig.getUntrackedParameter<std::string>("outputFileName");
-  isMC_    =   iConfig.getUntrackedParameter<bool>("isMC");
-  isSignalMC_    =   iConfig.getUntrackedParameter<bool>("isSignalMC");
+  outputFileName_ = iConfig.getUntrackedParameter<std::string>("outputFileName");
+  jetTreeName_ = iConfig.getUntrackedParameter<std::string>("jetTreeName");
+  trackTreeName_ = iConfig.getUntrackedParameter<std::string>("trackTreeName");
+
+  isMC_		  = iConfig.getUntrackedParameter<bool>("isMC");
+  isSignalMC_	  = iConfig.getUntrackedParameter<bool>("isSignalMC");
 
   //tags
-  tag_generalTracks_ = iConfig.getUntrackedParameter<edm::InputTag>("generalTracks");
-  tag_ak5CaloJets_ = iConfig.getUntrackedParameter<edm::InputTag>("ak5CaloJets");
-  tag_secondaryVertexTagInfo_ = iConfig.getUntrackedParameter<edm::InputTag>("secondaryVertexTagInfo");  
-  tag_lifetimeIPTagInfo_ = iConfig.getUntrackedParameter<edm::InputTag>("lifetimeIPTagInfo");  
-
+  tag_generalTracks_		  = iConfig.getUntrackedParameter<edm::InputTag>("generalTracks");
+  tag_ak5CaloJets_		  = iConfig.getUntrackedParameter<edm::InputTag>("ak5CaloJets");
+  tag_secondaryVertexTagInfo_	  = iConfig.getUntrackedParameter<edm::InputTag>("secondaryVertexTagInfo");  
+  tag_lifetimeIPTagInfo_	  = iConfig.getUntrackedParameter<edm::InputTag>("lifetimeIPTagInfo");  
 //  tag_trackIPTagInfoCollection_ = iConfig.getUntrackedParameter<edm::InputTag>("trackIPTagInfoCollection");
   token_trackIPTagInfoCollection_ = consumes<reco::TrackIPTagInfoCollection>(iConfig.getUntrackedParameter<edm::InputTag>("trackIPTagInfoCollection"));
-  
   
   //cuts 
   cut_jetPt = iConfig.getUntrackedParameter<double>("jetPt");
   cut_jetEta = iConfig.getUntrackedParameter<double>("jetEta");
-
 
   //mc tags
   if(isMC_) {
@@ -511,7 +508,6 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     // iEvent.getByLabel(tag_ak5GenJets_, ak5GenJets);
   }
   
-
   // RECO Compatible
   
   // RAW Compatible
@@ -520,45 +516,39 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   run = iEvent.id().run();
   lumi = iEvent.id().luminosityBlock();
-  event = iEvent.id().event();    
-  
-  //////////////////////////////////
-  // Calculate Variables
-  //////////////////////////////////
-  
+  event = iEvent.id().event();      
 
   /////////////////////////////////
   // Fill Trees
   /////////////////////////////////
      
-  //
   Int_t jj = 0;
   nCaloJets = 0;
   for(reco::CaloJetCollection::const_iterator jet = ak5CaloJets->begin(); jet != ak5CaloJets->end(); ++jet, jj++){
 
     //cuts 
-    if (jet->pt() < cut_jetPt) continue;
+    if (jet->pt() < cut_jetPt || fabs(jet->eta()) > cut_jetEta) continue;
     //if (fabs(jet->eta()) > cut_jetEta) continue;
     
     // initialize to zero in case there isnt any match
-    genMatch[jj] = 0; 
-    genPt[jj] = 0;
-    genEta[jj] = 0;
-    genPhi[jj] = 0;
-    genM[jj] = 0;
+    genMatch[nCaloJets] = 0; 
+    genPt[nCaloJets]	 = 0;
+    genEta[nCaloJets]	 = 0;
+    genPhi[nCaloJets]	 = 0;
+    genM[nCaloJets]	 = 0;
 
-    caloJetPt[jj] = jet->pt();
-    caloJetEta[jj] = jet->eta();
-    caloJetPhi[jj] = jet->phi();        
+    caloJetPt[nCaloJets]  = jet->pt();
+    caloJetEta[nCaloJets] = jet->eta();
+    caloJetPhi[nCaloJets] = jet->phi();        
     
     //area 
-    //caloJetN90[jj] = jet->n90();
-    //caloJetN60[jj] = jet->n60();
-    caloJetTowerArea[jj] = jet->towersArea();        
+    //caloJetN90[nCaloJets]	 = jet->n90();
+    //caloJetN60[nCaloJets]	 = jet->n60();
+    caloJetTowerArea[nCaloJets] = jet->towersArea();        
 
     //energy
-    caloJetHfrac[jj] = jet->energyFractionHadronic();
-    caloJetEfrac[jj] = jet->emEnergyFraction();
+    caloJetHfrac[nCaloJets] = jet->energyFractionHadronic();
+    caloJetEfrac[nCaloJets] = jet->emEnergyFraction();
 
     nCaloJets++;
   } // end loop over calojets
@@ -578,17 +568,11 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
       // const reco::Candidate * mom = part.mother();
       double genpt = part.pt(), geneta = part.eta(), genphi = part.phi(), genmass = part.mass();
-      
-      //      if (debug > 1 ) 
-      //      std::cout << "[GEN CAND] id " << id << " status " << st << " pt " << genpt << " eta " << geneta << " phi " << genphi  << std::endl;      
 
+      
       // check each jet if it matches
       for(int jj = 0; jj < nCaloJets; jj++ ) {
-
 	float calopt = caloJetPt[jj],  caloeta = caloJetEta[jj], calophi = caloJetPhi[jj];
-
-	//	if (calopt > 100) {std::cout << "[CALO JET] pt " << calopt << " eta " << caloeta << " phi " << calophi << std::endl;}
-
 	float dr = reco::deltaR( geneta, genphi, caloeta, calophi);
 	float dpt = fabs(calopt - genpt) / genpt;
 
@@ -596,10 +580,10 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	if (dr < .7 && dpt < .20) {
 	  std::cout << "[GEN MATCHED] id " << id << " status " << st << " pt " << genpt << " eta " << geneta  <<  " phi " << genphi << std::endl;      
 	  genMatch[jj]++; 
-	  genPt[jj] = genpt;
+	  genPt[jj]  = genpt;
 	  genEta[jj] = geneta;
 	  genPhi[jj] = geneta;
-	  genM[jj] = genmass;
+	  genM[jj]   = genmass;
 	}
       } //end loop over caloejts
     }
@@ -630,7 +614,7 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     jetJetID[nTagJets] = jetid; 
 
     //skip low pt jets
-    if (ipinfo->jet()->pt() < cut_jetPt) continue;
+    if (ipinfo->jet()->pt() < cut_jetPt || fabs(ipinfo->jet()->eta()) > cut_jetEta) continue;
 
 
     if(debug > 1){
@@ -714,7 +698,7 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   
   for(; liinfo != lifetime.end(); ++liinfo, jj++){        
     //skip low pt jets
-    if (liinfo->jet()->pt() < cut_jetPt) continue;    
+    if (liinfo->jet()->pt() < cut_jetPt || fabs(liinfo->jet()->eta()) > cut_jetEta) continue;    
 
     reco::TrackRefVector liTracks = liinfo->selectedTracks();    
 
@@ -727,7 +711,7 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     liJetID[nLiJets] = jetid; 
 
     //kinematics
-    liJetPt[nLiJets] = liinfo->jet()->pt();
+    liJetPt[nLiJets]  = liinfo->jet()->pt();
     liJetEta[nLiJets] = liinfo->jet()->eta();
     liJetPhi[nLiJets] = liinfo->jet()->phi();        
 
@@ -749,7 +733,7 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       //jet track association  
       liTrackJetID[nLiTracks] = jetid;
       liJetTrackDR[nLiTracks] = reco::deltaR( litrack.eta(), litrack.phi(),
-				   liinfo->jet()->eta(), liinfo->jet()->phi());
+					      liinfo->jet()->eta(), liinfo->jet()->phi());
 
       // mark the track as part of a gen matched jet
       genMatchTrack[nLiTracks] = 0;
@@ -784,7 +768,7 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   for(; svinfo != sv.end(); ++svinfo, jj++){    
 
     //skip low pt jets
-    if (svinfo->jet()->pt() < cut_jetPt) continue;    
+    if (svinfo->jet()->pt() < cut_jetPt || fabs(svinfo->jet()->eta()) > cut_jetEta) continue;    
 
     reco::TrackRefVector svTracks = svinfo->selectedTracks();    
 
@@ -891,19 +875,29 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   // loop over all calo jets
   for(int jj = 0; jj < nCaloJets; jj++) {
+
+    if (caloJetPt[jj] < cut_jetPt || fabs(caloJetEta[jj]) > cut_jetEta) continue;
     
     //double check that all the pt's match up between the tags
-    bool pt_equal = caloJetPt[jj] == liJetPt[jj] && liJetPt[jj] == svJetPt[jj]; 
-    bool eta_equal = caloJetEta[jj] == liJetEta[jj] && liJetEta[jj] == svJetEta[jj]; 
-    bool phi_equal = caloJetPhi[jj] == liJetPhi[jj] && liJetPhi[jj] == svJetPhi[jj]; 
-    bool all_match  = pt_equal && eta_equal && phi_equal;
-    assert(all_match);
+    bool    pt_equal  = caloJetPt[jj] == liJetPt[jj] && liJetPt[jj] == svJetPt[jj]; 
+    bool    eta_equal = caloJetEta[jj] == liJetEta[jj] && liJetEta[jj] == svJetEta[jj]; 
+    bool    phi_equal = caloJetPhi[jj] == liJetPhi[jj] && liJetPhi[jj] == svJetPhi[jj]; 
+    bool    all_match = pt_equal && eta_equal && phi_equal;
+
+    std::cout << "all_match " << all_match << " pt equal " << pt_equal << " eta_equal " << eta_equal << " phi equal " << phi_equal << std::endl;
+
+    std::cout << caloJetPt[jj] << " " << liJetPt[jj] << " " << svJetPt[jj] << std::endl;
+    std::cout << caloJetEta[jj] << " " << liJetEta[jj] << " " << svJetEta[jj] << std::endl;
+
+
+
+    //assert(all_match);
     
     // significance and aboslute IP weighted track energy
     jetEIPSig2D[jj] = 0;
-    jetEIP2D[jj] = 0;
+    jetEIP2D[jj]    = 0;
     jetEIPSig3D[jj] = 0;
-    jetEIP3D[jj] = 0;
+    jetEIP3D[jj]    = 0;
 
     //significance log weighted
     jetELogIPSig2D[jj] = 0;
@@ -913,47 +907,42 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
     // signed versions of track weighting
     jetEIPSignedSig2D[jj] = 0;
-    jetEIPSigned2D[jj] = 0;
+    jetEIPSigned2D[jj]	  = 0;
     jetEIPSignedSig3D[jj] = 0;
-    jetEIPSigned3D[jj] = 0;
+    jetEIPSigned3D[jj]	  = 0;
 
     // IP significance sums
-    jetIPSigSum2D[jj] = 0;
-    jetIPSigSum3D[jj] = 0;
-    jetIPSigInvSum2D[jj] = 0;
-    jetIPSigInvSum3D[jj] = 0;
+    jetIPSigSum2D[jj]	 = 0;
+    jetIPSigSum3D[jj]	 = 0;
 
     // IP significance log sums
     jetIPSigLogSum2D[jj] = 0;
     jetIPSigLogSum3D[jj] = 0;
 
-    jetIPSigLogSumP052D[jj] = 0;
-    jetIPSigLogSumP053D[jj] = 0;
-
     jetIPLogSum2D[jj] = 0;
     jetIPLogSum3D[jj] = 0;
 
     // IP signed significance sums
-    jetIPSignedSigSum2D[jj] = 0;
-    jetIPSignedSigSum3D[jj] = 0;
-    jetIPSignedSigInvSum2D[jj] = 0;
-    jetIPSignedSigInvSum3D[jj] = 0;
+    jetIPSignedSigSum2D[jj]    = 0;
+    jetIPSignedSigSum3D[jj]    = 0;
 
     // IP significance averages
-    jetMeanIPSig2D[jj] = 0;
-    jetMeanIPSig3D[jj] = 0;
-    jetMedianIPSig2D[jj] = 0;
-    jetMedianIPSig3D[jj] = 0;
+    jetMeanIPSig2D[jj]	   = 0;
+    jetMeanIPSig3D[jj]	   = 0;
+    jetMedianIPSig2D[jj]   = 0;
+    jetMedianIPSig3D[jj]   = 0;
     jetVarianceIPSig2D[jj] = 0;
     jetVarianceIPSig3D[jj] = 0;
 
     // signed averages 
-    jetMeanIPSignedSig2D[jj] = 0;
-    jetMeanIPSignedSig3D[jj] = 0;
-    jetMedianIPSignedSig2D[jj] = 0;
-    jetMedianIPSignedSig3D[jj] = 0;
+    jetMeanIPSignedSig2D[jj]	 = 0;
+    jetMeanIPSignedSig3D[jj]	 = 0;
+    jetMedianIPSignedSig2D[jj]	 = 0;
+    jetMedianIPSignedSig3D[jj]	 = 0;
     jetVarianceIPSignedSig2D[jj] = 0;
     jetVarianceIPSignedSig3D[jj] = 0;
+
+    if (caloJetPt[jj] != liJetPt[jj]) continue;
 
     //  ip tag related
     for(int tt = 0; tt < nLiTracks; tt++){            
@@ -996,26 +985,14 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       // unsigned 
       jetIPSigSum2D[jj]	   += fabs(ip2ds);
       jetIPSigSum3D[jj]	   += fabs(ip3ds);
-      jetIPSigInvSum2D[jj] += (ip2ds ? 1.0 / fabs(ip2ds): 0);
-      jetIPSigInvSum3D[jj] += (ip3ds ? 1.0 / fabs(ip3ds): 0);
 
       // signed
       jetIPSignedSigSum2D[jj]	 += (ip2ds);
       jetIPSignedSigSum3D[jj]	 += (ip3ds);
-      jetIPSignedSigInvSum2D[jj] += 1.0 / (ip2ds);
-      jetIPSignedSigInvSum3D[jj] += 1.0 / (ip3ds);
 
       // ip significance log sum
       jetIPSigLogSum2D[jj] += (ip2ds ? log(fabs(ip2ds)) : 0);
       jetIPSigLogSum3D[jj] += (ip3ds ? log(fabs(ip3ds)) : 0);
-
-      if (ip2d > .05) {
-	jetIPSigLogSumP052D[jj] += (ip2ds ? log(fabs(ip2ds)) : 0);
-      }
-
-      if (ip3d > .05) {
-	jetIPSigLogSumP053D[jj] += (ip3ds ? log(fabs(ip3ds)) : 0);     
-      }
 
       jetIPLogSum2D[jj] += (ip2ds ? log(fabs(ip2d)) : 0);
       jetIPLogSum3D[jj] += (ip3ds ? log(fabs(ip3d)) : 0);
@@ -1029,7 +1006,7 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       jetMeanIPSignedSig3D[jj] += ip3ds / float(liJetNSelTracks[jj]);
     }
 
-    bool has_track = liJetNSelTracks[jj] > 0;
+    bool    has_track = liJetNSelTracks[jj] > 0;
 
     // do the average for the IP weighted
     jetEIPSig2D[jj] /= (has_track ? jetIPSigSum2D[jj] : 1);
@@ -1149,8 +1126,8 @@ TrackAnalyzer::beginJob()
   
   // storage 
   outputFile_ = new TFile(outputFileName_.c_str(), "RECREATE");
-  trackTree_  = new TTree("tracks","track, vertex,jet index tree");
-  jetTree_    = new TTree("jets", "jet indexed tree");
+  trackTree_  = new TTree(trackTreeName_.c_str(), "track, vertex, jet index tree");
+  jetTree_    = new TTree(jetTreeName_.c_str(), "jet indexed tree");
 
   // book-keeping
   trackTree_->Branch("nCaloJets", &nCaloJets, "nCaloJets/I");
@@ -1256,7 +1233,6 @@ TrackAnalyzer::beginJob()
   trackTree_->Branch("liTrackIPSig3D", &liTrackIPSig3D, "liTrackIPSig3D[nLiTracks]/F");
   trackTree_->Branch("liTrackDistanceJetAxis", &liTrackDistanceJetAxis, "liTrackDistanceJetAxis[nLiTracks]/F");
   trackTree_->Branch("liTrackDistanceJetAxisSig", &liTrackDistanceJetAxisSig, "liTrackDistanceJetAxisSig[nLiTracks]/F");
-
 
   //////////////////////////////SV Jet tags////////////////////////
 
@@ -1371,24 +1347,13 @@ TrackAnalyzer::beginJob()
   jetTree_->Branch("jetIPSigSum2D", &jetIPSigSum2D, "jetIPSigSum2D[nCaloJets]/F");
   jetTree_->Branch("jetIPSigSum3D", &jetIPSigSum3D, "jetIPSigSum3D[nCaloJets]/F");
 
-  //ip sig inverse sums -- sum(1 / |IPsig|)
-  jetTree_->Branch("jetIPSigInvSum2D", &jetIPSigInvSum2D, "jetIPSigInvSum2D[nCaloJets]/F");
-  jetTree_->Branch("jetIPSigInvSum3D", &jetIPSigInvSum3D, "jetIPSigInvSum3D[nCaloJets]/F");
-
   //signed ip significance sums  -- sum(IPsig)
   jetTree_->Branch("jetIPSignedSigSum2D", &jetIPSignedSigSum2D, "jetIPSignedSigSum2D[nCaloJets]/F");
   jetTree_->Branch("jetIPSignedSigSum3D", &jetIPSignedSigSum3D, "jetIPSignedSigSum3D[nCaloJets]/F");
 
-  //signed ip sig inverse sums -- sum(1 / IPsig)
-  jetTree_->Branch("jetIPSignedSigInvSum2D", &jetIPSignedSigInvSum2D, "jetIPSignedSigInvSum2D[nCaloJets]/F");
-  jetTree_->Branch("jetIPSignedSigInvSum3D", &jetIPSignedSigInvSum3D, "jetIPSigInvSum3D[nCaloJets]/F");
-
   //ip sig log sums  -- sum(log(|IPsig|))
   jetTree_->Branch("jetIPSigLogSum2D", &jetIPSigLogSum2D, "jetIPSigLogSum2D[nCaloJets]/F");
   jetTree_->Branch("jetIPSigLogSum3D", &jetIPSigLogSum3D, "jetIPSigLogSum3D[nCaloJets]/F");
-
-  jetTree_->Branch("jetIPSigLogSumP052D", &jetIPSigLogSumP052D, "jetIPSigLogSumP052D[nCaloJets]/F");
-  jetTree_->Branch("jetIPSigLogSumP053D", &jetIPSigLogSumP053D, "jetIPSigLogSumP053D[nCaloJets]/F");
 
   jetTree_->Branch("jetIPLogSum2D", &jetIPLogSum2D, "jetIPLogSum2D[nCaloJets]/F");
   jetTree_->Branch("jetIPLogSum3D", &jetIPLogSum3D, "jetIPLogSum3D[nCaloJets]/F");

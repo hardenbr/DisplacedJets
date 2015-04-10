@@ -34,7 +34,6 @@ parser.add_option( "--genmatch", dest="genmatch",
 		                    help="Do generator matching for the signal MC",
 		                    action="store_true", default=False)
 
-
 parser.add_option( "--xlabel", dest="xlabel",
 		                    help="label for the x axis",
 		                    action="store",type="string",default = "Exactly N Jet Tags")
@@ -76,6 +75,7 @@ class sample:
             eval("self.hist.SetFillColor(rt.%s)" % fillColor)
         eval("self.hist.SetFillStyle(%s)" % fillStyle)
         eval("self.hist.SetLineColor(rt.%s)" % fillColor)
+        eval("self.hist.SetLineStyle(%i)" % int(lineStyle))
         self.hist.SetLineWidth(int(lineWidth))        
 
 
@@ -129,7 +129,7 @@ for key in stacks.keys():
             genMatch = tree.genMatch
 
             #get the metric we are looking for            
-            exec_string = "metric = tree.metric[%i]" % (int(samp.metricID)-1) #zero indexing
+            exec_string = "metric = tree.simple[%i]" % (int(samp.metricID)-1) #zero indexing
             exec(exec_string) 
 
             # apply the cut and gen matching if asked for            

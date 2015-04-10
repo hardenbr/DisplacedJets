@@ -1,2 +1,2 @@
 #sample | isSignal | xSec | fillcolor | fillstyle | lineWidth | stack | label 
-signal.root | 1 | 1 | kBlue | 3004 | 2 | 2 | m_{X} = 300 c#tau = 3cm
+signalCALO30.root | 1 | 1 | kBlue | 3004 | 2 | 2 | CALO m_{X} = 300 c#tau = 3cm

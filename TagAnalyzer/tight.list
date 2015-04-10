@@ -1,6 +1,8 @@
 #sample | isSignal | metricID | metric_cut | xSec | fillcolor | fillstyle | lineStyle | lineWidth | stack | label
-tags30.root   |bkg| 0 | 1 | .00045 | 1   | kGray    | 3001 | 1 | 2 | 1 | QCD 470 < p_{t} < 600
-tags3.root    |sig| 1 | 1 | .00045 | 1   | kBlue    | 0    | 2 | 3 | 3 | m_{X} = 300 c#tau = .3cm
-tags30.root   |sig| 1 | 1 | .00045 |  1  | kAzure+8 | 0    | 2 | 3 | 2 | m_{X} = 300 c#tau = 3cm
-tags300.root  |sig| 1 | 1 | .00045 |  1  | kRed-9   | 0    | 2 | 3 | 2 | m_{X} = 300 c#tau = 30cm
-tags1000.root |sig| 1 | 1 | .00045 |  1  | kRed     | 0    | 2 | 3 | 2 | m_{X} = 300 c#tau = 100cm
+tagsCALO30.root   |bkg| 0 | 1 | .000175 | 1   | kBlack    | 0 | 1 | 2 | 1 | CALO QCD 120 < p_{t} < 170
+tagsCALO3.root    |sig| 1 | 1 | .000175 | 1   | kBlue    | 0    | 1 | 2 | 2 | CALO m_{X} = 300 c#tau = .3cm
+tagsVTX3.root     |sig| 1 | 1 | .000175 | 1   | kBlue    | 0    | 2 | 2 | 2 | VTX m_{X} = 300 c#tau = .3cm
+tagsCALO30.root   |sig| 1 | 1 | .000175 |  1  | kAzure+8 | 0    | 1 | 2 | 2 | CALO m_{X} = 300 c#tau = 3cm
+tagsVTX30.root    |sig| 1 | 1 | .000175 |  1  | kAzure+8 | 0    | 2 | 2 | 2 | VTX m_{X} = 300 c#tau = 3cm
+tagsCALO300.root  |sig| 1 | 1 | .000175 |  1  | kRed-9   | 0    | 1 | 2 | 2 | CALO m_{X} = 300 c#tau = 30cm
+tagsVTX300.root   |sig| 1 | 1 | .000175 |  1  | kRed-9   | 0    | 2 | 2 | 2 | VTX m_{X} = 300 c#tau = 30cm

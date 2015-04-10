@@ -26,8 +26,49 @@ python ../plotScripts/plot1D.py -f tags.list -v "metric" -c "metricID==1" -t jet
 
 python ../plotScripts/plot1D.py -f tags.list -v "metric" -c "metricID==1" -t jets --xmin -.001 --xmax .0015 --nbins 100 --xlabel "Linear Fischer Discriminator" -o test.root --genmatch 
 
+python fischer_analyzer.py -s ../plotScripts/signalCALO30.root -b ../plotScripts/qcdCALO120_170.root -t jets -o tagsCALO30.root  --roc
+python fischer_analyzer.py -s ../plotScripts/signalCALO3.root -b ../plotScripts/qcdCALO120_170.root -t jets -o tagsCALO3.root  --roc
 
-python tag_analyzer.py -s signal.root -b qcd.root -t jets -o tags.root 
+python fischer_analyzer.py -s ../plotScripts/signalCALO100.root -b ../plotScripts/qcdCALO120_170.root -t jets -o tagsCALO100.root  --roc
+cmsenv
+dijethlt
+cmsenv
+cd -
+python fischer_analyzer.py -s ../plotScripts/signalCALO1000.root -b ../plotScripts/qcdCALO120_170.root -t jets -o tagsCALO1000.root  --roc
+cmsenv
+dijethlt
+cmsenv
+cd -
+python fischer_analyzer.py -s ../plotScripts/signalCALO300.root -b ../plotScripts/qcdCALO120_170.root -t jets -o tagsCALO300.root  --roc
+cmsenv
+dijethlt
+cmsenv
+cd -
+
+
+
+
+
+python fischer_analyzer.py -s ../plotScripts/signalVTX30.root -b ../plotScripts/qcdVTX120_170.root -t jets -o tagsVTX30.root  --roc
+python fischer_analyzer.py -s ../plotScripts/signalVTX3.root -b ../plotScripts/qcdVTX120_170.root -t jets -o tagsVTX3.root  --roc
+
+
+python fischer_analyzer.py -s ../plotScripts/signalVTX100.root -b ../plotScripts/qcdVTX120_170.root -t jets -o tagsVTX100.root  --roc
+cmsenv
+dijethlt
+cmsenv
+cd -
+python fischer_analyzer.py -s ../plotScripts/signalVTX1000.root -b ../plotScripts/qcdVTX120_170.root -t jets -o tagsVTX1000.root  --roc
+cmsenv
+dijethlt
+cmsenv
+cd -
+python fischer_analyzer.py -s ../plotScripts/signalVTX300.root -b ../plotScripts/qcdVTX120_170.root -t jets -o tagsVTX300.root  --roc
+cmsenv
+dijethlt
+cmsenv
+cd -
+
 
 
 python jet_counter.py -f tight.list  -o test.root --genmatch 

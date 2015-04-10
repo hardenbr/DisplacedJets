@@ -1,2 +1,2 @@
 #sample | isSignal | xSec | fillcolor | fillstyle | lineWidth | stack | label 
-qcd.root | 0 | 1 | kRed | 3004 | 2 | 1 | QCD 470 < p_{t} < 600
+qcdCALO.root | 0 | 1 | kRed | 3004 | 2 | 1 | QCD 470 < p_{t} < 600

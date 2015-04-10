@@ -221,4 +221,8 @@ leg.SetLineColor(0)
 CMS_lumi.CMS_lumi(canvas, 4, 0)
 
 raw_input("RAW INPUT")
-canvas.Print("%s.pdf" % options.var)
+
+plot_name = "%s_%s" % ( options.file[:-5], options.var)
+canvas.SaveAs("%s.C" % plot_name)
+canvas.Print("%s.pdf" % plot_name)
+

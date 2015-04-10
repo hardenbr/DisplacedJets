@@ -1,0 +1,9 @@
+#filename | roc name | line color | linestyle | linewidth | label
+tagsCALO30.root |simple_1| rt.kAzure+8 | 1 | 2 | CALO c#tau = 3 cm 
+tagsVTX30.root  |simple_1| rt.kAzure+8 | 2 | 2 | VTX c#tau = 3 cm 
+tagsCALO3.root |simple_1| rt.kBlue     | 1 | 2 | CALO c#tau = 0.3 cm 
+tagsVTX3.root  |simple_1| rt.kBlue     | 2 | 2 | VTX c#tau = 0.3 cm
+tagsCALO100.root |simple_1| rt.kBlue-10     | 1 | 2 | CALO c#tau = 10 cm 
+tagsVTX100.root  |simple_1| rt.kBlue-10     | 2 | 2 | VTX c#tau = 10 cm
+tagsCALO300.root |simple_1| rt.kRed-9     | 1 | 2 | CALO c#tau = 30 cm 
+tagsVTX300.root  |simple_1| rt.kRed-9     | 2 | 2 | VTX c#tau = 30 cm

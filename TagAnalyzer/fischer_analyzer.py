@@ -94,12 +94,14 @@ class analysis:
         tgraph.GetYaxis().SetTitle("QCD Jet Rejection")
 
         return tgraph
+
             
     def build_roc_canvas(self):
 
         self.canvas = rt.TCanvas("roc_curves","roc curves")
 
         color = 0
+        colors = [rt.kRed, rt.kBlue]
 
         first_graph = self.tgraphs[0]
         first_graph.SetLineColor(1)
@@ -116,7 +118,7 @@ class analysis:
         self.canvas.SetGridx(1)
 
         for graph in self.tgraphs[1:]:
-            graph.SetLineColor(color)
+            graph.SetLineColor(colors[color])
             graph.SetFillColor(0)
             graph.SetLineWidth(2)
 
@@ -125,12 +127,12 @@ class analysis:
             if color > 100:
                 color = 0
 
-        #leg = self.canvas.BuildLegend()
-        #leg.SetFillColor(0)
+        leg = self.canvas.BuildLegend()
+        leg.SetFillColor(0)
         
         CMS_lumi.CMS_lumi(self.canvas, 4, 0)        
 
-        return self.canvas            
+        return self.canvas          
 
     def generate_tgraphs(self):
 
@@ -158,27 +160,29 @@ class analysis:
 
         return self.tgraphs
 
-    def build_roc_curves(self, sig_tree, bkg_tree, xmin, xmax, npoints, explicit_array=None):
+    def build_roc_curves(self, sig_tree, bkg_tree, xmin, xmax, npoints):
         print "-- Building ROC curves" 
 
-        scan_points = list(np.linspace(xmin, xmax, npoints))
-
-        if explicit_array !=  None:
-            scan_points = explicit_array 
+#        scan_points = list(np.linspace(xmin, xmax, npoints))
+#        if explicit_array !=  None:
+#            scan_points = explicit_array 
+#        print scan_points
 
         #roc curve for each discriminant
+        print "-- Looping Discriminants -- " 
         for disc in self.disc_list:
 
             #total number of jets
             nsig_tot = sig_tree.GetEntries("genMatch > 0 && %sID == 1" % disc)
             nbkg_tot = bkg_tree.GetEntries(" %sID == 1" % disc)        
 
+            print "-- Looping GID -- " 
             # one curve per grid ID
             for gid in range(1, self.nGID+1):
-                if gid % 25 == 0:
-                    print "-- %s, GID =  %i of %s" % (disc, gid, self.nGID)
+                print "-- %s, GID =  %i of %s" % (disc, gid, self.nGID)
                 
                 curve = roc_curve(disc, gid)
+                scan_points = list(np.linspace(xmin, xmax, npoints))
 
                 # one point per threshold
                 for threshold in scan_points:
@@ -191,8 +195,10 @@ class analysis:
                     eff_sig = float(nsig_pass) / float(nsig_tot)
                     eff_bkg = float(nbkg_pass) / float(nbkg_tot)
                     
+
+
                     curve.add_point(threshold, eff_sig, 1 - eff_bkg) 
-                    
+
                 self.all_roc_curves.append(curve)
 
     def get_fischer_weights(self, tuple_of_weight_ranges):
@@ -216,7 +222,9 @@ class analysis:
         #calculate weights which maximize linear separation
         w = np.dot(np.linalg.inv(Sw), (mean2-mean1))
     
-        return w
+        neg_w = -1 * w
+
+        return neg_w
     
 #container for a range of weights to be scaned 
 class weight_range:
@@ -291,6 +299,8 @@ class roc_curve:
         self.gridID = gridID 
         
         name = disc + "__" + str(gridID)
+
+        print "building roc curve histogram"
         
         self.sig_hist = rt.TH1F(name, name, N_BEST_ROC_POINTS, MIN_BEST, MAX_BEST)        
 
@@ -531,8 +541,8 @@ class jet:
         return disc_dict[disc, wvector]
     
     # most naive descriminant 
-    def calc_metric_val1(self, pars):
-        (w1, w2, w3, w5) = pars #, w4, w5) = pars
+    def calc_metric_vtx(self, pars):
+        (w2, w3, w5) = pars #, w4, w5) = pars
 
         x1 = self.jetvars["jetELogIPSig2D"]
         x2 = self.jetvars["jetMedianIPSig2D"]
@@ -540,20 +550,17 @@ class jet:
         x4 = self.jetvars["jetSvMass"]
         x5 = self.jetvars["jetSvLxySig"]
 
-        return w1*(x1) + w2*(x2) + w3*(x3) + w5*x5
+        return  w2*(x2) + w3*(x3) + w5*x5
 
     def calc_metric_simple(self, pars):
-        (w2, w3) = pars #, w4, w5) = pars
+        (w2, w3) = pars
 
-#        x1 = self.jetvars["jetELogIPSig2D"]
         x2 = self.jetvars["jetMedianIPSig2D"]
         x3 = self.jetvars["jetIPSigLogSum2D"]
-#        x4 = self.jetvars["jetSvMass"]
-#        x5 = self.jetvars["jetSvLxySig"]
 
-#        return w1*(x1) + w2*(x2) + w3*(x3) + w5*x5
-        return  w2*(x2) + w3*(x3)
+        val =   w2*(x2) + w3*(x3)
 
+        return val
 
 
     def fill_disc(self, disc, weight_space):        
@@ -561,7 +568,14 @@ class jet:
         #go over each point in the weight space            
         for wvector in wgrid:            
             #self.disc_dict[disc, wvector] = self.calc_metric_val1(wvector)
-            self.disc_dict[disc, wvector] = self.calc_metric_simple(wvector)
+            if disc == "simple":
+                self.disc_dict[disc, wvector] = self.calc_metric_simple(wvector)
+            elif disc == "vtx":
+                self.disc_dict[disc, wvector] = self.calc_metric_vtx(wvector)
+            else:
+                print "FALSE DISCRIMINANT: ", disc, "---EXITING----"
+                exit(1)
+            
 
 output_file = rt.TFile(options.output, "RECREATE")
         
@@ -569,33 +583,48 @@ ana = analysis(options.sig_file, options.bkg_file)
 
 ana.build_jetcollections()
 
-#build the space for the metric
-#erange =   [ -3.62856211e-05,  -6.02216466e-06] #CALO
-erange =   [ -4.91493151e-05,  -4.52060701e-06] #VTX
+######################SIMPLE DISCRIMINANT###################
 
-#w1_range = weight_range("jetELogIPSig2D", 0, 1, 2, 1, explicit=[-1 * erange[0]])
-w2_range = weight_range("jetMedianIPSig2D", 0, 1, 2, 1, explicit=[-1 * erange[0]])
-w3_range = weight_range("jetIPSigLogSum2D", 0, 1, 2, 1, explicit=[-1 * erange[1]])
-#w5_range = weight_range("jetSvLxySig", 0, 1, 2, 1, explicit=[-1 * erange[3]])
-#w4_range = weight_range("jetSvMass", 0, 1, 2, 1, explicit=[2.16e-04])
+#build a dummy range for the simple discriminant
+med_range = weight_range("jetMedianIPSig2D", 0, 1, 2, 1, explicit=[0])
+ipsiglog_range = weight_range("jetIPSigLogSum2D", 0, 1, 2, 1, explicit=[0])
+disc_simple_tuple = (med_range, ipsiglog_range)
 
-#tuple_range = (w1_range, w2_range, w3_range, w5_range) 
-tuple_range = (w2_range, w3_range) #, w4_range, w5_range)
-
-metric_weight_space = weight_space("metric", 2, tuple_range)
-ana.fill_discriminant("metric", metric_weight_space)
-
-metric_weight_space.write_output(options.output_GID)
-
-# w1_range2 = weight_range("elogipsig", 0, 1, 5, 4.)
-# w2_range2 = weight_range("jetmedianipsig", 0, 1, 5, .05)
-# w3_range2 = weight_range("ipsiglogsum", 0, 1, 5, 10.)
-# metric2_weight_space = weight_space("metric2", 3, (w1_range2.vector, w2_range2.vector, w3_range2.vector))
-# ana.fill_discriminant("metric2", metric2_weight_space)
-
+#calculate the fischer weights for this range
 print "-- Building Weights --"
-fweights = ana.get_fischer_weights(tuple_range)
+fweights = ana.get_fischer_weights(disc_simple_tuple)
 print "Fischer Weights: ", fweights 
+
+#build the new fischer ranges with the weights
+fischer_med_range = weight_range("jetMedianIPSig2D", 0, 1, 2, 1, explicit=[fweights[0]])
+fischer_ipsiglog_range = weight_range("jetIPSigLogSum2D", 0, 1, 2, 1, explicit=[fweights[1]])
+fischer_tuple = (fischer_med_range, fischer_ipsiglog_range)
+
+#build the weight space to fill the discriminant
+disc_simple_weight_space = weight_space("simple", 2, fischer_tuple)
+ana.fill_discriminant("simple", disc_simple_weight_space)
+
+#disc_simple_weight_space.write_output(options.output_GID)
+
+######################SIMPLE DISCRIMINANT END ###################
+
+######################VTX DISCRIMINANT ###################
+# med_range = weight_range("jetMedianIPSig2D", 0, 1, 2, 1, explicit=[0])
+# ipsiglog_range = weight_range("jetIPSigLogSum2D", 0, 1, 2, 1, explicit=[0])
+# svlxysig_range = weight_range("jetSvLxySig", 0, 1, 2, 1, explicit=[0])
+# disc_vtx_tuple = (med_range, ipsiglog_range, svlxysig_range)
+
+# vtx_fweights = ana.get_fischer_weights(disc_vtx_tuple)
+
+# fischer_med_range = weight_range("jetMedianIPSig2D", 0, 1, 2, 1, explicit=[vtx_fweights[0]])
+# fischer_ipsiglog_range = weight_range("jetIPSigLogSum2D", 0, 1, 2, 1, explicit=[vtx_fweights[1]])
+# fischer_svlxysig_range = weight_range("jetSvLxySig", 0, 1, 2, 1, explicit=[vtx_fweights[2]])
+# fischer_vtx_tuple  = (fischer_med_range, fischer_ipsiglog_range, fischer_svlxysig_range)
+
+# disc_vtx_weight_space =  weight_space("vtx", 3, fischer_vtx_tuple)
+# ana.fill_discriminant("vtx", disc_vtx_weight_space)
+
+######################END DISCRIMINANT ###################
 
 (sig_tree, bkg_tree) = ana.get_trees() 
 
@@ -603,16 +632,20 @@ output_file.cd()
 sig_tree.Write()
 bkg_tree.Write()
 
-#--xmin -.001 --xmax .005 
+
 if options.do_roc:
+
+    
     ana.build_roc_curves(sig_tree, bkg_tree, -.001, .005 , 1000)
     tgraphs = ana.generate_tgraphs() 
-#    output_file.cd()
 
-    print "-- Building ROC Canvas -- "
-    roc_canvas = ana.build_roc_canvas()
-    print "-- Writing Canvas -- "
-    output_file.cd()
-    roc_canvas.Write()
+#    roc_canvas = ana.build_roc_canvas()
+#    roc_canvas.Write()
+
+    print "-- Writing TGraphs--"
+    
+    for tgraph in tgraphs: 
+        print tgraph
+        tgraph.Write()    
 
 output_file.Close()

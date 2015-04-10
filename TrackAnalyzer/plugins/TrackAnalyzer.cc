@@ -884,14 +884,11 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     bool    phi_equal = caloJetPhi[jj] == liJetPhi[jj] && liJetPhi[jj] == svJetPhi[jj]; 
     bool    all_match = pt_equal && eta_equal && phi_equal;
 
-    std::cout << "all_match " << all_match << " pt equal " << pt_equal << " eta_equal " << eta_equal << " phi equal " << phi_equal << std::endl;
+    // std::cout << "all_match " << all_match << " pt equal " << pt_equal << " eta_equal " << eta_equal << " phi equal " << phi_equal << std::endl;
+    // std::cout << caloJetPt[jj] << " " << liJetPt[jj] << " " << svJetPt[jj] << std::endl;
+    // std::cout << caloJetEta[jj] << " " << liJetEta[jj] << " " << svJetEta[jj] << std::endl;
 
-    std::cout << caloJetPt[jj] << " " << liJetPt[jj] << " " << svJetPt[jj] << std::endl;
-    std::cout << caloJetEta[jj] << " " << liJetEta[jj] << " " << svJetEta[jj] << std::endl;
-
-
-
-    //assert(all_match);
+    assert(all_match);
     
     // significance and aboslute IP weighted track energy
     jetEIPSig2D[jj] = 0;

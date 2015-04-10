@@ -1,14 +1,14 @@
 import FWCore.ParameterSet.Config as cms
 
 #output options
-appendLifetime="300"
+appendLifetime="single100"
 appendBkg="120_170"
 
 #flags for running
-isSignalMC = False
+isSignalMC = True
 isMC = True
 doedm = False
-nevents = 15000
+nevents = 2000
 
 # analysis cuts
 cut_jetPt = 80
@@ -18,11 +18,11 @@ input_file = None
 
 # test files
 if isSignalMC:
-    input_file = 'file:/afs/cern.ch/work/h/hardenbr/2015/DIJET/GEN_SIGNAL_TEST/dijet_700_300_ctau30.root'
+#    input_file = 'file:/afs/cern.ch/work/h/hardenbr/2015/DIJET/GEN_SIGNAL_TEST/dijet_700_300_ctau30.root'
 #    input_file = 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/group/phys_susy/razor/josh/RAZOR_DIJET/DIJET_MH700_MX300_CTAU1000_40BX25_AOD/dijet_700_300_ctau1000_94_1_3mG.root'    input_file = 'file:/afs/cern.ch/work/h/hardenbr/2015/DIJET/GEN_SIGNAL_TEST/dijet_700_300_ctau300.root'
 #   input_file = 'file:/afs/cern.ch/work/h/hardenbr/2015/DIJET/GEN_SIGNAL_TEST/dijet_700_300_ctau3000.root'
 #   input_file = 'file:/afs/cern.ch/work/h/hardenbr/2015/DIJET/GEN_SIGNAL_TEST/dijet_700_300_ctau3.root'
-#   input_file = 'file:/afs/cern.ch/user/t/tkolberg/public/hepmcreco_RAW2DIGI_RECO.root'
+   input_file = 'file:/afs/cern.ch/user/t/tkolberg/public/hepmcreco_RAW2DIGI_RECO.root'
 else:
     input_file = 'file:/afs/cern.ch/work/h/hardenbr/TEST_FILES/QCD_Pt-120to170_Tune4C_13TeV_pythia8_castor_tsg_PU40bx25_POSTLS162_V2-v1.root'
 #"file:/afs/cern.ch/work/h/hardenbr/QCD_Pt-50to80_Tune4C_13TeV_pythia8_AOD.root'
@@ -221,17 +221,17 @@ process.source = cms.Source("PoolSource",
 # 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/group/phys_susy/razor/josh/RAZOR_DIJET/DIJET_MH700_MX300_CTAU300_40BX25_AOD/dijet_700_300_ctau300_98_1_aIn.root',
 # 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/group/phys_susy/razor/josh/RAZOR_DIJET/DIJET_MH700_MX300_CTAU300_40BX25_AOD/dijet_700_300_ctau300_99_1_OCm.root',
 # 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/group/phys_susy/razor/josh/RAZOR_DIJET/DIJET_MH700_MX300_CTAU300_40BX25_AOD/dijet_700_300_ctau300_9_1_u6w.root'
-        # 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/user/mwalker/SIGNAL/Displaced/LL_sbottom_500_100.0mm/step2_LL_sbottom_500_100.0mm_0.root',
-        # 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/user/mwalker/SIGNAL/Displaced/LL_sbottom_500_100.0mm/step2_LL_sbottom_500_100.0mm_1.root',
-        # 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/user/mwalker/SIGNAL/Displaced/LL_sbottom_500_100.0mm/step2_LL_sbottom_500_100.0mm_2.root',
-        # 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/user/mwalker/SIGNAL/Displaced/LL_sbottom_500_100.0mm/step2_LL_sbottom_500_100.0mm_3.root',
-        # 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/user/mwalker/SIGNAL/Displaced/LL_sbottom_500_100.0mm/step2_LL_sbottom_500_100.0mm_4.root',
-        # 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/user/mwalker/SIGNAL/Displaced/LL_sbottom_500_100.0mm/step2_LL_sbottom_500_100.0mm_5.root',
-        # 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/user/mwalker/SIGNAL/Displaced/LL_sbottom_500_100.0mm/step2_LL_sbottom_500_100.0mm_6.root',
-        # 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/user/mwalker/SIGNAL/Displaced/LL_sbottom_500_100.0mm/step2_LL_sbottom_500_100.0mm_7.root',
-        # 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/user/mwalker/SIGNAL/Displaced/LL_sbottom_500_100.0mm/step2_LL_sbottom_500_100.0mm_8.root',
-        # 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/user/mwalker/SIGNAL/Displaced/LL_sbottom_500_100.0mm/step2_LL_sbottom_500_100.0mm_9.root'
-      input_file
+        'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/user/mwalker/SIGNAL/Displaced/LL_sbottom_500_100.0mm/step2_LL_sbottom_500_100.0mm_0.root',
+        'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/user/mwalker/SIGNAL/Displaced/LL_sbottom_500_100.0mm/step2_LL_sbottom_500_100.0mm_1.root',
+        'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/user/mwalker/SIGNAL/Displaced/LL_sbottom_500_100.0mm/step2_LL_sbottom_500_100.0mm_2.root',
+        'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/user/mwalker/SIGNAL/Displaced/LL_sbottom_500_100.0mm/step2_LL_sbottom_500_100.0mm_3.root',
+        'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/user/mwalker/SIGNAL/Displaced/LL_sbottom_500_100.0mm/step2_LL_sbottom_500_100.0mm_4.root',
+        'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/user/mwalker/SIGNAL/Displaced/LL_sbottom_500_100.0mm/step2_LL_sbottom_500_100.0mm_5.root',
+        'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/user/mwalker/SIGNAL/Displaced/LL_sbottom_500_100.0mm/step2_LL_sbottom_500_100.0mm_6.root',
+        'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/user/mwalker/SIGNAL/Displaced/LL_sbottom_500_100.0mm/step2_LL_sbottom_500_100.0mm_7.root',
+        'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/user/mwalker/SIGNAL/Displaced/LL_sbottom_500_100.0mm/step2_LL_sbottom_500_100.0mm_8.root',
+        'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/user/mwalker/SIGNAL/Displaced/LL_sbottom_500_100.0mm/step2_LL_sbottom_500_100.0mm_9.root'
+#      input_file
       #        'file:/afs/cern.ch/work/h/hardenbr/QCD_Pt-50to80_Tune4C_13TeV_pythia8_AOD.root'
       #        'file:/afs/cern.ch/work/h/hardenbr/HTo2LongLivedTo4L_MH_700_MFF_300_CTau30_TSG_PU40BX25_AODSIM.root'
       #       'file:/afs/cern.ch/work/h/hardenbr/HTo2LongLivedTo4L_MH_700_MFF_300_CTau30_TSG_PU40BX25_AODSIM_v6.root'

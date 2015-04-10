@@ -118,6 +118,7 @@ private:
   std::string trackTreeName_;
 
   TFile *outputFile_;
+  bool doGenMatch_;
   bool isMC_;
   bool isSignalMC_;
 
@@ -430,6 +431,7 @@ TrackAnalyzer::TrackAnalyzer(const edm::ParameterSet& iConfig)
   trackTreeName_ = iConfig.getUntrackedParameter<std::string>("trackTreeName");
 
   isMC_		  = iConfig.getUntrackedParameter<bool>("isMC");
+  doGenMatch_ = iConfig.getUntrackedParameter<bool>("doGenMatch");
   isSignalMC_	  = iConfig.getUntrackedParameter<bool>("isSignalMC");
 
   //tags
@@ -556,7 +558,7 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   edm::Handle<reco::GenParticleCollection> genParticles;
 
   // generator matching to truely displaced jets
-  if (isSignalMC_) {
+  if (isSignalMC_ && doGenMatch_) {
     iEvent.getByLabel("genParticles", genParticles);    
 
     for(size_t pp = 0; pp < genParticles->size(); ++pp) {

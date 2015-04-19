@@ -173,7 +173,8 @@ class analysis:
         for disc in self.disc_list:
 
             #total number of jets
-            nsig_tot = sig_tree.GetEntries("genMatch > 0 && %sID == 1" % disc)
+#            nsig_tot = sig_tree.GetEntries("genMatch > 0 && %sID == 1" % disc)
+            nsig_tot = sig_tree.GetEntries("genMatch == 0 && %sID == 1" % disc)
             nbkg_tot = bkg_tree.GetEntries(" %sID == 1" % disc)        
 
             print "-- Looping GID -- " 

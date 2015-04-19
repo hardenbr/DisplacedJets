@@ -4,5 +4,7 @@
 <use name="DataFormats/VertexReco"/>
 <use name="RecoBTag/SecondaryVertex"/>
 <use name="DataFormats/TrackReco"/>
+<use name="SimDataFormats/SimVertex"/>
+<use name="SimDataFormats/Vertex"/>
 <use name="CommonTools/UtilAlgos"/>
 <flags EDM_PLUGIN="1"/>

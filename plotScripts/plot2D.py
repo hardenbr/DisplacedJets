@@ -191,6 +191,7 @@ for key in stacks.keys():
         samp.hist.GetXaxis().SetTitle(options.xlabel)
         samp.hist.GetYaxis().SetTitle(options.ylabel)
 
+
 output.cd()
 #build the canvas
 canvas = rt.TCanvas("plot","plot", 1024, 768)
@@ -222,8 +223,9 @@ for key in stacks.keys():
 print "length of draw_rest", len(draw_rest)
 
 draw_first.Draw("colz")
+draw_first.GetXaxis().SetLimits(options.xmin, options.xmax)
+draw_first.GetYaxis().SetLimits(options.ymin, options.ymax)
 
-for ii in draw_rest: ii.Draw("same")
 
 leg = canvas.BuildLegend()
 leg.SetFillColor(0)

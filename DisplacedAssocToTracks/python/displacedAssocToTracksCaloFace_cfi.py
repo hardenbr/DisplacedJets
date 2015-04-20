@@ -1,7 +1,7 @@
 import FWCore.ParameterSet.Config as cms
 
 displacedAssocToTracksCaloFace = cms.EDProducer("DisplacedAssocToTracks",
-        jetTracksAssociation = cms.untracked.InputTag("ak5JetTracksAssociatorAtCaloFace","","ANA"),        
+        jetTracksAssociation = cms.untracked.InputTag("displacedAk4JetTracksAssociatorAtCaloFace", "", ""),        
         genParticleTag = cms.untracked.InputTag("genParticles","","RECO"),        
         outputLabel = cms.untracked.string('displacedAssocToTracksCaloFace'),
         jetPtCut = cms.untracked.double(40.0),

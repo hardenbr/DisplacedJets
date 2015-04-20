@@ -1,7 +1,7 @@
 import FWCore.ParameterSet.Config as cms
 
 #output options
-appendLifetime="single300"
+appendLifetime="single30"
 appendBkg="120_170"
 
 #flags for running
@@ -21,7 +21,7 @@ input_file = None
 if isSignalMC:
 #    input_file = 'file:/afs/cern.ch/work/h/hardenbr/2015/DIJET/GEN_SIGNAL_TEST/dijet_700_300_ctau30.root'
 #    input_file = 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/group/phys_susy/razor/josh/RAZOR_DIJET/DIJET_MH700_MX300_CTAU1000_40BX25_AOD/dijet_700_300_ctau1000_94_1_3mG.root'
-    input_file = 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_90_1_E5x_step3.root'
+    input_file = 'file:/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/SIGNAL_GENERATION/PAIR_XX/CMSSW_7_2_0/src/Configuration/GenProduction/python/ThirteenTeV/XXTo4J_M-1500_CTau-30mm_step3.root'
 #    input_file = 'file:/afs/cern.ch/work/h/hardenbr/2015/DIJET/GEN_SIGNAL_TEST/dijet_700_300_ctau300.root'
 #   input_file = 'file:/afs/cern.ch/work/h/hardenbr/2015/DIJET/GEN_SIGNAL_TEST/dijet_700_300_ctau3000.root'
 #   input_file = 'file:/afs/cern.ch/work/h/hardenbr/2015/DIJET/GEN_SIGNAL_TEST/dijet_700_300_ctau3.root'
@@ -32,7 +32,7 @@ else:
 #    input_file =  'file:/afs/cern.ch/work/h/hardenbr/QCD_470_600_AOD_40bx25.root'
 
 process = cms.Process("ANA")
-proc_label = "RECO"
+proc_label = "DIGI2RAW"
 
 # from RecoBTag.SoftLepton.softLepton_cff import *
 # from RecoBTag.ImpactParameter.impactParameter_cff import *
@@ -251,6 +251,9 @@ process.source = cms.Source("PoolSource",
 process.analyzerVTX = cms.EDAnalyzer('TrackAnalyzer')
 process.analyzerCALO = cms.EDAnalyzer('TrackAnalyzer')
 
+process.analyzerVTX.debugLevel  = cms.untracked.int32(3)
+process.analyzerCALO.debugLevel = cms.untracked.int32(3)
+
 #output configuration
 if isSignalMC:
     process.analyzerVTX.outputFileName = cms.untracked.string('signalVTX%s.root' % appendLifetime)
@@ -282,12 +285,12 @@ process.analyzerVTX.isSignalMC  = cms.untracked.bool(isSignalMC)
 process.analyzerCALO.isSignalMC = cms.untracked.bool(isSignalMC)
 
 #tags
-process.analyzerVTX.generalTracks  = cms.untracked.InputTag('generalTracks', '', proc_label)
-process.analyzerVTX.ak5CaloJets    = cms.untracked.InputTag('ak5CaloJets', '', proc_label)
-process.analyzerVTX.genParticles   = cms.untracked.InputTag('genParticles', '', proc_label)
-process.analyzerCALO.generalTracks = cms.untracked.InputTag('generalTracks', '', proc_label)
-process.analyzerCALO.ak5CaloJets   = cms.untracked.InputTag('ak5CaloJets', '', proc_label)
-process.analyzerCALO.genParticles  = cms.untracked.InputTag('genParticles', '', proc_label)
+process.analyzerVTX.generalTracks  = cms.untracked.InputTag('generalTracks', '', '')
+process.analyzerVTX.ak5CaloJets    = cms.untracked.InputTag('ak4CaloJets', '', '')
+process.analyzerVTX.genParticles   = cms.untracked.InputTag('genParticles', '', '')
+process.analyzerCALO.generalTracks = cms.untracked.InputTag('generalTracks', '', '')
+process.analyzerCALO.ak5CaloJets   = cms.untracked.InputTag('ak4CaloJets', '', '')
+process.analyzerCALO.genParticles  = cms.untracked.InputTag('genParticles', '', '')
 
 # vertex matched ip info
 process.analyzerVTX.secondaryVertexTagInfo   = cms.untracked.InputTag('displacedSecondaryVertexTagInfosNoPV', '', 'ANA')
@@ -315,13 +318,13 @@ process.analyzerCALO.jetEta = cms.untracked.double(cut_jetEta)
 # Tags related to the monte carlo
 if isMC:
     # Gen Information
-    process.analyzerVTX.ak5GenJets    = cms.untracked.InputTag('ak5GenJets', '', proc_label)
-    process.analyzerVTX.genMetCalo    = cms.untracked.InputTag('genMetCalo', '', proc_label)
-    process.analyzerVTX.genParticles  = cms.untracked.InputTag('genParticles', '', proc_label)
+    process.analyzerVTX.ak5GenJets    = cms.untracked.InputTag('ak5GenJets', '', '')
+    process.analyzerVTX.genMetCalo    = cms.untracked.InputTag('genMetCalo', '', '')
+    process.analyzerVTX.genParticles  = cms.untracked.InputTag('genParticles', '', '')
     
-    process.analyzerCALO.ak5GenJets   = cms.untracked.InputTag('ak5GenJets', '', proc_label)
-    process.analyzerCALO.genMetCalo   = cms.untracked.InputTag('genMetCalo', '', proc_label)
-    process.analyzerCALO.genParticles = cms.untracked.InputTag('genParticles', '', proc_label)
+    process.analyzerCALO.ak5GenJets   = cms.untracked.InputTag('ak5GenJets', '', '')
+    process.analyzerCALO.genMetCalo   = cms.untracked.InputTag('genMetCalo', '', '')
+    process.analyzerCALO.genParticles = cms.untracked.InputTag('genParticles', '', '')
 
     process.analyzerCALO.simVertices = cms.untracked.InputTag('g4SimHits', '', '')
     process.analyzerVTX.simVertices  = cms.untracked.InputTag('g4SimHits', '', '')        

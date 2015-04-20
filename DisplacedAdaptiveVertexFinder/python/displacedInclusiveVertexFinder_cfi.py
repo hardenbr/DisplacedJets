@@ -14,13 +14,13 @@ displacedInclusiveVertexFinder  = cms.EDProducer("InclusiveVertexFinder",
            seedMax3DIPValue = cms.double(9999.),
            seedMin3DIPSignificance = cms.double(5.0), 
            seedMin3DIPValue = cms.double(0.05),
-           clusterMaxDistance = cms.double(.05), #500um 
+           clusterMaxDistance = cms.double(.5), #500um #dijet .05 -> .5
            clusterMaxSignificance = cms.double(99999), #4.5 sigma  #djet  4.5 ---> infty
            distanceRatio = cms.double(20), # was cluster scale = 1 / density factor =0.05 
            clusterMinAngleCosine = cms.double(-99999), # only forward decays   #djet accept backward decays (unboosted topologies) .5 -> -9999
        ),
 
-       vertexMinAngleCosine = cms.double(-9999), # scalar prod direction of tracks and flight dir  #djet accept backward decays .95 -> -9999
+       vertexMinAngleCosine = cms.double(.6), # scalar prod direction of tracks and flight dir  #djet accept backward decays .95 -> .6
        vertexMinDLen2DSig = cms.double(2.5), #2.5 sigma 
        vertexMinDLenSig = cms.double(0.5), #0.5 sigma
        fitterSigmacut =  cms.double(3),

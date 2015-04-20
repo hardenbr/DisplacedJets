@@ -164,11 +164,8 @@ private:
   static const Int_t	MAX_JETS   = 999;
   static const Int_t	MAX_VTX	   = 999;
   static const Int_t	MAX_GEN	   = 9999;
-  static const Int_t	debug	   = 0; 
 
-#ifdef DEBUG
-  debug = 2; 
-#endif 
+  Int_t	debug = 0; 
  
   //bookkeeping
   Int_t run   = -1;
@@ -321,7 +318,6 @@ private:
   // IP significance log sums
   Float_t   jetIPSigLogSum2D[MAX_JETS];
   Float_t   jetIPSigLogSum3D[MAX_JETS];
-
   Float_t   jetIPLogSum2D[MAX_JETS];
   Float_t   jetIPLogSum3D[MAX_JETS];
 
@@ -447,6 +443,7 @@ private:
   Int_t genPartStatus[MAX_GEN];
 
   // Position
+  Float_t genPartPt[MAX_GEN];
   Float_t genPartEta[MAX_GEN];
   Float_t genPartPhi[MAX_GEN];
 
@@ -485,6 +482,8 @@ private:
 TrackAnalyzer::TrackAnalyzer(const edm::ParameterSet& iConfig)
 {
   //output configuration
+  debug = iConfig.getUntrackedParameter<int>("debugLevel");
+
   outputFileName_ = iConfig.getUntrackedParameter<std::string>("outputFileName");
   jetTreeName_	  = iConfig.getUntrackedParameter<std::string>("jetTreeName");
   trackTreeName_  = iConfig.getUntrackedParameter<std::string>("trackTreeName");
@@ -636,17 +635,18 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       int id = part.pdgId();
       int st = part.status();  
 
-      if (st != 3 || fabs(id) > 6 ) continue;     
+      // pythia6 status code to match = 3
+      // pythia8 status code to match = 23
+      if (st != 23 || fabs(id) > 6 ) continue;     
 
       // const reco::Candidate * mom = part.mother();
       double genpt = part.pt(), geneta = part.eta(), genphi = part.phi(), genmass = part.mass();
-
       
       // check each jet if it matches
       for(int jj = 0; jj < nCaloJets; jj++ ) {
-	float calopt = caloJetPt[jj],  caloeta = caloJetEta[jj], calophi = caloJetPhi[jj];
-	float dr = reco::deltaR( geneta, genphi, caloeta, calophi);
-	float dpt = fabs(calopt - genpt) / genpt;
+	float	calopt = caloJetPt[jj],  caloeta = caloJetEta[jj], calophi = caloJetPhi[jj];
+	float	dr     = reco::deltaR( geneta, genphi, caloeta, calophi);
+	float	dpt    = fabs(calopt - genpt) / genpt;
 
 	// found a match
 	if (dr < .7 && dpt < .20) {
@@ -851,6 +851,8 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   /////////////////////////////// VERTEX TREE VARIABLES CALCULATIONS ///////////////
   ///////////////////////////////////////////////////////////////////////////////////
 
+  if(debug > 1 ) std::cout << "[DEBUG] Performing Vertex Tree Dumping" << std::endl;
+  if(debug > 1 ) std::cout << "[DEBUG] Inclusive Candidate Vertex Dumping" << std::endl;
 
   // fill the vertex information for inclusive vertex candidates
   reco::VertexCollection::const_iterator incIter = inc.begin();
@@ -868,8 +870,8 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     vtxIncCandY[vtxIncCandN] = incIter->y();
     vtxIncCandZ[vtxIncCandN] = incIter->z();
 
-    vtxIncCandLxy[vtxIncCandN] = std::sqrt( incIter->x() * incIter->x() + incIter->y() + incIter->y());
-    vtxIncCandLxyz[vtxIncCandN] = std::sqrt( incIter->x() * incIter->x() + incIter->y() + incIter->y() + incIter->z() + incIter->z());
+    vtxIncCandLxy[vtxIncCandN] = std::sqrt( incIter->x() * incIter->x() + incIter->y() *incIter->y());
+    vtxIncCandLxyz[vtxIncCandN] = std::sqrt( incIter->x() * incIter->x() + incIter->y() * incIter->y() + incIter->z() * incIter->z());
 
     //significances
     vtxIncCandXSig[vtxIncCandN] = incIter->x() / incIter->xError();
@@ -883,31 +885,36 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     vtxIncCandN++;
   }
 
+  if(debug > 1 ) std::cout << "[DEBUG] Inclusive Secondary Vertex Dumping" << std::endl;
+
   // fill the vertex information for inclusive vertex secondary vertices
   reco::VertexCollection::const_iterator incSVIter = incSV.begin();
   vtxIncSecN = 0;
-  for(; incIter != incSV.end(); ++incSVIter){    
+  for(; incSVIter != incSV.end(); ++incSVIter){    
     //qualities
-    vtxIncSecIsFake[vtxIncSecN]	 = incIter->isFake();
-    vtxIncSecNTracks[vtxIncSecN] = incIter->nTracks();
-    vtxIncSecChi2[vtxIncSecN]	 = incIter->chi2();
-    vtxIncSecNDof[vtxIncSecN]	 = incIter->ndof();
+
+    vtxIncSecIsFake[vtxIncSecN]	 = incSVIter->isFake();
+    vtxIncSecNTracks[vtxIncSecN] = incSVIter->nTracks();
+    vtxIncSecChi2[vtxIncSecN]	 = incSVIter->chi2();
+    vtxIncSecNDof[vtxIncSecN]	 = incSVIter->ndof();
 
     //positions
-    vtxIncSecX[vtxIncSecN]    = incIter->x();
-    vtxIncSecY[vtxIncSecN]    = incIter->y();
-    vtxIncSecZ[vtxIncSecN]    = incIter->z();
-    vtxIncSecLxy[vtxIncSecN]  = std::sqrt( incIter->x() * incIter->x() + incIter->y() + incIter->y());
-    vtxIncSecLxyz[vtxIncSecN] = std::sqrt( incIter->x() * incIter->x() + incIter->y() + incIter->y() + incIter->z() + incIter->z());
+    if(debug > 1 ) std::cout << "[DEBUG] [INC SV] Positions" << std::endl;
+    vtxIncSecX[vtxIncSecN]    = incSVIter->x();
+    vtxIncSecY[vtxIncSecN]    = incSVIter->y();
+    vtxIncSecZ[vtxIncSecN]    = incSVIter->z();
+    vtxIncSecLxy[vtxIncSecN]  = std::sqrt( incSVIter->x() * incSVIter->x() + incSVIter->y() * incSVIter->y());
+    vtxIncSecLxyz[vtxIncSecN] = std::sqrt( incSVIter->x() * incSVIter->x() + incSVIter->y() * incSVIter->y() + incSVIter->z() * incSVIter->z());
 
     //significances
-    vtxIncSecXSig[vtxIncSecN]	 = incIter->x() / incIter->xError();
-    vtxIncSecYSig[vtxIncSecN]	 = incIter->y() / incIter->yError();
-    vtxIncSecZSig[vtxIncSecN]	 = incIter->z() / incIter->zError();
-    vtxIncSecLxySig[vtxIncSecN]	 = std::sqrt( incIter->x() * incIter->x() + incIter->y() * incIter->y())
-      / std::sqrt(incIter->xError() * incIter->xError() + incIter->yError() * incIter->yError());
-    vtxIncSecLxyzSig[vtxIncSecN] = std::sqrt( incIter->x() * incIter->x() + incIter->y() * incIter->y() + incIter->z() * incIter->z())
-      / std::sqrt(incIter->xError() * incIter->xError() + incIter->yError() * incIter->yError() + incIter->zError() * incIter->zError());
+    if(debug > 1 ) std::cout << "[DEBUG] [INC SV] Significances" << std::endl;
+    vtxIncSecXSig[vtxIncSecN]	 = incSVIter->x() / incSVIter->xError();
+    vtxIncSecYSig[vtxIncSecN]	 = incSVIter->y() / incSVIter->yError();
+    vtxIncSecZSig[vtxIncSecN]	 = incSVIter->z() / incSVIter->zError();
+    vtxIncSecLxySig[vtxIncSecN]	 = std::sqrt( incSVIter->x() * incSVIter->x() + incSVIter->y() * incSVIter->y())
+      / std::sqrt(incSVIter->xError() * incSVIter->xError() + incSVIter->yError() * incSVIter->yError());
+    vtxIncSecLxyzSig[vtxIncSecN] = std::sqrt( incSVIter->x() * incSVIter->x() + incSVIter->y() * incSVIter->y() + incSVIter->z() * incSVIter->z())
+      / std::sqrt(incSVIter->xError() * incSVIter->xError() + incSVIter->yError() * incSVIter->yError() + incSVIter->zError() * incSVIter->zError());
        
     vtxIncSecN++;
   }
@@ -915,6 +922,8 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   ///////////////////////////////////////////////////////////////////////////////////
   /////////////////////////////// GENERATOR TREE VARIABLES CALCULATIONS /////////////
   ///////////////////////////////////////////////////////////////////////////////////
+
+  if(debug > 1 ) std::cout << "[DEBUG] Sim Vertex Dumping" << std::endl;
 
   edm::SimVertexContainer::const_iterator iterSimVtx = simVtx.begin();
   simVtxN = 0;
@@ -935,17 +944,20 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     simVtxN++;
   }
 
+  if(debug > 1 ) std::cout << "[DEBUG] Gen Particle Dumping" << std::endl;
+
   reco::GenParticleCollection::const_iterator iterGenParticle = gen.begin();
   genPartN = 0;
   for(; iterGenParticle != gen.end(); ++iterGenParticle){    
     float vx = iterGenParticle->vx(), vy = iterGenParticle->vy(), vz = iterGenParticle->vz();
 
     // we only want to keep vertices that are far displaced from the beamline
-    if (vx*vx + vy*vy  < 0.05 * 0.05) continue;
+    //if (vx*vx + vy*vy  < 0.05 * 0.05) continue;
 
     genPartPID[genPartN] = iterGenParticle->pdgId();
     genPartStatus[genPartN] = iterGenParticle->status();
 
+    genPartPt[genPartN]	 = iterGenParticle->pt();
     genPartEta[genPartN] = iterGenParticle->eta();
     genPartPhi[genPartN] = iterGenParticle->phi();
     
@@ -974,12 +986,14 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     bool    phi_equal = caloJetPhi[jj] == liJetPhi[jj] && liJetPhi[jj] == svJetPhi[jj]; 
     bool    all_match = pt_equal && eta_equal && phi_equal;
 
-    // std::cout << "all_match " << all_match << " pt equal " << pt_equal << " eta_equal " << eta_equal << " phi equal " << phi_equal << std::endl;
-    // std::cout << caloJetPt[jj] << " " << liJetPt[jj] << " " << svJetPt[jj] << std::endl;
-    // std::cout << caloJetEta[jj] << " " << liJetEta[jj] << " " << svJetEta[jj] << std::endl;
+    if (debug == 3 ) {
+      std::cout << "all_match " << all_match << " pt equal " << pt_equal << " eta_equal " << eta_equal << " phi equal " << phi_equal << std::endl;
+      std::cout << caloJetPt[jj] << " " << liJetPt[jj] << " " << svJetPt[jj] << std::endl;
+      std::cout << caloJetEta[jj] << " " << liJetEta[jj] << " " << svJetEta[jj] << std::endl;
 
+    }
     // the calo jets, lifetime tags and secondary vertices must all match exactly!
-    assert(all_match);
+    assert(all_match);    
     
     // significance and aboslute IP weighted track energy
     jetEIPSig2D[jj] = 0;
@@ -1196,9 +1210,14 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   } // end loop over jets
 
   evNum++;
+  if(debug > 1) std::cout << "[DEBUG] Fill Track Tree" << std::endl;
   trackTree_->Fill();
+  if(debug > 1) std::cout << "[DEBUG] Fill Jet Tree" << std::endl;
   jetTree_->Fill();
+  if(debug > 1) std::cout << "[DEBUG] Fill VTX Tree" << std::endl;
   vertexTree_->Fill();
+  if(debug > 1) std::cout << "[DEBUG] Fill GEN Tree" << std::endl;
+  genTree_->Fill();
 }
 
 
@@ -1217,19 +1236,19 @@ TrackAnalyzer::beginJob()
   genTree_    = new TTree(genTreeName_.c_str(), "Gen Particle Info tree");
 
   // indices which index the branches 
-  trackTree_->Branch("nCaloJets", nCaloJets, "nCaloJets/I");
-  trackTree_->Branch("nLiTracks", nLiTracks, "nLiTracks/I");
-  trackTree_->Branch("nSvJets", nSvJets, "nSvJets/I");
-  trackTree_->Branch("nSV", nSV, "nSV/I");
-  trackTree_->Branch("nLiJets", nLiJets, "nLiJets/I");
+  trackTree_->Branch("nCaloJets", &nCaloJets, "nCaloJets/I");
+  trackTree_->Branch("nLiTracks", &nLiTracks, "nLiTracks/I");
+  trackTree_->Branch("nSvJets", &nSvJets, "nSvJets/I");
+  trackTree_->Branch("nSV", &nSV, "nSV/I");
+  trackTree_->Branch("nLiJets", &nLiJets, "nLiJets/I");
 
   // analyzer event number
-  trackTree_->Branch("evNum", evNum, "evNum/I");
+  trackTree_->Branch("evNum", &evNum, "evNum/I");
 
   // file run numbers
-  trackTree_->Branch("run", run, "run/I");
-  trackTree_->Branch("lumi", lumi, "lumi/I");
-  trackTree_->Branch("event", event, "event/I");
+  trackTree_->Branch("run", &run, "run/I");
+  trackTree_->Branch("lumi", &lumi, "lumi/I");
+  trackTree_->Branch("event", &event, "event/I");
 
   ////////////////////////////// Calo Jet Information////////////////////////
   
@@ -1469,67 +1488,68 @@ TrackAnalyzer::beginJob()
   vertexTree_->Branch("event", &event, "event/I");
 
   // Standalone Vertexing
-  vertexTree_->Branch("vtxN",vtxN,"vtxN/I");
-  vertexTree_->Branch("vtxIsFake",&vtxIsFake,"vtxIsFake[vtxN]/I");
-  vertexTree_->Branch("vtxNTracks",&vtxNTracks,"vtxNTracks[vtxN]/I");
-  vertexTree_->Branch("vtxChi2",&vtxChi2,"vtxChi2[vtxN]/F");
-  vertexTree_->Branch("vtxNDof",&vtxNDof,"vtxNDof[vtxN]/I");
-  vertexTree_->Branch("vtxX",&vtxX,"vtxX[vtxN]/F");
-  vertexTree_->Branch("vtxY",&vtxY,"vtxY[vtxN]/F");
-  vertexTree_->Branch("vtxZ",&vtxZ,"vtxZ[vtxN]/F");
-  vertexTree_->Branch("vtxLxy",&vtxLxy,"vtxLxy[vtxN]/F");
-  vertexTree_->Branch("vtxLxyz",&vtxLxyz,"vtxLxyz[vtxN]/F");
-  vertexTree_->Branch("vtxXsig",&vtxXSig,"vtxXSig[vtxN]/F");
-  vertexTree_->Branch("vtxYsig",&vtxYSig,"vtxYSig[vtxN]/F");
-  vertexTree_->Branch("vtxZsig",&vtxZSig,"vtxZSig[vtxN]/F");
-  vertexTree_->Branch("vtxLxySig",&vtxLxySig,"vtxLxySig[vtxN]/F");
+  vertexTree_->Branch("vtxN", &vtxN, "vtxN/I");
+  vertexTree_->Branch("vtxIsFake", &vtxIsFake, "vtxIsFake[vtxN]/I");
+  vertexTree_->Branch("vtxNTracks", &vtxNTracks, "vtxNTracks[vtxN]/I");
+  vertexTree_->Branch("vtxChi2", &vtxChi2, "vtxChi2[vtxN]/F");
+  vertexTree_->Branch("vtxNDof", &vtxNDof, "vtxNDof[vtxN]/I");
+  vertexTree_->Branch("vtxX", &vtxX, "vtxX[vtxN]/F");
+  vertexTree_->Branch("vtxY", &vtxY, "vtxY[vtxN]/F");
+  vertexTree_->Branch("vtxZ", &vtxZ, "vtxZ[vtxN]/F");
+  vertexTree_->Branch("vtxLxy", &vtxLxy, "vtxLxy[vtxN]/F");
+  vertexTree_->Branch("vtxLxyz", &vtxLxyz, "vtxLxyz[vtxN]/F");
+  vertexTree_->Branch("vtxXsig", &vtxXSig, "vtxXSig[vtxN]/F");
+  vertexTree_->Branch("vtxYsig", &vtxYSig, "vtxYSig[vtxN]/F");
+  vertexTree_->Branch("vtxZsig", &vtxZSig, "vtxZSig[vtxN]/F");
+  vertexTree_->Branch("vtxLxySig", &vtxLxySig, "vtxLxySig[vtxN]/F");
 
   // Inclusive candidate vertices
-  vertexTree_->Branch("vtxIncCandN",vtxIncCandN,"vtxIncCandN/I");
-  vertexTree_->Branch("vtxIncCandIsFake",&vtxIncCandIsFake,"vtxIncCandIsFake[vtxIncCandN]/F");
-  vertexTree_->Branch("vtxIncCandNTracks",&vtxIncCandNTracks,"vtxIncCandNTracks[vtxIncCandN]/F");
-  vertexTree_->Branch("vtxIncCandChi2",&vtxIncCandChi2,"vtxIncCandChi2[vtxIncCandN]/F");
-  vertexTree_->Branch("vtxIncCandNDof",&vtxIncCandNDof,"vtxIncCandNDof[vtxIncCandN]/I");
-  vertexTree_->Branch("vtxIncCandX",&vtxIncCandX,"vtxIncCandX[vtxIncCandN]/F");
-  vertexTree_->Branch("vtxIncCandY",&vtxIncCandY,"vtxIncCandY[vtxIncCandN]/F");
-  vertexTree_->Branch("vtxIncCandZ",&vtxIncCandZ,"vtxIncCandZ[vtxIncCandN]/F");
-  vertexTree_->Branch("vtxIncCandLxy",&vtxIncCandLxy,"vtxIncCandLxy[vtxIncCandN]/F");
-  vertexTree_->Branch("vtxIncCandLxyz",&vtxIncCandLxyz,"vtxIncCandLxyz[vtxIncCandN]/F");
-  vertexTree_->Branch("vtxIncCandXsig",&vtxIncCandXSig,"vtxIncCandXSig[vtxIncCandN]/F");
-  vertexTree_->Branch("vtxIncCandYsig",&vtxIncCandYSig,"vtxIncCandYSig[vtxIncCandN]/F");
-  vertexTree_->Branch("vtxIncCandZsig",&vtxIncCandZSig,"vtxIncCandZSig[vtxIncCandN]/F");
-  vertexTree_->Branch("vtxIncCandLxySig",&vtxIncCandLxySig,"vtxIncCandLxySig[vtxIncCandN]/F");
+  vertexTree_->Branch("vtxIncCandN", &vtxIncCandN, "vtxIncCandN/I");
+  vertexTree_->Branch("vtxIncCandIsFake", &vtxIncCandIsFake, "vtxIncCandIsFake[vtxIncCandN]/F");
+  vertexTree_->Branch("vtxIncCandNTracks", &vtxIncCandNTracks, "vtxIncCandNTracks[vtxIncCandN]/F");
+  vertexTree_->Branch("vtxIncCandChi2", &vtxIncCandChi2, "vtxIncCandChi2[vtxIncCandN]/F");
+  vertexTree_->Branch("vtxIncCandNDof", &vtxIncCandNDof, "vtxIncCandNDof[vtxIncCandN]/I");
+  vertexTree_->Branch("vtxIncCandX", &vtxIncCandX, "vtxIncCandX[vtxIncCandN]/F");
+  vertexTree_->Branch("vtxIncCandY", &vtxIncCandY, "vtxIncCandY[vtxIncCandN]/F");
+  vertexTree_->Branch("vtxIncCandZ", &vtxIncCandZ, "vtxIncCandZ[vtxIncCandN]/F");
+  vertexTree_->Branch("vtxIncCandLxy", &vtxIncCandLxy, "vtxIncCandLxy[vtxIncCandN]/F");
+  vertexTree_->Branch("vtxIncCandLxyz", &vtxIncCandLxyz, "vtxIncCandLxyz[vtxIncCandN]/F");
+  vertexTree_->Branch("vtxIncCandXsig", &vtxIncCandXSig, "vtxIncCandXSig[vtxIncCandN]/F");
+  vertexTree_->Branch("vtxIncCandYsig", &vtxIncCandYSig, "vtxIncCandYSig[vtxIncCandN]/F");
+  vertexTree_->Branch("vtxIncCandZsig", &vtxIncCandZSig, "vtxIncCandZSig[vtxIncCandN]/F");
+  vertexTree_->Branch("vtxIncCandLxySig", &vtxIncCandLxySig, "vtxIncCandLxySig[vtxIncCandN]/F");
 
   //inclusive secondary vertices (after merging and arbitration) 
-  vertexTree_->Branch("vtxIncSecN",vtxIncSecN,"vtxIncSecN/I");
-  vertexTree_->Branch("vtxIncSecIsFake",&vtxIncSecIsFake,"vtxIncSecIsFake[vtxIncSecN]/F");
-  vertexTree_->Branch("vtxIncSecNTracks",&vtxIncSecNTracks,"vtxIncSecNTracks[vtxIncSecN]/I");
-  vertexTree_->Branch("vtxIncSecChi2",&vtxIncSecChi2,"vtxIncSecChi2[vtxIncSecN]/F");
-  vertexTree_->Branch("vtxIncSecNDof",&vtxIncSecNDof,"vtxIncSecNDof[vtxIncSecN]/I");
-  vertexTree_->Branch("vtxIncSecX",&vtxIncSecX,"vtxIncSecX[vtxIncSecN]/F");
-  vertexTree_->Branch("vtxIncSecY",&vtxIncSecY,"vtxIncSecY[vtxIncSecN]/F");
-  vertexTree_->Branch("vtxIncSecZ",&vtxIncSecZ,"vtxIncSecZ[vtxIncSecN]/F");
-  vertexTree_->Branch("vtxIncSecLxy",&vtxIncSecLxy,"vtxIncSecLxy[vtxIncSecN]/F");
-  vertexTree_->Branch("vtxIncSecLxyz",&vtxIncSecLxyz,"vtxIncSecLxyz[vtxIncSecN]/F");
-  vertexTree_->Branch("vtxIncSecXsig",&vtxIncSecXSig,"vtxIncSecXSig[vtxIncSecN]/F");
-  vertexTree_->Branch("vtxIncSecYsig",&vtxIncSecYSig,"vtxIncSecYSig[vtxIncSecN]/F");
-  vertexTree_->Branch("vtxIncSecZsig",&vtxIncSecZSig,"vtxIncSecZSig[vtxIncSecN]/F");
-  vertexTree_->Branch("vtxIncSecLxySig",&vtxIncSecLxySig,"vtxIncSecLxySig[vtxIncSecN]/F");    
+  vertexTree_->Branch("vtxIncSecN", &vtxIncSecN, "vtxIncSecN/I");
+  vertexTree_->Branch("vtxIncSecIsFake", &vtxIncSecIsFake, "vtxIncSecIsFake[vtxIncSecN]/F");
+  vertexTree_->Branch("vtxIncSecNTracks", &vtxIncSecNTracks, "vtxIncSecNTracks[vtxIncSecN]/I");
+  vertexTree_->Branch("vtxIncSecChi2", &vtxIncSecChi2, "vtxIncSecChi2[vtxIncSecN]/F");
+  vertexTree_->Branch("vtxIncSecNDof", &vtxIncSecNDof, "vtxIncSecNDof[vtxIncSecN]/I");
+  vertexTree_->Branch("vtxIncSecX", &vtxIncSecX, "vtxIncSecX[vtxIncSecN]/F");
+  vertexTree_->Branch("vtxIncSecY", &vtxIncSecY, "vtxIncSecY[vtxIncSecN]/F");
+  vertexTree_->Branch("vtxIncSecZ", &vtxIncSecZ, "vtxIncSecZ[vtxIncSecN]/F");
+  vertexTree_->Branch("vtxIncSecLxy", &vtxIncSecLxy, "vtxIncSecLxy[vtxIncSecN]/F");
+  vertexTree_->Branch("vtxIncSecLxyz", &vtxIncSecLxyz, "vtxIncSecLxyz[vtxIncSecN]/F");
+  vertexTree_->Branch("vtxIncSecXsig", &vtxIncSecXSig, "vtxIncSecXSig[vtxIncSecN]/F");
+  vertexTree_->Branch("vtxIncSecYsig", &vtxIncSecYSig, "vtxIncSecYSig[vtxIncSecN]/F");
+  vertexTree_->Branch("vtxIncSecZsig", &vtxIncSecZSig, "vtxIncSecZSig[vtxIncSecN]/F");
+  vertexTree_->Branch("vtxIncSecLxySig", &vtxIncSecLxySig, "vtxIncSecLxySig[vtxIncSecN]/F");    
 
   ///////////  ///////////  ///////////  ///////////  ///////////  ///////////  ////
   //////////////////////////////// SIMULATION QUANITIES ////////////////////////////
   ///////////  ///////////  ///////////  ///////////  ///////////  /////////// /////
 
   // file run numbers
-  genTree_->Branch("evNum", &evNum, "evNum/I");
-  genTree_->Branch("run", &run, "run/I");
-  genTree_->Branch("lumi", &lumi, "lumi/I");
-  genTree_->Branch("event", &event, "event/I");
+  genTree_->Branch("evNum",  &evNum,  "evNum/I");
+  genTree_->Branch("run",  &run,  "run/I");
+  genTree_->Branch("lumi",  &lumi,  "lumi/I");
+  genTree_->Branch("event",  &event,  "event/I");
 
   // GEN Particle Information
-  genTree_->Branch("genPartN", genPartN, "genPartN/I");
+  genTree_->Branch("genPartN", &genPartN, "genPartN/I");
   genTree_->Branch("genPartPID", &genPartPID, "genPartPID[genPartN]/I");
   genTree_->Branch("genPartStatus", &genPartStatus, "genPartStatus[genPartN]/I");
+  genTree_->Branch("genPartPt", &genPartPt, "genPartPt[genPartN]/F");
   genTree_->Branch("genPartEta", &genPartEta, "genPartEta[genPartN]/F");
   genTree_->Branch("genPartPhi", &genPartPhi, "genPartPhi[genPartN]/F");
   genTree_->Branch("genPartVX", &genPartVX, "genPartVX[genPartN]/F");
@@ -1558,6 +1578,8 @@ TrackAnalyzer::endJob()
   outputFile_->cd();
   jetTree_->Write();
   trackTree_->Write();
+  genTree_->Write();
+  vertexTree_->Write();
   outputFile_->Close();
 }
 

@@ -161,14 +161,14 @@ private:
   TTree* vertexTree_;
   TTree* genTree_;
 
-  static const Int_t    SIM_STATUS_CODE_MATCH = 23; 
+  static const Int_t    SIM_STATUS_CODE_MATCH = 0; 
   static const Int_t    GEN_STATUS_CODE_MATCH = 23; 
-  const float		VERTEX_MATCH_METRIC = 0.05;
-  static const Int_t	MAX_TRACKS	    = 9999;
-  static const Int_t	MAX_JETS	    = 999;
-  static const Int_t	MAX_VTX		    = 999;
-  static const Int_t	MAX_GEN		    = 9999;
-  static const Int_t	FAKE_HIGH_VAL	    = 9999;
+  const float		VERTEX_MATCH_METRIC   = 0.05;
+  static const Int_t	MAX_TRACKS	      = 9999;
+  static const Int_t	MAX_JETS	      = 999;
+  static const Int_t	MAX_VTX		      = 999;
+  static const Int_t	MAX_GEN		      = 9999;
+  static const Int_t	FAKE_HIGH_VAL	      = 9999;
 
   Int_t	debug = 0; 
  

@@ -124,6 +124,7 @@ private:
 
   TFile *outputFile_;
   bool doGenMatch_;
+  bool doSimMatch_;
   bool isMC_;
   bool isSignalMC_;
 
@@ -160,10 +161,14 @@ private:
   TTree* vertexTree_;
   TTree* genTree_;
 
-  static const Int_t	MAX_TRACKS = 9999;
-  static const Int_t	MAX_JETS   = 999;
-  static const Int_t	MAX_VTX	   = 999;
-  static const Int_t	MAX_GEN	   = 9999;
+  static const Int_t    SIM_STATUS_CODE_MATCH = 23; 
+  static const Int_t    GEN_STATUS_CODE_MATCH = 23; 
+  const float		VERTEX_MATCH_METRIC = 0.05;
+  static const Int_t	MAX_TRACKS	    = 9999;
+  static const Int_t	MAX_JETS	    = 999;
+  static const Int_t	MAX_VTX		    = 999;
+  static const Int_t	MAX_GEN		    = 9999;
+  static const Int_t	FAKE_HIGH_VAL	    = 9999;
 
   Int_t	debug = 0; 
  
@@ -377,6 +382,15 @@ private:
   Float_t   jetSvNDof[MAX_JETS];
   Int_t	    jetSvIsValid[MAX_JETS];
 
+  Int_t	    jetSvNGenMatched;
+  Int_t	    jetSvNGenFake;
+  Int_t	    jetSvGenMatched[MAX_JETS];
+  Float_t   jetSvGenMatchMetric[MAX_JETS];
+  Int_t	    jetSvNSimMatched;
+  Int_t	    jetSvNSimFake;
+  Int_t	    jetSvSimMatched[MAX_JETS];
+  Float_t   jetSvSimMatchMetric[MAX_JETS];
+
   ///////////////// VERTEX TREE SPECIFIC MEMBERS /////////////////
 
   // Secondary Vertex Candidates from standalone
@@ -416,6 +430,15 @@ private:
   Float_t   vtxIncCandLxySig[MAX_VTX];
   Float_t   vtxIncCandLxyzSig[MAX_VTX];
 
+  Int_t	    vtxIncCandNGenMatched;
+  Int_t	    vtxIncCandNGenFake;
+  Int_t	    vtxIncCandGenMatched[MAX_VTX];
+  Float_t   vtxIncCandGenMatchMetric[MAX_VTX];
+  Int_t	    vtxIncCandNSimMatched;
+  Int_t	    vtxIncCandNSimFake;
+  Int_t	    vtxIncCandSimMatched[MAX_VTX];
+  Float_t   vtxIncCandSimMatchMetric[MAX_VTX];
+
   // Inclusive Secondary  (post merge and arbitration)
   Int_t     vtxIncSecN;
   Float_t   vtxIncSecIsFake[MAX_VTX];
@@ -434,6 +457,16 @@ private:
   Float_t   vtxIncSecZSig[MAX_VTX];
   Float_t   vtxIncSecLxySig[MAX_VTX];  
   Float_t   vtxIncSecLxyzSig[MAX_VTX];  
+
+  Int_t	    vtxIncSecNGenMatched;
+  Int_t	    vtxIncSecNGenFake;
+  Int_t	    vtxIncSecGenMatched[MAX_VTX];
+  Float_t   vtxIncSecGenMatchMetric[MAX_VTX];
+  Int_t	    vtxIncSecNSimMatched;
+  Int_t	    vtxIncSecNSimFake;
+  Int_t	    vtxIncSecSimMatched[MAX_VTX];
+  Float_t   vtxIncSecSimMatchMetric[MAX_VTX];
+
 
   ///////////////// GENERATOR TREE SPECIFIC MEMBERS /////////////////
 
@@ -492,6 +525,7 @@ TrackAnalyzer::TrackAnalyzer(const edm::ParameterSet& iConfig)
 
   isMC_	      = iConfig.getUntrackedParameter<bool>("isMC");
   doGenMatch_ = iConfig.getUntrackedParameter<bool>("doGenMatch");
+  doSimMatch_ = iConfig.getUntrackedParameter<bool>("doSimMatch");
   isSignalMC_ = iConfig.getUntrackedParameter<bool>("isSignalMC");
 
   //tags
@@ -566,8 +600,9 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   edm::Handle<edm::SimVertexContainer > simVertices;
 
   if(isMC_) {    
-    iEvent.getByLabel(tag_genParticles_, genParticles);
-    iEvent.getByLabel(tag_simVertex_, simVertices);
+
+    if(doGenMatch_) iEvent.getByLabel(tag_genParticles_, genParticles);
+    if(doSimMatch_) iEvent.getByLabel(tag_simVertex_, simVertices);
 
     // edm::Handle<std::vector<int> > genParticleID;
     // iEvent.getByLabel(tag_genParticle_, genParticleID);
@@ -637,7 +672,7 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
       // pythia6 status code to match = 3
       // pythia8 status code to match = 23
-      if (st != 23 || fabs(id) > 6 ) continue;     
+      if (st != GEN_STATUS_CODE_MATCH) continue;     
 
       // const reco::Candidate * mom = part.mother();
       double genpt = part.pt(), geneta = part.eta(), genphi = part.phi(), genmass = part.mass();
@@ -846,6 +881,61 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     jetid++; //global jet identifier
   } // end sv tag (jet) loop
 
+
+
+  ///////////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////// GENERATOR TREE VARIABLES CALCULATIONS /////////////
+  ///////////////////////////////////////////////////////////////////////////////////
+
+  if(debug > 1 ) std::cout << "[DEBUG] Sim Vertex Dumping" << std::endl;
+
+  edm::SimVertexContainer::const_iterator iterSimVtx = simVtx.begin();
+  simVtxN = 0;
+  for(; iterSimVtx != simVtx.end(); ++iterSimVtx){    
+    const math::XYZTLorentzVectorD & pos = iterSimVtx->position();
+
+    Int_t proc_type = iterSimVtx->processType();
+
+    // only keep vertices from the generator
+    if (proc_type != 0) continue;
+
+    simVtxProcType[simVtxN] = proc_type;
+    simVtxID[simVtxN] = iterSimVtx->vertexId();
+
+    simVtxTOF[simVtxN] = pos.t();
+    simVtxX[simVtxN]   = pos.x();
+    simVtxY[simVtxN]   = pos.y();
+    simVtxZ[simVtxN]   = pos.z();
+
+    simVtxLxy[simVtxN]  = std::sqrt(pos.x() * pos.x()  + pos.y() * pos.y() );
+    simVtxLxyz[simVtxN] = std::sqrt(pos.x() * pos.x()  + pos.y() * pos.y() + pos.z() * pos.z());
+    
+    simVtxN++;
+  }
+
+  if(debug > 1 ) std::cout << "[DEBUG] Gen Particle Dumping" << std::endl;
+
+  reco::GenParticleCollection::const_iterator iterGenParticle = gen.begin();
+  genPartN = 0;
+  for(; iterGenParticle != gen.end(); ++iterGenParticle){    
+    float vx = iterGenParticle->vx(), vy = iterGenParticle->vy(), vz = iterGenParticle->vz();
+
+    genPartPID[genPartN] = iterGenParticle->pdgId();
+    genPartStatus[genPartN] = iterGenParticle->status();
+
+    genPartPt[genPartN]	 = iterGenParticle->pt();
+    genPartEta[genPartN] = iterGenParticle->eta();
+    genPartPhi[genPartN] = iterGenParticle->phi();
+    
+    genPartVX[genPartN] = vx;
+    genPartVY[genPartN] = vy;
+    genPartVZ[genPartN] = vz;
+
+    genPartVLxy[genPartN] = std::sqrt( vx * vx + vy * vy );
+    genPartVLxyz[genPartN] = std::sqrt( vx * vx + vy * vy + vz * vz);
+
+    genPartN++;    
+  }
   
   ///////////////////////////////////////////////////////////////////////////////////
   /////////////////////////////// VERTEX TREE VARIABLES CALCULATIONS ///////////////
@@ -856,10 +946,17 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   // fill the vertex information for inclusive vertex candidates
   reco::VertexCollection::const_iterator incIter = inc.begin();
-  vtxIncCandN = 0;
+  vtxIncCandN		= 0;
+  vtxIncCandNSimMatched = 0;
+  vtxIncCandNGenMatched = 0;
+  vtxIncCandNSimFake	= 0;
+  vtxIncCandNGenFake	= 0;
+
   for(; incIter != inc.end(); ++incIter){    
 
-    //qualities
+    float vx = incIter->x(), vy = incIter->y(), vz = incIter->z();
+
+    //qualities    
     vtxIncCandIsFake[vtxIncCandN] = incIter->isFake();
     vtxIncCandNTracks[vtxIncCandN] = incIter->nTracks();
     vtxIncCandChi2[vtxIncCandN] = incIter->chi2();
@@ -881,7 +978,49 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       / std::sqrt(incIter->xError() * incIter->xError() + incIter->yError() * incIter->yError());
     vtxIncCandLxyzSig[vtxIncCandN] = std::sqrt( incIter->x() * incIter->x() + incIter->y() * incIter->y() + incIter->z() * incIter->z())
       / std::sqrt(incIter->xError() * incIter->xError() + incIter->yError() * incIter->yError() + incIter->zError() * incIter->zError());
-       
+
+    vtxIncCandGenMatched[vtxIncCandN]	  = 0;
+    vtxIncCandGenMatchMetric[vtxIncCandN] = FAKE_HIGH_VAL;
+    vtxIncCandSimMatched[vtxIncCandN]	  = 0;
+    vtxIncCandSimMatchMetric[vtxIncCandN] = FAKE_HIGH_VAL;
+    
+    if (isSignalMC_ && doGenMatch_) {
+      //perform gen matching
+      for(Int_t gg = 0; gg < genPartN; gg++) {
+	if (genPartStatus[gg] != GEN_STATUS_CODE_MATCH) continue;
+	
+	float gx = genPartVX[gg], gy = genPartVY[gg], gz = genPartVZ[gg];
+	float metric = std::sqrt(((gx-vx)*(gx-vx))/(gx*gx) + ((gy-vy)*(gy-vy))/(gy*gy) + ((gz-vz)*(gz-vz))/(gz*gz));
+      
+	if (metric < VERTEX_MATCH_METRIC) {
+	  vtxIncCandGenMatched[vtxIncCandN] += 1;
+	}
+	if(metric < vtxIncCandGenMatchMetric[vtxIncCandN]) {
+	  vtxIncCandGenMatchMetric[vtxIncCandN] = metric;
+	}	
+      }
+
+      //do sim matching
+      for(Int_t ss = 0; ss < simVtxN; ss++) {
+	if (!doSimMatch_) continue;
+	if (simVtxProcType[ss] != SIM_STATUS_CODE_MATCH) continue;
+	
+	float sx = simVtxX[ss], sy = simVtxY[ss], sz = genPartVZ[ss];
+	float metric = std::sqrt(((sx-vx)*(sx-vx))/(sx*sx) + ((sy-vy)*(sy-vy))/(sy*sy) + ((sz-vz)*(sz-vz))/(sz*sz));
+      
+	if (metric < VERTEX_MATCH_METRIC) {
+	  vtxIncCandSimMatched[vtxIncCandN] += 1;
+	}
+	if(metric < vtxIncCandGenMatchMetric[vtxIncCandN]) {
+	  vtxIncCandSimMatchMetric[vtxIncCandN] = metric;
+	}	
+      }
+    }
+
+    if (vtxIncCandGenMatched[vtxIncCandN] > 0) vtxIncCandNGenMatched += 1;
+    else vtxIncCandNGenFake += 1;
+    if (vtxIncCandSimMatched[vtxIncCandN] > 0) vtxIncCandNSimMatched += 1;
+    else vtxIncCandNSimFake += 1;
     vtxIncCandN++;
   }
 
@@ -889,10 +1028,16 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   // fill the vertex information for inclusive vertex secondary vertices
   reco::VertexCollection::const_iterator incSVIter = incSV.begin();
-  vtxIncSecN = 0;
-  for(; incSVIter != incSV.end(); ++incSVIter){    
-    //qualities
+  vtxIncSecN	       = 0;
+  vtxIncSecNSimMatched = 0;
+  vtxIncSecNGenMatched = 0;
+  vtxIncSecNSimFake    = 0;
+  vtxIncSecNGenFake    = 0;
 
+  for(; incSVIter != incSV.end(); ++incSVIter){    
+    float vx = incSVIter->x(), vy = incSVIter->y(), vz = incSVIter->z();
+    
+    //qualities
     vtxIncSecIsFake[vtxIncSecN]	 = incSVIter->isFake();
     vtxIncSecNTracks[vtxIncSecN] = incSVIter->nTracks();
     vtxIncSecChi2[vtxIncSecN]	 = incSVIter->chi2();
@@ -903,72 +1048,64 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     vtxIncSecX[vtxIncSecN]    = incSVIter->x();
     vtxIncSecY[vtxIncSecN]    = incSVIter->y();
     vtxIncSecZ[vtxIncSecN]    = incSVIter->z();
-    vtxIncSecLxy[vtxIncSecN]  = std::sqrt( incSVIter->x() * incSVIter->x() + incSVIter->y() * incSVIter->y());
-    vtxIncSecLxyz[vtxIncSecN] = std::sqrt( incSVIter->x() * incSVIter->x() + incSVIter->y() * incSVIter->y() + incSVIter->z() * incSVIter->z());
+    vtxIncSecLxy[vtxIncSecN]  = std::sqrt( vx*vx + vy*vy);
+    vtxIncSecLxyz[vtxIncSecN] = std::sqrt( vx*vx + vy*vy + vz*vz);
 
     //significances
     if(debug > 1 ) std::cout << "[DEBUG] [INC SV] Significances" << std::endl;
     vtxIncSecXSig[vtxIncSecN]	 = incSVIter->x() / incSVIter->xError();
     vtxIncSecYSig[vtxIncSecN]	 = incSVIter->y() / incSVIter->yError();
     vtxIncSecZSig[vtxIncSecN]	 = incSVIter->z() / incSVIter->zError();
-    vtxIncSecLxySig[vtxIncSecN]	 = std::sqrt( incSVIter->x() * incSVIter->x() + incSVIter->y() * incSVIter->y())
+    vtxIncSecLxySig[vtxIncSecN]	 = std::sqrt(vx*vx + vy*vy)
       / std::sqrt(incSVIter->xError() * incSVIter->xError() + incSVIter->yError() * incSVIter->yError());
-    vtxIncSecLxyzSig[vtxIncSecN] = std::sqrt( incSVIter->x() * incSVIter->x() + incSVIter->y() * incSVIter->y() + incSVIter->z() * incSVIter->z())
+    vtxIncSecLxyzSig[vtxIncSecN] = std::sqrt( vx*vx + vy*vy + vz*vz)
       / std::sqrt(incSVIter->xError() * incSVIter->xError() + incSVIter->yError() * incSVIter->yError() + incSVIter->zError() * incSVIter->zError());
-       
+
+    vtxIncSecGenMatched[vtxIncSecN] = 0;
+    vtxIncSecGenMatchMetric[vtxIncSecN] = FAKE_HIGH_VAL;
+    vtxIncSecSimMatched[vtxIncSecN] = 0;
+    vtxIncSecSimMatchMetric[vtxIncSecN] = FAKE_HIGH_VAL;
+    
+    //gen and sim vertex matchingw
+    if (isSignalMC_ && doGenMatch_) {
+      //perform gen matching
+      for(Int_t gg = 0; gg < genPartN; gg++) {
+	if (genPartStatus[gg] != GEN_STATUS_CODE_MATCH) continue;
+	
+	float gx = genPartVX[gg], gy = genPartVY[gg], gz = genPartVZ[gg];
+	float metric = std::sqrt(((gx-vx)*(gx-vx))/(gx*gx) + ((gy-vy)*(gy-vy))/(gy*gy) + ((gz-vz)*(gz-vz))/(gz*gz));
+      
+	if (metric < VERTEX_MATCH_METRIC) {
+	  vtxIncSecGenMatched[vtxIncSecN] += 1;
+	}
+	if(metric < vtxIncSecGenMatchMetric[vtxIncSecN]) {
+	  vtxIncSecGenMatchMetric[vtxIncSecN] = metric;
+	}	
+      }
+
+      //do sim matching
+      for(Int_t ss = 0; ss < simVtxN; ss++) {
+	if (!doSimMatch_) continue;
+	if (simVtxProcType[ss] != SIM_STATUS_CODE_MATCH) continue;
+	
+	float sx = simVtxX[ss], sy = simVtxY[ss], sz = genPartVZ[ss];
+	float metric = std::sqrt(((sx-vx)*(sx-vx))/(sx*sx) + ((sy-vy)*(sy-vy))/(sy*sy) + ((sz-vz)*(sz-vz))/(sz*sz));
+      
+	if (metric < VERTEX_MATCH_METRIC) {
+	  vtxIncSecSimMatched[vtxIncSecN] += 1;
+	}
+	if(metric < vtxIncSecGenMatchMetric[vtxIncSecN]) {
+	  vtxIncSecSimMatchMetric[vtxIncSecN] = metric;
+	}	
+      }
+    }
+
+    if (vtxIncSecGenMatched[vtxIncSecN] > 0) vtxIncSecNGenMatched += 1;
+    else vtxIncSecNGenFake += 1;
+    if (vtxIncSecSimMatched[vtxIncSecN] > 0) vtxIncSecNSimMatched += 1;
+    else vtxIncSecNSimFake += 1;
+
     vtxIncSecN++;
-  }
-
-  ///////////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////// GENERATOR TREE VARIABLES CALCULATIONS /////////////
-  ///////////////////////////////////////////////////////////////////////////////////
-
-  if(debug > 1 ) std::cout << "[DEBUG] Sim Vertex Dumping" << std::endl;
-
-  edm::SimVertexContainer::const_iterator iterSimVtx = simVtx.begin();
-  simVtxN = 0;
-  for(; iterSimVtx != simVtx.end(); ++iterSimVtx){    
-    const math::XYZTLorentzVectorD & pos = iterSimVtx->position();
-
-    simVtxProcType[simVtxN] = iterSimVtx->processType();
-    simVtxID[simVtxN] = iterSimVtx->vertexId();
-
-    simVtxTOF[simVtxN] = pos.t();
-    simVtxX[simVtxN]   = pos.x();
-    simVtxY[simVtxN]   = pos.y();
-    simVtxZ[simVtxN]   = pos.z();
-
-    simVtxLxy[simVtxN]  = std::sqrt(pos.x() * pos.x()  + pos.y() * pos.y() );
-    simVtxLxyz[simVtxN] = std::sqrt(pos.x() * pos.x()  + pos.y() * pos.y() + pos.z() * pos.z());
-    
-    simVtxN++;
-  }
-
-  if(debug > 1 ) std::cout << "[DEBUG] Gen Particle Dumping" << std::endl;
-
-  reco::GenParticleCollection::const_iterator iterGenParticle = gen.begin();
-  genPartN = 0;
-  for(; iterGenParticle != gen.end(); ++iterGenParticle){    
-    float vx = iterGenParticle->vx(), vy = iterGenParticle->vy(), vz = iterGenParticle->vz();
-
-    // we only want to keep vertices that are far displaced from the beamline
-    //if (vx*vx + vy*vy  < 0.05 * 0.05) continue;
-
-    genPartPID[genPartN] = iterGenParticle->pdgId();
-    genPartStatus[genPartN] = iterGenParticle->status();
-
-    genPartPt[genPartN]	 = iterGenParticle->pt();
-    genPartEta[genPartN] = iterGenParticle->eta();
-    genPartPhi[genPartN] = iterGenParticle->phi();
-    
-    genPartVX[genPartN] = vx;
-    genPartVY[genPartN] = vy;
-    genPartVZ[genPartN] = vz;
-
-    genPartVLxy[genPartN] = std::sqrt( vx * vx + vy * vy );
-    genPartVLxyz[genPartN] = std::sqrt( vx * vx + vy * vy + vz * vz);
-
-    genPartN++;    
   }
   
   ///////////////////////////////////////////////////////////////////////////////////
@@ -976,6 +1113,12 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   ///////////////////////////////////////////////////////////////////////////////////
 
   // loop over all calo jets
+
+  jetSvNGenMatched = 0;
+  jetSvNSimMatched = 0;
+  jetSvNGenFake	   = 0;
+  jetSvNSimFake	   = 0;
+
   for(int jj = 0; jj < nCaloJets; jj++) {
 
     if (caloJetPt[jj] < cut_jetPt || fabs(caloJetEta[jj]) > cut_jetEta) continue;
@@ -1206,6 +1349,52 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     jetSvNChi2[jj]   = svNChi2[bestSV];
     jetSvNDof[jj]    = svNDof[bestSV];
     jetSvIsValid[jj] = svIsValid[bestSV];                  
+
+    jetSvGenMatched[jj] = 0 ;
+    jetSvGenMatchMetric[jj] = FAKE_HIGH_VAL;
+    jetSvSimMatched[jj] = 0 ;
+    jetSvSimMatchMetric[jj] = FAKE_HIGH_VAL;
+
+    float vx = jetSvX[jj], vy = jetSvY[jj], vz = jetSvZ[jj];
+
+    //gen and sim vertex matchingw
+    if (isSignalMC_ && doGenMatch_) {
+      //perform gen matching
+      for(Int_t gg = 0; gg < genPartN; gg++) {
+	if (genPartStatus[gg] != GEN_STATUS_CODE_MATCH) continue;
+	
+	float gx = genPartVX[gg], gy = genPartVY[gg], gz = genPartVZ[gg];
+	float metric = std::sqrt(((gx-vx)*(gx-vx))/(gx*gx) + ((gy-vy)*(gy-vy))/(gy*gy) + ((gz-vz)*(gz-vz))/(gz*gz));
+      
+	if (metric < VERTEX_MATCH_METRIC) {
+	  jetSvGenMatched[jj] += 1;
+	}
+	if( metric < jetSvSimMatchMetric[jj]) {
+	  jetSvGenMatchMetric[jj] = metric;
+	}	
+      }
+
+      //do sim matching
+      for(Int_t ss = 0; ss < simVtxN; ss++) {
+	if (!doSimMatch_) continue;
+	if (simVtxProcType[ss] != SIM_STATUS_CODE_MATCH) continue;
+	
+	float sx = simVtxX[ss], sy = simVtxY[ss], sz = genPartVZ[ss];
+	float metric = std::sqrt(((sx-vx)*(sx-vx))/(sx*sx) + ((sy-vy)*(sy-vy))/(sy*sy) + ((sz-vz)*(sz-vz))/(sz*sz));
+      
+	if(metric < VERTEX_MATCH_METRIC) {
+	  jetSvSimMatched[jj] += 1;
+	}
+	if(metric < jetSvGenMatchMetric[jj]) {
+	  jetSvSimMatchMetric[jj] = metric;
+	}	
+      }
+    }
+
+    if (jetSvGenMatched[jj] > 0) jetSvNGenMatched += 1;
+    else jetSvNGenFake += 1;
+    if (jetSvSimMatched[jj] > 0) jetSvNSimMatched += 1;
+    else jetSvNSimFake += 1;
 
   } // end loop over jets
 
@@ -1475,6 +1664,15 @@ TrackAnalyzer::beginJob()
   jetTree_->Branch("jetSvNDof", &jetSvNDof, "jetSvNDof[nCaloJets]/F");  
   jetTree_->Branch("jetSvIsValid", &jetSvIsValid, "jetSvIsValid[nCaloJets]/I");  
 
+  // Gen Matching
+  jetTree_->Branch("jetSvNGenMatched", &jetSvNGenMatched, "jetSvNGenMatched/I");  
+  jetTree_->Branch("jetSvNGenFake", &jetSvNGenFake, "jetSvNGenFake/I");  
+  jetTree_->Branch("jetSvGenMatched", &jetSvGenMatched, "jetSvGenMatched[nCaloJets]/I");  
+  jetTree_->Branch("jetSvGenMatchMetric", &jetSvGenMatchMetric, "jetSvGenMatchMetric[nCaloJets]/F");  
+  jetTree_->Branch("jetSvNSimMatched", &jetSvNSimMatched, "jetSvNSimMatched/I");  
+  jetTree_->Branch("jetSvNSimFake", &jetSvNSimFake, "jetSvNSimFake/I");  
+  jetTree_->Branch("jetSvSimMatched", &jetSvSimMatched, "jetSvSimMatched[nCaloJets]/I");  
+  jetTree_->Branch("jetSvSimMatchMetric", &jetSvSimMatchMetric, "jetSvSimMatchMetric[nCaloJets]/F");  
 
   ///////////  ///////////  ///////////  ///////////  ///////////  ///////////  ////
   //////////////////////////////// VTX TREE QUANITIES //////////////////////////////
@@ -1519,6 +1717,15 @@ TrackAnalyzer::beginJob()
   vertexTree_->Branch("vtxIncCandZsig", &vtxIncCandZSig, "vtxIncCandZSig[vtxIncCandN]/F");
   vertexTree_->Branch("vtxIncCandLxySig", &vtxIncCandLxySig, "vtxIncCandLxySig[vtxIncCandN]/F");
 
+  vertexTree_->Branch("vtxIncCandNGenMatched", &vtxIncCandNGenMatched, "vtxIncCandNGenMatched/I");
+  vertexTree_->Branch("vtxIncCandNGenFake", &vtxIncCandNGenFake, "vtxIncCandNGenFake/I");
+  vertexTree_->Branch("vtxIncCandGenMatched", &vtxIncCandGenMatched, "vtxIncCandGenMatched[vtxIncCandN]/I");
+  vertexTree_->Branch("vtxIncCandGenMatchMetric", &vtxIncCandGenMatchMetric, "vtxIncCandGenMatchMetric[vtxIncCandN]/F");
+  vertexTree_->Branch("vtxIncCandNSimMatched", &vtxIncCandNSimMatched, "vtxIncCandNSimMatched/I");
+  vertexTree_->Branch("vtxIncCandNSimFake", &vtxIncCandNSimFake, "vtxIncCandNSimFake/I");
+  vertexTree_->Branch("vtxIncCandSimMatched", &vtxIncCandSimMatched, "vtxIncCandSimMatched[vtxIncCandN]/I");
+  vertexTree_->Branch("vtxIncCandSimMatchMetric", &vtxIncCandSimMatchMetric, "vtxIncCandSimMatchMetric[vtxIncCandN]/F");
+
   //inclusive secondary vertices (after merging and arbitration) 
   vertexTree_->Branch("vtxIncSecN", &vtxIncSecN, "vtxIncSecN/I");
   vertexTree_->Branch("vtxIncSecIsFake", &vtxIncSecIsFake, "vtxIncSecIsFake[vtxIncSecN]/F");
@@ -1534,6 +1741,16 @@ TrackAnalyzer::beginJob()
   vertexTree_->Branch("vtxIncSecYsig", &vtxIncSecYSig, "vtxIncSecYSig[vtxIncSecN]/F");
   vertexTree_->Branch("vtxIncSecZsig", &vtxIncSecZSig, "vtxIncSecZSig[vtxIncSecN]/F");
   vertexTree_->Branch("vtxIncSecLxySig", &vtxIncSecLxySig, "vtxIncSecLxySig[vtxIncSecN]/F");    
+
+  vertexTree_->Branch("vtxIncSecNGenMatched", &vtxIncSecNGenMatched, "vtxIncSecNGenMatched/I");
+  vertexTree_->Branch("vtxIncSecNGenFake", &vtxIncSecNGenFake, "vtxIncSecNGenFake/I");
+  vertexTree_->Branch("vtxIncSecGenMatched", &vtxIncSecGenMatched, "vtxIncSecGenMatched[vtxIncSecN]/I");
+  vertexTree_->Branch("vtxIncSecGenMatchMetric", &vtxIncSecGenMatchMetric, "vtxIncSecGenMatchMetric[vtxIncSecN]/F");
+  vertexTree_->Branch("vtxIncSecNSimMatched", &vtxIncSecNSimMatched, "vtxIncSecNSimMatched/I");
+  vertexTree_->Branch("vtxIncSecNSimFake", &vtxIncSecNSimFake, "vtxIncSecNSimFake/I");
+  vertexTree_->Branch("vtxIncSecSimMatched", &vtxIncSecSimMatched, "vtxIncSecSimMatched[vtxIncSecN]/I");
+  vertexTree_->Branch("vtxIncSecSimMatchMetric", &vtxIncSecSimMatchMetric, "vtxIncSecSimMatchMetric[vtxIncSecN]/F");
+
 
   ///////////  ///////////  ///////////  ///////////  ///////////  ///////////  ////
   //////////////////////////////// SIMULATION QUANITIES ////////////////////////////

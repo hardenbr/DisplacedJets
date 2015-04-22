@@ -70,4 +70,6 @@ python plot2D.py -f vtx2D.list -v "simVtxY:simVtxX" -c "evNum==1 && simVtxProcTy
 ### PLOT VERTEX TREE
 python plot2D.py -f vtx2D.list -v "vtxIncSecY:vtxIncSecX" -c "evNum==1" -t vtx --xmin -5 --xmax 5 --nxbins 50  --xlabel "Inclusive Secondary Vertex X [cm]" --ymin -5 --ymax 5 --nybins 50 --ylabel "Inclusive Secondary Vertex Y [cm]" -o test.root
 
+python plot2D.py -f vtx2D.list -v "vtxIncSecY:vtxIncSecX" -c "vtxIncSecGenMatchMetric * (vtxIncSecGenMatched > 0 && evNum==1) " -t vtx --xmin -5 --xmax 5 --nxbins 50  --xlabel "Inclusive Secondary Vertex X [cm]" --ymin -5 --ymax 5 --nybins 50 --ylabel "Inclusive Secondary Vertex Y [cm]" -o test.root
+
 python plot2D.py -f vtx2D.list -v "jetSvX:jetSvY" -c "evNum==1" -t jets --xmin -5 --xmax 5 --nxbins 50  --xlabel "AVF Vertex X [cm]" --ymin -5 --ymax 5 --nybins 50 --ylabel "AVF Vertex Y [cm]" -o test.root

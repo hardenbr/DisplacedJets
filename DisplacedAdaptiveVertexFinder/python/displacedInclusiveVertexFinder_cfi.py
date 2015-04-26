@@ -35,7 +35,6 @@ displacedInclusiveVertexFinder  = cms.EDProducer("InclusiveVertexFinder",
                smoothing = cms.bool(True)
        )
 
-
 )
 
 

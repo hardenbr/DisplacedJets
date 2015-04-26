@@ -68,8 +68,24 @@ python plot2D.py -f vtx2D.list -v "simVtxY:simVtxX" -c "evNum==1 && simVtxProcTy
 
 
 ### PLOT VERTEX TREE
+python plot1D.py -f vtx.list -v "vtxIncSecNGenMatched" -c "1" -t vtx --xmin 0 --xmax 10 --nbins 10 --xlabel "N Matched Inclusive Secondary" -o test.root
+python plot1D.py -f vtx.list -v "vtxIncSecNGenFake" -c "1" -t vtx --xmin 0 --xmax 10 --nbins 10 --xlabel "N Fake Inclusive Secondary" -o test.root
+python plot1D.py -f vtx.list -v "vtxIncSecNGenFake/vtxIncSecNGenMatched" -c "1" -t vtx --xmin 0 --xmax 5 --nbins 10 --xlabel "N Fake / N Matched Inclusive Secondary" -o test.root
+python plot1D.py -f vtx.list -v "vtxIncSecGenMatchMetric" -c "1" -t vtx --xmin 0 --xmax 1 --nbins 50 --xlabel "Gen Sec. Inclusive Matching Metric" -o test.root
+
+
+python plot1D.py -f sv.list -v "jetSvNGenMatched" -c "1" -t vtx --xmin 0 --xmax 10 --nbins 10 --xlabel "N Matched S.A.  Secondary" -o test.root
+python plot1D.py -f sv.list -v "jetSvNGenFake" -c "1" -t vtx --xmin 0 --xmax 10 --nbins 10 --xlabel "N Fake S.A. Secondary" -o test.root
+python plot1D.py -f sv.list -v "jetSvNGenFake/jetSvNGenMatched" -c "1" -t vtx --xmin 0 --xmax 5 --nbins 10 --xlabel "N Fake / N Matched S.A. Secondary" -o test.root
+python plot1D.py -f sv.list -v "jetSvGenMatchMetric" -c "1" -t vtx --xmin 0 --xmax 1 --nbins 50 --xlabel "Gen Sec. S.A. Matching Metric" -o test.root
+
+
+
+
+
 python plot2D.py -f vtx2D.list -v "vtxIncSecY:vtxIncSecX" -c "evNum==1" -t vtx --xmin -5 --xmax 5 --nxbins 50  --xlabel "Inclusive Secondary Vertex X [cm]" --ymin -5 --ymax 5 --nybins 50 --ylabel "Inclusive Secondary Vertex Y [cm]" -o test.root
 
 python plot2D.py -f vtx2D.list -v "vtxIncSecY:vtxIncSecX" -c "vtxIncSecGenMatchMetric * (vtxIncSecGenMatched > 0 && evNum==1) " -t vtx --xmin -5 --xmax 5 --nxbins 50  --xlabel "Inclusive Secondary Vertex X [cm]" --ymin -5 --ymax 5 --nybins 50 --ylabel "Inclusive Secondary Vertex Y [cm]" -o test.root
 
 python plot2D.py -f vtx2D.list -v "jetSvX:jetSvY" -c "evNum==1" -t jets --xmin -5 --xmax 5 --nxbins 50  --xlabel "AVF Vertex X [cm]" --ymin -5 --ymax 5 --nybins 50 --ylabel "AVF Vertex Y [cm]" -o test.root
+

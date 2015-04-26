@@ -8,7 +8,7 @@ vertexCutsBlock = cms.PSet(
 		distVal2dMax = cms.double(99999.9), #displaced 2.5 -> infinity
 		useTrackWeights = cms.bool(False), #displaced True -> False only matters for mass cut!
 		maxDeltaRToJetAxis = cms.double(1.0), #displaced .5 -> 1
-		v0Filter = cms.PSet(k0sMassWindow = cms.double(-9999)), #k short filter out? displaced .05 --> -infty  format: abs(vtx_mass - k0s mass) < masswindow)
+		v0Filter = cms.PSet(k0sMassWindow = cms.double(.05)), #k short filter out? displaced .05 --> -infty  format: abs(vtx_mass - k0s mass) < masswindow)
 		distSig2dMin = cms.double(3.0),
 		multiplicityMin = cms.uint32(2), #displaced 2 -> 2
 		massMax = cms.double(99999.9), # displaced 6.5 -> infity

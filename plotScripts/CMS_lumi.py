@@ -215,7 +215,7 @@ def CMS_lumi(pad,  iPeriod,  iPosX ):
         lumiText += " (7 TeV)"
     elif ( iPeriod==4 ):
         lumiText += lumi_13TeV
-        lumiText += " 13 TeV MC 40bx25"
+        lumiText += " 13 TeV MC"
     elif ( iPeriod==7 ):
         if( outOfFrame ):lumiText += "#scale[0.85]{"
         lumiText += lumi_13TeV 

@@ -11,7 +11,11 @@ displacedInclusiveSecondaryVertices.secondaryVertices = cms.InputTag("displacedT
 displacedInclusiveSecondaryVertices.maxFraction = 0.05 #djet .2 -> .05
 displacedInclusiveSecondaryVertices.minSignificance = 10.
 
+from DisplacedJets.DisplacedAdaptiveVertexFinder.inclusiveSecondaryVertexFinderTagInfos_cfi import *
+
+
+
 #displacedInclusiveVertexing = cms.Sequence(displacedInclusiveVertexFinder * displacedVertexMerger * displacedTrackVertexArbitrator * displacedInclusiveSecondaryVertices * displacedInclusiveVertexFinderJetMatchedTracks * displacedInclusiveVertexFinderJetMatchedTracksCaloFace )
 
-displacedInclusiveVertexing = cms.Sequence(displacedInclusiveVertexFinder * displacedInclusiveVertexFinderJetMatchedTracks * displacedInclusiveVertexFinderJetMatchedTracksCaloFace * displacedVertexMerger * displacedTrackVertexArbitrator * displacedInclusiveSecondaryVertices )
+displacedInclusiveVertexing = cms.Sequence(displacedInclusiveVertexFinder * displacedInclusiveVertexFinderJetMatchedTracks * displacedInclusiveVertexFinderJetMatchedTracksCaloFace * displacedVertexMerger * displacedTrackVertexArbitrator * displacedInclusiveSecondaryVertices * displacedInclusiveSecondaryVertexFinderTagInfos)
 

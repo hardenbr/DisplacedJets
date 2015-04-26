@@ -1,60 +1,61 @@
 import FWCore.ParameterSet.Config as cms
 
-#output options
-appendLifetime="single30"
-appendBkg="120_170"
+# output options (to be appended to the file name outputted)
+appendLifetime = "single30"
+appendBkg      = "120_170"
 
-#flags for running
-isSignalMC = True
-doGenMatch = True
+# flags for running
+nevents       = 2000
+isSignalMC    = True
+doGenMatch    = True
 doSimVtxMatch = True
-isMC = True
-doedm = False
-nevents = 2000
+isMC          = True
+doedm         = False
 
 # analysis cuts
 cut_jetPt = 80
 cut_jetEta = 2.0
 
-input_file = None
 
-# test files
+input_file = None
 if isSignalMC:
 #    input_file = 'file:/afs/cern.ch/work/h/hardenbr/2015/DIJET/GEN_SIGNAL_TEST/dijet_700_300_ctau30.root'
 #    input_file = 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/group/phys_susy/razor/josh/RAZOR_DIJET/DIJET_MH700_MX300_CTAU1000_40BX25_AOD/dijet_700_300_ctau1000_94_1_3mG.root'
     input_file = 'file:/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/SIGNAL_GENERATION/PAIR_XX/CMSSW_7_2_0/src/Configuration/GenProduction/python/ThirteenTeV/XXTo4J_M-1500_CTau-30mm_step3.root'
-#    input_file = 'file:/afs/cern.ch/work/h/hardenbr/2015/DIJET/GEN_SIGNAL_TEST/dijet_700_300_ctau300.root'
+#   input_file = 'file:/afs/cern.ch/work/h/hardenbr/2015/DIJET/GEN_SIGNAL_TEST/dijet_700_300_ctau300.root'
 #   input_file = 'file:/afs/cern.ch/work/h/hardenbr/2015/DIJET/GEN_SIGNAL_TEST/dijet_700_300_ctau3000.root'
 #   input_file = 'file:/afs/cern.ch/work/h/hardenbr/2015/DIJET/GEN_SIGNAL_TEST/dijet_700_300_ctau3.root'
 #   input_file = 'file:/afs/cern.ch/user/t/tkolberg/public/hepmcreco_RAW2DIGI_RECO.root'
 else:
     input_file = 'file:/afs/cern.ch/work/h/hardenbr/TEST_FILES/QCD_Pt-120to170_Tune4C_13TeV_pythia8_castor_tsg_PU40bx25_POSTLS162_V2-v1.root'
-#"file:/afs/cern.ch/work/h/hardenbr/QCD_Pt-50to80_Tune4C_13TeV_pythia8_AOD.root'
+#    "file:/afs/cern.ch/work/h/hardenbr/QCD_Pt-50to80_Tune4C_13TeV_pythia8_AOD.root'
 #    input_file =  'file:/afs/cern.ch/work/h/hardenbr/QCD_470_600_AOD_40bx25.root'
 
 process = cms.Process("ANA")
 proc_label = "DIGI2RAW"
 
-# from RecoBTag.SoftLepton.softLepton_cff import *
-# from RecoBTag.ImpactParameter.impactParameter_cff import *
-# from RecoBTag.SecondaryVertex.secondaryVertex_cff import *
-# from RecoBTau.JetTagComputer.combinedMVA_cff import *
-# from RecoBTag.Configuration.RecoBTag_EventContent_cff import *
-# process.load('RecoBTag/Configuration/RecoBTag_cff')
-
 process.load("FWCore.MessageService.MessageLogger_cfi")
 
-#geometry and global tag sequences
+#standard sequences (from 740x driver command)
 process.load('Configuration.StandardSequences.Services_cff')
-process.load("Configuration.StandardSequences.MagneticField_38T_cff")
-process.load("Configuration.Geometry.GeometryIdeal_cff")
-process.load("Configuration.StandardSequences.Reconstruction_cff")
+#process.load('SimGeneral.HepPDTESSource.pythiapdt_cfi')
+process.load('FWCore.MessageService.MessageLogger_cfi')
+process.load('Configuration.EventContent.EventContent_cff')
+#process.load('SimGeneral.MixingModule.mixNoPU_cfi')
+process.load('Configuration.StandardSequences.GeometryRecoDB_cff')
+process.load('Configuration.StandardSequences.MagneticField_38T_PostLS1_cff')
+process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_condDBv2_cff')
 
+#geometry and global tag sequences
+#process.load('Configuration.StandardSequences.Services_cff')
+#process.load("Configuration.StandardSequences.MagneticField_38T_cff")
+#process.load("Configuration.Geometry.GeometryIdeal_cff")
+#process.load("Configuration.StandardSequences.Reconstruction_cff")
 #process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
 #process.GlobalTag.globaltag = 'MCRUN2_72_V1A::All'
 
 process.GlobalTag = cms.ESSource( "PoolDBESSource",
-    globaltag = cms.string( "auto:run2_mc_GRun" ),
+    globaltag = cms.string( "auto:run2_mc" ),
     RefreshEachRun = cms.untracked.bool( True ),
     RefreshOpenIOVs = cms.untracked.bool( False ),
     toGet = cms.VPSet( 
@@ -86,11 +87,11 @@ process.GlobalTag = cms.ESSource( "PoolDBESSource",
     BlobStreamerName = cms.untracked.string( "TBufferBlobStreamingService" )
 )
 
-# override the GlobalTag, connection string and pfnPrefix
+# Deliver the missing payloads fro the globaltag (TO BE REMOVED)
 if 'GlobalTag' in process.__dict__:
     from Configuration.AlCa.GlobalTag_condDBv2 import GlobalTag as customiseGlobalTag
-    process.GlobalTag = customiseGlobalTag(process.GlobalTag, globaltag = 'MCRUN2_72_V4A')
-#    process.GlobalTag = customiseGlobalTag(process.GlobalTag, globaltag = 'MCRUN2_72_V4A',conditions='TrackerAlignmentExtendedError_2011Realistic_v1_mc,TrackerAlignmentErrorExtendedRcd,frontier://FrontierProd/CMS_CONDITIONS+MuonDTAPEObjectsExtended_v0_mc,DTAlignmentErrorExtendedRcd,frontier://FrontierProd/CMS_CONDITIONS+MuonCSCAPEObjectsExtended_v0_mc,CSCAlignmentErrorExtendedRcd,frontier://FrontierProd/CMS_CONDITIONS+EcalSamplesCorrelation_mc,EcalSamplesCorrelationRcd,frontier://FrontierProd/CMS_CONDITIONS+EcalPulseShapes_mc,EcalPulseShapesRcd,frontier://FrontierProd/CMS_CONDITIONS+EcalPulseCovariances_mc,EcalPulseCovariancesRcd,frontier://FrontierProd/CMS_CONDITIONS')
+#    process.GlobalTag = customiseGlobalTag(process.GlobalTag, globaltag = 'MCRUN2_72_V4A')
+    process.GlobalTag = customiseGlobalTag(process.GlobalTag, globaltag = 'auto:run2_mc',conditions='TrackerAlignmentExtendedError_2011Realistic_v1_mc,TrackerAlignmentErrorExtendedRcd,frontier://FrontierProd/CMS_CONDITIONS+MuonDTAPEObjectsExtended_v0_mc,DTAlignmentErrorExtendedRcd,frontier://FrontierProd/CMS_CONDITIONS+MuonCSCAPEObjectsExtended_v0_mc,CSCAlignmentErrorExtendedRcd,frontier://FrontierProd/CMS_CONDITIONS+EcalSamplesCorrelation_mc,EcalSamplesCorrelationRcd,frontier://FrontierProd/CMS_CONDITIONS+EcalPulseShapes_mc,EcalPulseShapesRcd,frontier://FrontierProd/CMS_CONDITIONS+EcalPulseCovariances_mc,EcalPulseCovariancesRcd,frontier://FrontierProd/CMS_CONDITIONS')
 #    process.GlobalTag = customiseGlobalTag(process.GlobalTag, globaltag = 'MCRUN2_72_V1A')
     process.GlobalTag.connect   = 'frontier://FrontierProd/CMS_CONDITIONS'
     process.GlobalTag.pfnPrefix = cms.untracked.string('frontier://FrontierProd/')
@@ -454,3 +455,10 @@ if doedm:
     process.btag_output = cms.EndPath( process.test_output)
 else:
     process.p = cms.Path(process.djtagging + process.analyzerVTX + process.analyzerCALO)
+
+
+# Automatic addition of the customisation function from SLHCUpgradeSimulations.Configuration.postLS1Customs                                                                  
+from SLHCUpgradeSimulations.Configuration.postLS1Customs import customisePostLS1
+
+#call to customisation function customisePostLS1 imported from SLHCUpgradeSimulations.Configuration.postLS1Customs                                                           
+process = customisePostLS1(process)

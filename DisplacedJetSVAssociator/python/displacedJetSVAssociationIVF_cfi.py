@@ -6,6 +6,6 @@ displacedJetSVAssociationIVF = cms.EDProducer("DisplacedJetSVAssociator",
                                               primaryVertices   = cms.untracked.InputTag("offlinePrimaryVertices"),
                                               outputLabel       = cms.untracked.string('displacedIVFJetAssoc'),
                                               jetPtCut          = cms.untracked.double(70.0),
-                                              alogname          = cms.untracked.string("oneOverDeltaR"),
+                                              algoName          = cms.untracked.string("oneOverDeltaR"),
                                               debug             = cms.untracked.int32(1)
 )

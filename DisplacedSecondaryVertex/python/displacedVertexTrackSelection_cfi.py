@@ -1,6 +1,6 @@
 import FWCore.ParameterSet.Config as cms
 
-from RecoBTag.ImpactParameter.variableJTA_cfi import *
+from RecoBTag.ImpactParameter.variableJTA_cff import *
 
 vertexTrackSelectionBlock = cms.PSet(
 	trackSelection = cms.PSet(

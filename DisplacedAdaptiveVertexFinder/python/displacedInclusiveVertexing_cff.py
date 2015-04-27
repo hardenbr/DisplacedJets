@@ -5,17 +5,14 @@ from DisplacedJets.DisplacedAdaptiveVertexFinder.displacedVertexMerger_cfi impor
 from DisplacedJets.DisplacedAdaptiveVertexFinder.displacedTrackVertexArbitrator_cfi import *
 from DisplacedJets.DisplacedAdaptiveVertexFinder.displacedInclusiveVertexFinderJetMatchedTracksCaloFace_cfi import *
 from DisplacedJets.DisplacedAdaptiveVertexFinder.displacedInclusiveVertexFinderJetMatchedTracks_cfi import *
+from DisplacedJets.DisplacedJetSVAssociator.displacedJetSVAssociationIVF_cfi import *
 
 displacedInclusiveSecondaryVertices = displacedVertexMerger.clone()
 displacedInclusiveSecondaryVertices.secondaryVertices = cms.InputTag("displacedTrackVertexArbitrator")
 displacedInclusiveSecondaryVertices.maxFraction = 0.05 #djet .2 -> .05
 displacedInclusiveSecondaryVertices.minSignificance = 10.
 
-from DisplacedJets.DisplacedAdaptiveVertexFinder.inclusiveSecondaryVertexFinderTagInfos_cfi import *
-
-
-
 #displacedInclusiveVertexing = cms.Sequence(displacedInclusiveVertexFinder * displacedVertexMerger * displacedTrackVertexArbitrator * displacedInclusiveSecondaryVertices * displacedInclusiveVertexFinderJetMatchedTracks * displacedInclusiveVertexFinderJetMatchedTracksCaloFace )
 
-displacedInclusiveVertexing = cms.Sequence(displacedInclusiveVertexFinder * displacedInclusiveVertexFinderJetMatchedTracks * displacedInclusiveVertexFinderJetMatchedTracksCaloFace * displacedVertexMerger * displacedTrackVertexArbitrator * displacedInclusiveSecondaryVertices * displacedInclusiveSecondaryVertexFinderTagInfos)
+displacedInclusiveVertexing = cms.Sequence(displacedInclusiveVertexFinder * displacedInclusiveVertexFinderJetMatchedTracks * displacedInclusiveVertexFinderJetMatchedTracksCaloFace * displacedVertexMerger * displacedTrackVertexArbitrator * displacedInclusiveSecondaryVertices * displacedJetSVAssociationIVF)
 

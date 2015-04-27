@@ -110,12 +110,12 @@ DisplacedTagsToVertices::DisplacedTagsToVertices(const edm::ParameterSet& iConfi
 {
 
   tag_secondaryVertexTagInfo_ = iConfig.getUntrackedParameter<edm::InputTag>("secondaryVertexTagInfo");
-  tag_genParticles_ = iConfig.getUntrackedParameter<edm::InputTag>("genParticleTag");
-  jetPtCut_ = iConfig.getUntrackedParameter<double>("jetPtCut");
-  outputLabel_ = iConfig.getUntrackedParameter<std::string>("outputLabel");
-  isSignalMC_    =   iConfig.getUntrackedParameter<bool>("isSignalMC");
-  doGenMatch_    =   iConfig.getUntrackedParameter<bool>("doGenMatch");
-  debug_    =   iConfig.getUntrackedParameter<int>("debug");
+  tag_genParticles_	      = iConfig.getUntrackedParameter<edm::InputTag>("genParticleTag");
+  jetPtCut_		      = iConfig.getUntrackedParameter<double>("jetPtCut");
+  outputLabel_		      = iConfig.getUntrackedParameter<std::string>("outputLabel");
+  isSignalMC_		      = iConfig.getUntrackedParameter<bool>("isSignalMC");
+  doGenMatch_		      = iConfig.getUntrackedParameter<bool>("doGenMatch");
+  debug_		      = iConfig.getUntrackedParameter<int>("debug");
 
   produces<reco::VertexCollection>(outputLabel_);  
 }
@@ -195,8 +195,7 @@ DisplacedTagsToVertices::produce(edm::Event& iEvent, const edm::EventSetup& iSet
        } // end loop over gen particles
      } // end if statement for gen match
 
-    int nSV = svinfo->nVertices();     
-
+    int nSV = svinfo->nVertices();    
 
     // loop over each SVvertex that jet has
     for(int vv = 0; vv < nSV; vv++) {

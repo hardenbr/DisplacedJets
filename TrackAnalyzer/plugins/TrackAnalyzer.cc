@@ -626,10 +626,8 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   /////////////////////////////////
   // Fill Trees
-
   /////////////////////////////////
-  
-  
+    
   Int_t jj = 0;
   nCaloJets = 0;
   for(reco::CaloJetCollection::const_iterator jet = ak5CaloJets->begin(); jet != ak5CaloJets->end(); ++jet, jj++){
@@ -769,7 +767,6 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     jetid++; //global jet id
     nLiJets++; //index in filled array
   }// end ip info jet loop
-
 
   reco::SecondaryVertexTagInfoCollection::const_iterator svinfo = svTagInfo.begin();
   jj = 0;
@@ -1113,7 +1110,6 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   ///////////////////////////////////////////////////////////////////////////////////
 
   // loop over all calo jets
-
   jetSvNGenMatched = 0;
   jetSvNSimMatched = 0;
   jetSvNGenFake	   = 0;

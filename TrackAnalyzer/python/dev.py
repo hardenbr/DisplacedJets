@@ -1,11 +1,12 @@
 import FWCore.ParameterSet.Config as cms
 
 # output options (to be appended to the file name outputted)
-appendLifetime = "single30"
+appendLifetime = "1500_30mm"
 appendBkg      = "120_170"
 
 # flags for running
-nevents       = 2000
+nevents       = 5
+debugLevel    = 2
 isSignalMC    = True
 doGenMatch    = True
 doSimVtxMatch = True
@@ -13,11 +14,11 @@ isMC          = True
 doedm         = False
 
 # analysis cuts
-cut_jetPt = 80
+cut_jetPt  = 80
 cut_jetEta = 2.0
 
-
 input_file = None
+
 if isSignalMC:
 #    input_file = 'file:/afs/cern.ch/work/h/hardenbr/2015/DIJET/GEN_SIGNAL_TEST/dijet_700_300_ctau30.root'
 #    input_file = 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/group/phys_susy/razor/josh/RAZOR_DIJET/DIJET_MH700_MX300_CTAU1000_40BX25_AOD/dijet_700_300_ctau1000_94_1_3mG.root'
@@ -351,8 +352,8 @@ process.source = cms.Source("PoolSource",
 process.analyzerVTX = cms.EDAnalyzer('TrackAnalyzer')
 process.analyzerCALO = cms.EDAnalyzer('TrackAnalyzer')
 
-process.analyzerVTX.debugLevel  = cms.untracked.int32(0)
-process.analyzerCALO.debugLevel = cms.untracked.int32(0)
+process.analyzerVTX.debugLevel  = cms.untracked.int32(debugLevel)
+process.analyzerCALO.debugLevel = cms.untracked.int32(debugLevel)
 
 #output configuration
 if isSignalMC:
@@ -362,7 +363,6 @@ if isSignalMC:
 else:
     process.analyzerVTX.outputFileName = cms.untracked.string('qcdVTX%s.root' % appendBkg)
     process.analyzerCALO.outputFileName = cms.untracked.string('qcdCALO%s.root' % appendBkg)
-
 
 process.analyzerCALO.jetTreeName = cms.untracked.string('jets')
 process.analyzerCALO.trackTreeName = cms.untracked.string('tracks')
@@ -374,14 +374,15 @@ process.analyzerVTX.trackTreeName = cms.untracked.string('tracks')
 process.analyzerVTX.vertexTreeName = cms.untracked.string('vtx')
 process.analyzerVTX.genTreeName = cms.untracked.string('gen')
 
-process.analyzerVTX.isMC  = cms.untracked.bool(isMC)
-process.analyzerCALO.isMC = cms.untracked.bool(isMC)
+# MC dependent flags
+process.analyzerVTX.isMC        = cms.untracked.bool(isMC)
+process.analyzerCALO.isMC       = cms.untracked.bool(isMC)
 
 process.analyzerVTX.doGenMatch  = cms.untracked.bool(doGenMatch)
 process.analyzerCALO.doGenMatch = cms.untracked.bool(doGenMatch)
 
 process.analyzerVTX.doSimMatch  = cms.untracked.bool(doSimVtxMatch)
-process.analyzerCALO.doSimMatch  = cms.untracked.bool(doSimVtxMatch)
+process.analyzerCALO.doSimMatch = cms.untracked.bool(doSimVtxMatch)
 
 process.analyzerVTX.isSignalMC  = cms.untracked.bool(isSignalMC)
 process.analyzerCALO.isSignalMC = cms.untracked.bool(isSignalMC)
@@ -410,6 +411,10 @@ process.analyzerCALO.inclusiveVertexSecondary = cms.untracked.InputTag('displace
 process.analyzerVTX.secondaryVertex          = cms.untracked.InputTag('displacedTagsToVertices', '', 'ANA')
 process.analyzerVTX.inclusiveVertexCand      = cms.untracked.InputTag('displacedInclusiveVertexFinderJetMatchedTracks', '', 'ANA')
 process.analyzerVTX.inclusiveVertexSecondary = cms.untracked.InputTag('displacedInclusiveSecondaryVertices', '', 'ANA')
+
+# primary vertex
+process.analyzerCALO.offlinePrimaryVertices = cms.untracked.InputTag('offlinePrimaryVerticesWithBS')
+process.analyzerVTX.offlinePrimaryVertices  = cms.untracked.InputTag('offlinePrimaryVerticesWithBS')
 
 #cuts
 process.analyzerVTX.jetPt   = cms.untracked.double(cut_jetPt)

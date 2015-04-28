@@ -45,7 +45,7 @@ public:
 
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
-  typedef std::vector<JetVertexAssociation> jetVertexAssociationCollection; 
+  typedef std::vector<float> jetVertexScores; 
   
 private:
   virtual void beginJob() override;
@@ -84,7 +84,7 @@ DisplacedJetSVAssociator::DisplacedJetSVAssociator(const edm::ParameterSet& iCon
   debug_		 = iConfig.getUntrackedParameter<int>("debug");
   outputLabel_		 = iConfig.getUntrackedParameter<std::string>("outputLabel");
 
-  produces<jetVertexAssociationCollection>(outputLabel_);
+  produces<std::vector<std::vector<float> > >(outputLabel_);
 }
 
 
@@ -104,7 +104,7 @@ DisplacedJetSVAssociator::produce(edm::Event& iEvent, const edm::EventSetup& iSe
 {
    using namespace edm;
 
-   std::auto_ptr<std::vector<JetVertexAssociation> > jetVertexAssociationCollection(new std::vector<JetVertexAssociation>);
+   std::auto_ptr<std::vector<jetVertexScores > > jetVertexAssociationCollection(new std::vector<jetVertexScores >);
       
    edm::Handle<reco::CaloJetCollection> caloJets;
    edm::Handle<reco::VertexCollection>	secondaryVertices;
@@ -136,7 +136,7 @@ DisplacedJetSVAssociator::produce(edm::Event& iEvent, const edm::EventSetup& iSe
      if (jet_pt < jetPtCut_) continue;
 
      //start building the vertex scores
-     std::vector<std::pair<reco::Vertex, float> > vertexScores; 
+     jetVertexScores vertexScores; 
      float bestScore = -1;
      reco::Vertex bestVertex;
 
@@ -163,8 +163,8 @@ DisplacedJetSVAssociator::produce(edm::Event& iEvent, const edm::EventSetup& iSe
        if (debug_ > 1) std::cout << "[DEBUG] [SV Associator] Inserting Scores " << std::endl; 	
 
        //parse a vertex reference using the handle and size
-       std::pair<reco::Vertex, float> scorePair(*ss, score);
-       vertexScores.push_back(scorePair);
+       //std::pair<reco::Vertex, float> scorePair(*ss, score);
+       vertexScores.push_back(score);
 
        if (score > bestScore) {
 	 bestScore = score;
@@ -174,8 +174,8 @@ DisplacedJetSVAssociator::produce(edm::Event& iEvent, const edm::EventSetup& iSe
 
      if (debug_ > 1) std::cout << "[DEBUG] [SV Associator] Building Association" << std::endl; 	
      // put together the scores with the best vertex 
-     JetVertexAssociation association(vertexScores, *jj, bestVertex, algoName_);     
-     (*jetVertexAssociationCollection).push_back(association);         
+     //JetVertexAssociation association(vertexScores, *jj, bestVertex, algoName_);     
+     (*jetVertexAssociationCollection).push_back(vertexScores);         
    }     
 
    iEvent.put(jetVertexAssociationCollection, outputLabel_);

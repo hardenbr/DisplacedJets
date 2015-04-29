@@ -146,11 +146,10 @@ private:
 
   //jet tags
   edm::InputTag tag_ak4CaloJets_;
-  edm::InputTag tag_ak5CaloJets_;
   
   //gen info
   edm::InputTag tag_genParticles_;
-  edm::InputTag tag_ak5GenJets_;
+  edm::InputTag tag_ak4GenJets_;
   edm::InputTag tag_genMetCalo_;
   
   //sim Tags
@@ -415,6 +414,15 @@ private:
   Float_t   jetIVFYErr[MAX_JETS];
   Float_t   jetIVFXErr[MAX_JETS];
 
+  // IVF matching score
+  Float_t   jetIVFMatchingScore[MAX_JETS];
+
+  // IVF gen matching
+  Int_t	    jetIVFGenMatched[MAX_JETS];
+  Float_t   jetIVFGenMatchMetric[MAX_JETS];
+  Int_t	    jetIVFSimMatched[MAX_JETS];
+  Float_t   jetIVFSimMatchMetric[MAX_JETS];
+
   ///////////////// VERTEX TREE SPECIFIC MEMBERS /////////////////
 
   // Secondary Vertex Candidates from standalone
@@ -544,7 +552,7 @@ TrackAnalyzer::TrackAnalyzer(const edm::ParameterSet& iConfig)
 
   //tags
   tag_generalTracks_		  = iConfig.getUntrackedParameter<edm::InputTag>("generalTracks");
-  tag_ak5CaloJets_		  = iConfig.getUntrackedParameter<edm::InputTag>("ak5CaloJets");
+  tag_ak4CaloJets_		  = iConfig.getUntrackedParameter<edm::InputTag>("ak4CaloJets");
   tag_secondaryVertexTagInfo_	  = iConfig.getUntrackedParameter<edm::InputTag>("secondaryVertexTagInfo");  
   tag_lifetimeIPTagInfo_	  = iConfig.getUntrackedParameter<edm::InputTag>("lifetimeIPTagInfo"); 
 
@@ -593,8 +601,8 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    // AOD Compatible
   edm::Handle<reco::TrackCollection> tracks;
   iEvent.getByLabel(tag_generalTracks_, tracks); 
-  edm::Handle<reco::CaloJetCollection> ak5CaloJets;
-  iEvent.getByLabel(tag_ak5CaloJets_, ak5CaloJets);
+  edm::Handle<reco::CaloJetCollection> ak4CaloJets;
+  iEvent.getByLabel(tag_ak4CaloJets_, ak4CaloJets);
 
   // tag info
   edm::Handle<reco::TrackIPTagInfoCollection>		lifetimeIPTagInfo;
@@ -636,17 +644,78 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   lumi	= iEvent.id().luminosityBlock();
   event = iEvent.id().event();      
 
-  /////////////////////////////////
+  ///////////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////// GENERATOR TREE VARIABLES CALCULATIONS /////////////
+  ///////////////////////////////////////////////////////////////////////////////////
+
+  if(debug > 1 ) std::cout << "[DEBUG] Sim Vertex Dumping" << std::endl;
+
+  if(isMC_) {
+    if(doSimMatch_) {
+      edm::SimVertexContainer::const_iterator iterSimVtx = simVtx.begin();
+      simVtxN = 0;
+      for(; iterSimVtx != simVtx.end(); ++iterSimVtx){    
+	
+	Int_t proc_type = iterSimVtx->processType();
+	
+	// only keep vertices from the generator level
+	if (proc_type != 0) continue;
+	
+	simVtxProcType[simVtxN] = proc_type;
+	simVtxID[simVtxN]	    = iterSimVtx->vertexId();
+	
+	const math::XYZTLorentzVectorD & pos = iterSimVtx->position();      
+	simVtxTOF[simVtxN] = pos.t();
+	simVtxX[simVtxN]   = pos.x();
+	simVtxY[simVtxN]   = pos.y();
+	simVtxZ[simVtxN]   = pos.z();
+	
+	simVtxLxy[simVtxN]  = std::sqrt(pos.x() * pos.x()  + pos.y() * pos.y() );
+	simVtxLxyz[simVtxN] = std::sqrt(pos.x() * pos.x()  + pos.y() * pos.y() + pos.z() * pos.z());
+	
+	simVtxN++;
+      }
+    }    
+
+    if(debug > 1 ) std::cout << "[DEBUG] Gen Particle Dumping" << std::endl;
+    
+    reco::GenParticleCollection::const_iterator iterGenParticle = gen.begin();
+    genPartN = 0;
+    for(; iterGenParticle != gen.end(); ++iterGenParticle){    
+      float vx = iterGenParticle->vx(), vy = iterGenParticle->vy(), vz = iterGenParticle->vz();
+      
+      genPartPID[genPartN]    = iterGenParticle->pdgId();
+      genPartStatus[genPartN] = iterGenParticle->status();
+      
+      genPartPt[genPartN]  = iterGenParticle->pt();
+      genPartEta[genPartN] = iterGenParticle->eta();
+      genPartPhi[genPartN] = iterGenParticle->phi();
+      
+      genPartVX[genPartN] = vx;
+      genPartVY[genPartN] = vy;
+      genPartVZ[genPartN] = vz;
+      
+      genPartVLxy[genPartN] = std::sqrt( vx * vx + vy * vy );
+      genPartVLxyz[genPartN] = std::sqrt( vx * vx + vy * vy + vz * vz);
+      
+      genPartN++;    
+    }
+  }
+
+
+  //////////////////////////////////////////////////////////////
   // C++ User Calculations
-  /////////////////////////////////
+  //////////////////////////////////////////////////////////////
   
   // set up the jet vertex association
   JetVertexAssociation JVAIVF("IVF"); 
   JVAIVF.setPrimaryVertex(firstPV); 
-  
+
+  if(debug > 1 ) std::cout << "[DEBUG] Filling JVA Association" << std::endl;  
+
   // fill the association 
-  reco::CaloJetCollection::const_iterator jetIter = ak5CaloJets->begin();
-  for(; jetIter != ak5CaloJets->end(); ++jetIter){
+  reco::CaloJetCollection::const_iterator jetIter = ak4CaloJets->begin();
+  for(; jetIter != ak4CaloJets->end(); ++jetIter){
     if (jetIter->pt() < cut_jetPt || fabs(jetIter->eta()) > cut_jetEta) continue;
     JVAIVF.addCaloJet(*jetIter);
   }
@@ -654,15 +723,20 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   for(; svIter != incSV.end(); ++svIter){    
     JVAIVF.addVertex(*svIter);
   }
-  
+
+  if(debug > 1 ) std::cout << "[DEBUG] Filling Associated IVF Information" << std::endl;    
   // reset the iterator
-  jetIter = ak5CaloJets->begin(); 
+  jetIter = ak4CaloJets->begin(); 
   int jj = 0;
-  for(; jetIter != ak5CaloJets->end(); ++jetIter, ++jj){
+  for(; jetIter != ak4CaloJets->end(); ++jetIter, ++jj){
     if (jetIter->pt() < cut_jetPt || fabs(jetIter->eta()) > cut_jetEta) continue;
-    
-    const reco::Vertex bestVertex = JVAIVF.getBestVertex(*jetIter, "oneOverR");
-        
+
+    if(debug >2 ) std::cout << "[DEBUG] Grabbing Best Vertex" << std::endl;        
+    const std::pair<reco::Vertex, float>    bestVertexPair  = JVAIVF.getBestVertex(*jetIter, "oneOverR");
+    const reco::Vertex			    bestVertex	    = bestVertexPair.first;
+    const float				    bestVertexScore = bestVertexPair.second;
+
+    if(debug >2 ) std::cout << "[DEBUG] Accessing Best Vertex Info" << std::endl;        
     // IVF Information
     float x = bestVertex.x(), y = bestVertex.y(), z = bestVertex.z();    
     float xE = bestVertex.xError(), yE = bestVertex.yError(), zE = bestVertex.zError();
@@ -683,6 +757,49 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     jetIVFXErr[jj] = xE;
     jetIVFYErr[jj] = yE;
     jetIVFZErr[jj] = zE;
+
+    jetIVFMatchingScore[jj] = bestVertexScore;
+
+    // Gen Matching
+    jetIVFGenMatched[jj] = 0 ;
+    jetIVFGenMatchMetric[jj] = FAKE_HIGH_VAL;
+    jetIVFSimMatched[jj] = 0 ;
+    jetIVFSimMatchMetric[jj] = FAKE_HIGH_VAL;
+
+    if (isSignalMC_ && doGenMatch_) {
+    if(debug >2 ) std::cout << "[DEBUG] Signal Gen Matching Info" << std::endl;        
+      for(Int_t gg = 0; gg < genPartN; gg++) {
+	if (genPartStatus[gg] != GEN_STATUS_CODE_MATCH) continue;
+	
+	float gx = genPartVX[gg], gy = genPartVY[gg], gz = genPartVZ[gg];
+	float metric = std::sqrt(((gx - x) * (gx - x)) / (gx * gx) + ((gy - y) * (gy - y)) / (gy * gy) + ((gz - z) * (gz - z)) / (gz * gz));
+      
+	if (metric < VERTEX_MATCH_METRIC) {
+	  jetIVFGenMatched[jj] = 1;
+	}
+	if (metric < jetIVFGenMatchMetric[jj]) {
+	  jetIVFGenMatchMetric[jj] = metric;
+	}	
+      }
+
+      //do sim matching
+      for(Int_t ss = 0; ss < simVtxN; ss++) {
+	if (!doSimMatch_) break;
+	if (simVtxProcType[ss] != SIM_STATUS_CODE_MATCH) continue;
+	
+	float sx = simVtxX[ss], sy = simVtxY[ss], sz = genPartVZ[ss];
+	float metric = std::sqrt(((sx - x) * (sx - x)) / (sx * sx) + ((sy - y) * (sy - y)) / (sy * sy) + ((sz - z) * (sz - z)) / (sz * sz));
+      
+	if (metric < VERTEX_MATCH_METRIC) {
+	  jetIVFSimMatched[jj] = 1;
+	}
+	if(metric < jetIVFGenMatchMetric[jj]) {
+	  jetIVFSimMatchMetric[jj] = metric;
+	}	
+      }
+    }
+
+
   }
   
   if (debug > 1 ) std::cout << "[DEBUG] [JVA] nJets " << JVAIVF.getNJets() << " nVertices" << JVAIVF.getNVertices() << std::endl;
@@ -690,12 +807,14 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   
   /////////////////////////////////
   // Fill Trees
+
   /////////////////////////////////
-    
+
+  if(debug > 1 ) std::cout << "[DEBUG] Filling Calo jet Information" << std::endl;        
   jj = 0;
   nCaloJets = 0;
-  reco::CaloJetCollection::const_iterator jet = ak5CaloJets->begin();
-  for(; jet != ak5CaloJets->end(); ++jet, jj++){
+  reco::CaloJetCollection::const_iterator jet = ak4CaloJets->begin();
+  for(; jet != ak4CaloJets->end(); ++jet, jj++){
 
     // cuts 
     if (jet->pt() < cut_jetPt || fabs(jet->eta()) > cut_jetEta) continue;
@@ -934,62 +1053,6 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     nSvJets++; //index in array for jet
     jetid++; //global jet identifier
   } // end sv tag (jet) loop
-
-  ///////////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////// GENERATOR TREE VARIABLES CALCULATIONS /////////////
-  ///////////////////////////////////////////////////////////////////////////////////
-
-  if(debug > 1 ) std::cout << "[DEBUG] Sim Vertex Dumping" << std::endl;
-
-  if(isMC_) {
-    edm::SimVertexContainer::const_iterator iterSimVtx = simVtx.begin();
-    simVtxN = 0;
-    for(; iterSimVtx != simVtx.end(); ++iterSimVtx){    
-      
-      Int_t proc_type = iterSimVtx->processType();
-      
-      // only keep vertices from the generator level
-      if (proc_type != 0) continue;
-      
-      simVtxProcType[simVtxN] = proc_type;
-      simVtxID[simVtxN]	    = iterSimVtx->vertexId();
-      
-      const math::XYZTLorentzVectorD & pos = iterSimVtx->position();      
-      simVtxTOF[simVtxN] = pos.t();
-      simVtxX[simVtxN]   = pos.x();
-      simVtxY[simVtxN]   = pos.y();
-      simVtxZ[simVtxN]   = pos.z();
-      
-      simVtxLxy[simVtxN]  = std::sqrt(pos.x() * pos.x()  + pos.y() * pos.y() );
-      simVtxLxyz[simVtxN] = std::sqrt(pos.x() * pos.x()  + pos.y() * pos.y() + pos.z() * pos.z());
-    
-      simVtxN++;
-    }
-    
-    if(debug > 1 ) std::cout << "[DEBUG] Gen Particle Dumping" << std::endl;
-    
-    reco::GenParticleCollection::const_iterator iterGenParticle = gen.begin();
-    genPartN = 0;
-    for(; iterGenParticle != gen.end(); ++iterGenParticle){    
-      float vx = iterGenParticle->vx(), vy = iterGenParticle->vy(), vz = iterGenParticle->vz();
-      
-      genPartPID[genPartN]    = iterGenParticle->pdgId();
-      genPartStatus[genPartN] = iterGenParticle->status();
-      
-      genPartPt[genPartN]  = iterGenParticle->pt();
-      genPartEta[genPartN] = iterGenParticle->eta();
-      genPartPhi[genPartN] = iterGenParticle->phi();
-      
-      genPartVX[genPartN] = vx;
-      genPartVY[genPartN] = vy;
-      genPartVZ[genPartN] = vz;
-      
-      genPartVLxy[genPartN] = std::sqrt( vx * vx + vy * vy );
-      genPartVLxyz[genPartN] = std::sqrt( vx * vx + vy * vy + vz * vz);
-      
-      genPartN++;    
-    }
-  }
   
   ///////////////////////////////////////////////////////////////////////////////////
   /////////////////////////////// VERTEX TREE VARIABLES CALCULATIONS ///////////////
@@ -1098,7 +1161,6 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     vtxIncSecNDof[vtxIncSecN]	 = incSVIter->ndof();
 
     //positions
-    if(debug > 1 ) std::cout << "[DEBUG] [INC SV] Positions" << std::endl;
     vtxIncSecX[vtxIncSecN]    = incSVIter->x();
     vtxIncSecY[vtxIncSecN]    = incSVIter->y();
     vtxIncSecZ[vtxIncSecN]    = incSVIter->z();
@@ -1106,7 +1168,6 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     vtxIncSecLxyz[vtxIncSecN] = std::sqrt( vx*vx + vy*vy + vz*vz);
 
     //significances
-    if(debug > 1 ) std::cout << "[DEBUG] [INC SV] Significances" << std::endl;
     vtxIncSecXSig[vtxIncSecN]	 = incSVIter->x() / incSVIter->xError();
     vtxIncSecYSig[vtxIncSecN]	 = incSVIter->y() / incSVIter->yError();
     vtxIncSecZSig[vtxIncSecN]	 = incSVIter->z() / incSVIter->zError();
@@ -1732,6 +1793,15 @@ TrackAnalyzer::beginJob()
   jetTree_->Branch("jetIVFXErr", &jetIVFXErr, "jetIVFXErr[nCaloJets]/F");
   jetTree_->Branch("jetIVFYErr", &jetIVFYErr, "jetIVFYErr[nCaloJets]/F");
   jetTree_->Branch("jetIVFZErr", &jetIVFZErr, "jetIVFZErr[nCaloJets]/F");
+
+  // IVF Vertex Picking Metric
+  jetTree_->Branch("jetIVFMatchingScore", &jetIVFMatchingScore, "jetIVFMatchingScore[nCaloJets]/F");  
+
+  // IVF Gen Matching
+  jetTree_->Branch("jetIVFGenMatched", &jetIVFGenMatched, "jetIVFGenMatched[nCaloJets]/I");  
+  jetTree_->Branch("jetIVFGenMatchMetric", &jetIVFGenMatchMetric, "jetIVFGenMatchMetric[nCaloJets]/F");  
+  jetTree_->Branch("jetIVFSimMatched", &jetIVFSimMatched, "jetIVFSimMatched[nCaloJets]/I");  
+  jetTree_->Branch("jetIVFSimMatchMetric", &jetIVFSimMatchMetric, "jetIVFSimMatchMetric[nCaloJets]/F");  
 
   // Gen Matching
   jetTree_->Branch("jetSvNGenMatched", &jetSvNGenMatched, "jetSvNGenMatched/I");  

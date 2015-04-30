@@ -5,10 +5,10 @@ appendLifetime = "1500_30mm"
 appendBkg      = "120_170"
 
 # flags for running
-nevents       = 100
+nevents       = -1
 debugLevel    = 3
 isSignalMC    = False
-doGenMatch    = True
+doGenMatch    = False
 doSimVtxMatch = False
 isMC          = True
 doedm         = False
@@ -324,7 +324,7 @@ if doedm:
     process.p = cms.Path(process.djtagging)    
     process.btag_output = cms.EndPath( process.test_output)
 else:
-    process.p = cms.Path(process.djtagging + process.analyzerVTX + process.analyzerCALO)
+    process.p = cms.Path(process.djtagging + process.analyzerCALO) #process.analyzerVTX 
 
 
 # Automatic addition of the customisation function from SLHCUpgradeSimulations.Configuration.postLS1Customs                                                                  

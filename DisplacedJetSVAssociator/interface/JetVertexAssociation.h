@@ -30,6 +30,7 @@ class JetVertexAssociation {
   int	getNJets() { return caloJetCollection.size(); } 
   float getBestVertexScore() { return bestVertexScore; }
 
+
   std::string getName() { return name; }
   // score
   const std::pair<const reco::Vertex, const float> getBestVertex(const reco::CaloJet&, const std::string&);

@@ -1,6 +1,8 @@
 class DisplacedJet {
  public:
   DisplacedJet(const reco::CaloJet & jet, const bool & isMC_) {
+    isMC    = isMC_;
+
     // initialize calo related variables
     caloPt  = jet.pt();
     caloEta = jet.eta();
@@ -12,7 +14,7 @@ class DisplacedJet {
     detEta = detP4.eta();
     detPhi = detP4.phi();
     
-    // energy fractions fro very long lived jets
+    // energy fractions for tagging very long lived jets
     caloEMEnergyFrac  = jet.emEnergyFraction();
     caloHadEnergyFrac = jet.energyFractionHadronic();
     
@@ -34,9 +36,7 @@ class DisplacedJet {
     //variance
     varianceIPSig2D = 0, varianceIPSig3D = 0;
     varianceIP2D    = 0, varianceIP3D = 0;
-    varianceJetDist = 0, varianceJetDistSig = 0;
-    
-    isMC    = isMC_;
+    varianceJetDist = 0, varianceJetDistSig = 0;    
   }
 
   // jet info integration
@@ -45,12 +45,19 @@ class DisplacedJet {
   void addIVFCollection();
   void addIPTagInfo(const reco::TrackIPTagInfo&);
 
+  // jet info extraction
+  reco::TrackCollection getCaloMatchedTracks() { return caloMatchedTracks;}
+  reco::TrackCollection getVertexMatchedTracks() { return vertexMatchedTracks;}
+  reco::Vertex          getIVFVertexSelected() { return selIVF };
+  reco::Vertex          getSVVertex() { return selSV};
+  
   // jet distribution calculator
   float getJetMedian(const std::vector<float>, bool);
   float getJetMean(const std::vector<float>, bool);
   float getJetVariance(const std::vector<float>, bool);
 
   //////////////CALO INFORMATION////////////
+
   bool isMC;
   
   // calo related variables
@@ -65,7 +72,6 @@ class DisplacedJet {
   float ipSigLogSum2D, ipSigLogSum3D;
   float ipLogSum2D, ipLogSum3D;  
   float jetDistLogSum, jetDistSigLogSum;
-
   // ip distribution variables
   // mean 
   float meanIPSig2D, meanIPSig3D;
@@ -83,15 +89,36 @@ class DisplacedJet {
   //////////////VERTEX VARIABLES//////////////
 
   // ivf related variables
+  // position
+  float ivfX, ivfY, ivfZ;
+  float ivfXError, ivfYError, ivfZError;  
+  float ivfLxy, ivfLxyz;
+  float ivfLxySig, ivfLxyzSig;
+  // qualities
+  float ivfMass;
+  float ivfNTracks;
+  // matching
+  bool  ivfIsGenMatched;
+  bool  ivfIsSimMatched;
+  float ivfMatchingScore;
 
   // sv related variables
-
-  ////////////////////////////////////////////
+  // position
+  float svX, svY, svZ;
+  float svXError, svYError, svZError;  
+  float svLxy, svLxyz;
+  float svLxySig, svLxyzSig;
+  // qualities
+  float svMass;
+  float svNTracks;
+  // matching
+  bool  svIsGenMatched;
+  bool  svIsSimMatched;   
   
-  // matching quantities 
-  bool isGenMatched;
-  bool isPVMatched;
-  bool hasSimMatchedVertex;
+  //////////////JET MATCH VARIABLES///////////
+
+  bool isCaloGenMatched;
+  bool isCaloPVGenMatched;
 
  private: 
   // related vertices

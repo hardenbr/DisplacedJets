@@ -18,7 +18,6 @@
 
 //#define DEBUG
 
-
 //root includes
 #include "TFile.h"  
 #include "TH2F.h"   
@@ -94,10 +93,9 @@
 
 // user defined includes
 #include "DisplacedJets/DisplacedJetSVAssociator/interface/JetVertexAssociation.h"
-#include "DisplacedJets/TrackAnalyzer/interface/TrackAnalyzer.h"
 #include "DisplacedJets/DisplacedJet/interface/DisplacedJet.h"
 #include "DisplacedJets/DisplacedJet/interface/DisplacedJetEvent.h"
-
+#include "DisplacedJets/TrackAnalyzer/interface/TrackAnalyzer.h"
 //
 // class declaration
 //
@@ -171,14 +169,18 @@ TrackAnalyzer::fillHandles(const edm::Event & iEvent ) {
 void 
 TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
-  // event information 
-  run	= iEvent.id().run();
-  lumi	= iEvent.id().luminosityBlock();
-  event = iEvent.id().event();      
+  std::cout << "[----------------- ANALYZE EVENT BEGIN -----------------]" << std::endl;
+  std::cout << "[----------------- DEBUG LEVEL = " << debug << "--------------]" << std::endl;
+   
+  /////////////////////////////////
+  // Event Setup
+  /////////////////////////////////
 
+  // fill the handles before grabbing the products from them
   fillHandles(iEvent);
 
   // collection products
+  const reco::CaloJetCollection &		    caloJets	     = *(ak4CaloJets.product());
   const reco::VertexCollection &                    pvCollection     = *(offlinePrimaryVertices.product());
   const reco::TrackIPTagInfoCollection &	    lifetimeTagInfo  = *(lifetimeIPTagInfo.product()); ;
   const reco::SecondaryVertexTagInfoCollection &    svTagInfo	     = *(secondaryVertexTagInfo.product()); 
@@ -187,832 +189,65 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   const reco::GenParticleCollection &		    genCollection    = *(genParticles.product());     
   const edm::SimVertexContainer &		    simVtxCollection = *(simVertices.product()); 
 
-  // pull out the first primary vertex in the collection
+  // build the displaced event from the calo jet collection and kinematic cuts
+  DisplacedJetEvent djEvent(isMC_, caloJets, pvCollection, cut_jetPt, cut_jetEta, debug);
+
+  // pull out the first primary vertex in the collection (the default PV)
   const reco::Vertex & firstPV = *pvCollection.begin(); 
-
-  dumpPVInfo(pvCollection);
-  if(isMC_) dumpGenInfo(genCollection);    
-  if(isMC_ && doSimMatch_) dumpSimInfo(simVtxCollection); 
-  
-  //////////////////////////////////////////////////////////////
-  // C++ User Calculations
-  //////////////////////////////////////////////////////////////
-  
-  // set up the jet vertex association
-  JetVertexAssociation JVAIVF("IVF"); 
-  JVAIVF.setPrimaryVertex(firstPV); 
-
-  if(debug > 1 ) std::cout << "[DEBUG] Filling JVA Association" << std::endl;  
-
-  // fill the association 
-  reco::CaloJetCollection::const_iterator jetIter = ak4CaloJets->begin();
-  for(; jetIter != ak4CaloJets->end(); ++jetIter){
-    if (jetIter->pt() < cut_jetPt || fabs(jetIter->eta()) > cut_jetEta) continue;
-    JVAIVF.addCaloJet(*jetIter);
-  }
-  reco::VertexCollection::const_iterator  svIter= incSV.begin();  
-  for(; svIter != incSV.end(); ++svIter){    
-    JVAIVF.addVertex(*svIter);
-  }
    
   /////////////////////////////////
   // Fill Trees
   /////////////////////////////////
 
-  if(debug > 1 ) std::cout << "[DEBUG] Filling Calo jet Information" << std::endl;        
-  int jj = 0;
-  nCaloJets = 0;
-  reco::CaloJetCollection::const_iterator jet = ak4CaloJets->begin();
-  for(; jet != ak4CaloJets->end(); ++jet, jj++){
-    // cuts 
-    if (jet->pt() < cut_jetPt || fabs(jet->eta()) > cut_jetEta) continue;
-    
-    // initialize to zero in case there isnt any match
-    genMatch[nCaloJets] = 0; 
-    genPt[nCaloJets]	= 0;
-    genEta[nCaloJets]	= 0;
-    genPhi[nCaloJets]	= 0;
-    genM[nCaloJets]	= 0;
-
-    caloJetID[nCaloJets]  = jetid;
-    caloJetPt[nCaloJets]  = jet->pt();
-    caloJetEta[nCaloJets] = jet->eta();
-    caloJetPhi[nCaloJets] = jet->phi();        
-    
-    //area 
-    //caloJetN90[nCaloJets]	 = jet->n90();
-    //caloJetN60[nCaloJets]	 = jet->n60();
-    caloJetTowerArea[nCaloJets] = jet->towersArea();        
-
-    //energy
-    caloJetHfrac[nCaloJets] = jet->energyFractionHadronic();
-    caloJetEfrac[nCaloJets] = jet->emEnergyFraction();
-
-    if(debug > 2) std::cout << "[DEBUG] Grabbing Best Vertex" << std::endl;        
-    const std::pair<reco::Vertex, float>    bestVertexPair  = JVAIVF.getBestVertex(*jet, "oneOverR");
-    const reco::Vertex			    bestVertex	    = bestVertexPair.first;
-    const float				    bestVertexScore = bestVertexPair.second;
-
-    if(debug > 2) std::cout << "[DEBUG] Accessing Best Vertex Info" << std::endl;        
-
-    //flight distance from the firstPV
-    float x = bestVertex.x(), y = bestVertex.y(), z = bestVertex.z();    
-    float dx = x - firstPV.x() , dy = y - firstPV.y(), dz = z - firstPV.z();
-    
-    //build the total error
-    float svxE = bestVertex.xError(), svyE = bestVertex.yError(), svzE = bestVertex.zError();
-    float pvxE = firstPV.x(), pvyE = firstPV.yError(), pvzE = firstPV.zError();
-    float xE = std::sqrt(svxE * svxE + pvxE * pvxE), yE = std::sqrt(svyE * svyE + pvyE * pvyE), zE = std::sqrt(svzE * svzE + pvzE * pvzE);
-
-    if(debug > 1 ) std::cout << "[DEBUG] Filling Associated IVF Information" << std::endl;        
-
-    jetIVFNTrack[nCaloJets]  = bestVertex.nTracks();  
-    jetIVFMass[nCaloJets]    = bestVertex.p4().mass();    
-    jetIVFLxySig[nCaloJets]  = std::sqrt( dx * dx + dy * dy ) / std::sqrt(xE * xE + yE * yE);
-    jetIVFLxyzSig[nCaloJets] = std::sqrt( dx * dx + dy * dy + dz * dz) / std::sqrt(xE * xE + yE * yE + zE * zE);
-    jetIVFLxy[nCaloJets]     = std::sqrt( dx * dx + dy * dy );
-    jetIVFLxyz[nCaloJets]    = std::sqrt( dx * dx + dy * dy + dz * dz );
-
-    // IVF position
-    jetIVFX[nCaloJets] = x;
-    jetIVFY[nCaloJets] = y;
-    jetIVFZ[nCaloJets] = z;
-
-    // IVF position Error
-    jetIVFXErr[nCaloJets] = xE;
-    jetIVFYErr[nCaloJets] = yE;
-    jetIVFZErr[nCaloJets] = zE;
-
-    jetIVFMatchingScore[nCaloJets] = bestVertexScore;
-
-    // Gen Matching
-    jetIVFGenMatched[nCaloJets]	    = 0;
-    jetIVFGenMatchMetric[nCaloJets] = FAKE_HIGH_VAL;
-    jetIVFSimMatched[nCaloJets]	    = 0;
-    jetIVFSimMatchMetric[nCaloJets] = FAKE_HIGH_VAL;
-
-    // signal gen matching 
-    if (isSignalMC_ && doGenMatch_) {
-      if(debug >2 ) std::cout << "[DEBUG] Signal Gen Matching Info" << std::endl;              
-      for(Int_t gg = 0; gg < genPartN; gg++) {
-	if (genPartStatus[gg] != GEN_STATUS_CODE_MATCH) continue;
-	
-	float gx = genPartVX[gg], gy = genPartVY[gg], gz = genPartVZ[gg];
-	float metric = std::sqrt(((gx - x) * (gx - x)) / (gx * gx) + ((gy - y) * (gy - y)) / (gy * gy) + ((gz - z) * (gz - z)) / (gz * gz));
-      
-	if (metric < VERTEX_MATCH_METRIC) {
-	  jetIVFGenMatched[nCaloJets] = 1;
-	}
-	if (metric < jetIVFGenMatchMetric[nCaloJets]) {
-	  jetIVFGenMatchMetric[nCaloJets] = metric;
-	}	
-      }
-
-      //do sim matching
-      for(Int_t ss = 0; ss < simVtxN; ss++) {
-	if (!doSimMatch_) break;
-	if (simVtxProcType[ss] != SIM_STATUS_CODE_MATCH) continue;
-	
-	float sx = simVtxX[ss], sy = simVtxY[ss], sz = genPartVZ[ss];
-	float metric = std::sqrt(((sx - x) * (sx - x)) / (sx * sx) + ((sy - y) * (sy - y)) / (sy * sy) + ((sz - z) * (sz - z)) / (sz * sz));
-      
-	if (metric < VERTEX_MATCH_METRIC) {
-	  jetIVFSimMatched[nCaloJets] = 1;
-	}
-	if(metric < jetIVFGenMatchMetric[nCaloJets]) {
-	  jetIVFSimMatchMetric[nCaloJets] = metric;
-	}	
-      }
-    }
-    if (debug > 1 ) std::cout << "[DEBUG] [JVA] nJets " << JVAIVF.getNJets() << " nVertices" << JVAIVF.getNVertices() << std::endl;
-
-    nCaloJets++;
-    jetid++;
-  } // end loop over calojets
-
-  // generator matching to truely displaced jets
-  if (isSignalMC_ && doGenMatch_) {
-
-    for(size_t pp = 0; pp < genParticles->size(); ++pp) {
-      const reco::GenParticle & part = (*genParticles)[pp];
-      int id = part.pdgId();
-      int st = part.status();  
-
-      // pythia6 status code to match = 3
-      // pythia8 status code to match = 23
-      if (st != GEN_STATUS_CODE_MATCH) continue;     
-
-      // const reco::Candidate * mom = part.mother();
-      double genpt = part.pt(), geneta = part.eta(), genphi = part.phi(), genmass = part.mass();
-      
-      // check each jet if it matches
-      for(int jj = 0; jj < nCaloJets; jj++ ) {
-	float	calopt = caloJetPt[jj],  caloeta = caloJetEta[jj], calophi = caloJetPhi[jj];
-	float	dr     = reco::deltaR( geneta, genphi, caloeta, calophi);
-	float	dpt    = fabs(calopt - genpt) / genpt;
-
-	// found a match
-	if (dr < .7 && dpt < .20) {
-	  std::cout << "[GEN MATCHED] id " << id << " status " << st << " pt " << genpt << " eta " << geneta  <<  " phi " << genphi << std::endl;      
-	  genMatch[jj]++; 
-	  genPt[jj]  = genpt;
-	  genEta[jj] = geneta;
-	  genPhi[jj] = geneta;
-	  genM[jj]   = genmass;
-	}
-      } //end loop over caloejts
-    }
-  }
-
-  if(debug > 1 ) std::cout << "[DEBUG] Begin Extracting Tag Info" << std::endl;
-
-  //iterate over the lifetime ip info
-  reco::TrackIPTagInfoCollection::const_iterator liinfo = lifetimeTagInfo.begin(); 
-
-  jj = 0;
-  jetid -= nCaloJets;
-  nLiJets = 0;
-  nLiTracks = 0;
-  
-  for(; liinfo != lifetimeTagInfo.end(); ++liinfo, jj++){        
-    // skip jets outside of acceptance
-    if (liinfo->jet()->pt() < cut_jetPt || fabs(liinfo->jet()->eta()) > cut_jetEta) continue;    
-
-    reco::TrackRefVector liTracks = liinfo->selectedTracks();    
-
-    // track selection  
-    int n_liTracks = liTracks.size();
-    liJetNSelTracks[nLiJets] = n_liTracks;
-
-    // redundancy for tree output
-    liJetID[nLiJets] = jetid; 
-
-    // kinematics
-    liJetPt[nLiJets]  = liinfo->jet()->pt();
-    liJetEta[nLiJets] = liinfo->jet()->eta();
-    liJetPhi[nLiJets] = liinfo->jet()->phi();        
-
-    bool is_matched = genMatch[nLiJets];
-
-    for(int tt = 0; tt < n_liTracks; tt++){            
-      reco::btag::TrackIPData data = liinfo->impactParameterData()[tt];  
-      const reco::Track litrack = *(liTracks[tt]);
-      
-      //kinematics
-      liTrackPt[nLiTracks] = litrack.pt();
-      liTrackPhi[nLiTracks] = litrack.phi();
-      liTrackEta[nLiTracks] = litrack.eta();
-
-      //jet track association  
-      liTrackJetID[nLiTracks] = jetid;
-      liJetTrackDR[nLiTracks] = reco::deltaR( litrack.eta(), litrack.phi(),
-					      liinfo->jet()->eta(), liinfo->jet()->phi());
-
-      // mark the track as part of a gen matched jet
-      genMatchTrack[nLiTracks] = 0;
-      if (is_matched) genMatchTrack[nLiTracks] = 1;
-
-      // ip info tags
-      liTrackIP3D[nLiTracks]		   = data.ip3d.value();
-      liTrackIPSig3D[nLiTracks]		   = data.ip3d.significance();
-      liTrackIP2D[nLiTracks]		   = data.ip2d.value();
-      liTrackIPSig2D[nLiTracks]		   = data.ip2d.significance();
-      liTrackDistanceJetAxis[nLiTracks]	   = data.distanceToJetAxis.value();
-      liTrackDistanceJetAxisSig[nLiTracks] = data.distanceToJetAxis.significance();
-
-      //track quality
-      liTrackChi2[nLiTracks] = litrack.normalizedChi2();
-
-      nLiTracks++; // number of tracks in event
-    } // End Matched Track Loop
-
-    jetid++; //global jet id
-    nLiJets++; //index in filled array
-  }// end ip info jet loop
-
-  reco::SecondaryVertexTagInfoCollection::const_iterator svinfo = svTagInfo.begin();
-  jj = 0;
-  jetid -= nLiJets; //reset the jetid counter
-  nSvJets = 0; //number of jets in sv jet tag info collection
-  nSV = 0; // global event counter fo SV
-  for(; svinfo != svTagInfo.end(); ++svinfo, jj++){    
-
-    //skip jets outside of acceptance
-    if (svinfo->jet()->pt() < cut_jetPt || fabs(svinfo->jet()->eta()) > cut_jetEta) continue;    
-
-    reco::TrackRefVector svTracks = svinfo->selectedTracks();    
-
-    // global jet identifier 
-    svJetID[nSvJets] = jetid; 
-    
-    // jet kinematics
-    svJetPt[nSvJets] = svinfo->jet()->pt();
-    svJetEta[nSvJets] = svinfo->jet()->eta();
-    svJetPhi[nSvJets] = svinfo->jet()->phi();        
-
-    // number of secondary vertices 
-    int nSvVertex = 0;
-    int thisJetnSV = svinfo->nVertices();
-    for(int vv = 0; vv < thisJetnSV; vv++) {
-
-      if(debug > 1)  std::cout << "[DEBUG] [Tracking] jet " << jetid << " nSV " << nSV << " nSvVertex " << nSvVertex << " thisJetnSV " << thisJetnSV << std::endl;
-
-      svVertexJetID[nSV] = jetid;
-      reco::Vertex svVertex = svinfo->secondaryVertex(vv);  
-
-      // vertex kinematics
-      svMass[nSV] = svinfo->secondaryVertex(vv).p4().mass();
-      svPx[nSV]	  = svVertex.p4().px();
-      svPy[nSV]	  = svVertex.p4().py();
-      svPt[nSV]	  = svVertex.p4().pt();
-      svEta[nSV]  = svVertex.p4().eta();
-      svPhi[nSV]  = svVertex.p4().phi();
-      
-      // quality
-      svChi2[nSV]    = svVertex.chi2();
-      svNChi2[nSV]   = svVertex.normalizedChi2();
-      svNDof[nSV]    = svVertex.ndof();
-      svIsValid[nSV] = svVertex.isValid(); 	
-
-      // positional space
-      svX[nSV]	  = svVertex.x();
-      svXErr[nSV] = svVertex.xError();
-      svY[nSV]	  = svVertex.y();   
-      svYErr[nSV] = svVertex.yError();   
-      svZ[nSV]	  = svVertex.z();      
-      svZErr[nSV] = svVertex.zError();      
-      
-      // flight
-      svFlight[nSV]	 = svinfo->flightDistance(vv).value();
-      svFlightErr[nSV]	 = svinfo->flightDistance(vv).error();
-      svFlight2D[nSV]	 = svinfo->flightDistance(vv, true).value();
-      svFlight2DErr[nSV] = svinfo->flightDistance(vv, true).error();
-
-      // charge
-      svTotalCharge[nSV] = 0;
-
-      //tracking 
-      svNTracks[nSV] = svVertex.nTracks();
-      reco::TrackKinematics vertexKinematics;
-
-      Bool_t hasRefittedTracks = svVertex.hasRefittedTracks();      
-
-      // loop over the tracks associated with the Secondary Vertex to compute total charge
-      for(int tt = 0; tt < svNTracks[nSV]; tt++) {		
-	//svTrackVertexID[tt] = vv; 		
-
-	reco::Track track	= *svinfo->track(tt);	//->get(); //get the track from TrackRef 
-	Double_t    trackWeight = svinfo->trackWeight(vv, tt);	
-
-	// only keep high weight tracks
-        if(trackWeight < 0.5){
-	  continue;
-	}
-
-	// use the refitted tracks if they exist
-        if (hasRefittedTracks) {
-	  reco::Track refitTrack = svVertex.refittedTracks()[vv];
-          vertexKinematics.add(refitTrack, trackWeight);
-          svTotalCharge[nSV] += refitTrack.charge();
-        }
-        else {
-          vertexKinematics.add(track, trackWeight);
-          svTotalCharge[nSV] += track.charge();
-        }
-      } // end sv tracking look
-
-      // vectors for deltaR calculation
-      math::XYZTLorentzVector	vertexSum = vertexKinematics.weightedVectorSum();
-      math::XYZVector		jetDir	  = svinfo->jet()->momentum().Unit();
-      GlobalVector		flightDir = svinfo->flightDirection(vv);
-
-      // deltaR variables
-      svDRFlightJet[nSV] = reco::deltaR(flightDir, jetDir);
-      svDRTrackJet[nSV] = reco::deltaR(vertexSum, jetDir); 
-      svDRTrackFlight[nSV] = reco::deltaR(vertexSum, flightDir);       
-      
-      nSvVertex++; // index in array corresponding to a single jet for vertex
-      nSV++; // event sv index  (includes all jets)
-    } // end sv vertex loop
-
-    nSvJets++; //index in array for jet
-    jetid++; //global jet identifier
-  } // end sv tag (jet) loop
-  
-  ///////////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////// VERTEX TREE VARIABLES CALCULATIONS ///////////////
-  ///////////////////////////////////////////////////////////////////////////////////
-
-  if(debug > 1 ) std::cout << "[DEBUG] Performing Vertex Tree Dumping" << std::endl;
-  if(debug > 1 ) std::cout << "[DEBUG] Inclusive Candidate Vertex Dumping" << std::endl;
-
-  // fill the vertex information for inclusive vertex candidates
-
-  vtxIncCandN		= 0;
-  vtxIncCandNSimMatched = 0;
-  vtxIncCandNGenMatched = 0;
-  vtxIncCandNSimFake	= 0;
-  vtxIncCandNGenFake	= 0;
-  reco::VertexCollection::const_iterator incIter = inc.begin();
-  for(; incIter != inc.end(); ++incIter){    
-
-    float vx = incIter->x(), vy = incIter->y(), vz = incIter->z();
-
-    //qualities    
-    vtxIncCandIsFake[vtxIncCandN]  = incIter->isFake();
-    vtxIncCandNTracks[vtxIncCandN] = incIter->nTracks();
-    vtxIncCandChi2[vtxIncCandN]	   = incIter->chi2();
-    vtxIncCandNDof[vtxIncCandN]	   = incIter->ndof();
-
-    //positions
-    vtxIncCandX[vtxIncCandN] = incIter->x();
-    vtxIncCandY[vtxIncCandN] = incIter->y();
-    vtxIncCandZ[vtxIncCandN] = incIter->z();
-
-    vtxIncCandLxy[vtxIncCandN]	= std::sqrt( incIter->x() * incIter->x() + incIter->y() *incIter->y());
-    vtxIncCandLxyz[vtxIncCandN] = std::sqrt( incIter->x() * incIter->x() + incIter->y() * incIter->y() + incIter->z() * incIter->z());
-
-    //significances
-    vtxIncCandXSig[vtxIncCandN]	   = incIter->x() / incIter->xError();
-    vtxIncCandYSig[vtxIncCandN]	   = incIter->y() / incIter->yError();
-    vtxIncCandZSig[vtxIncCandN]	   = incIter->z() / incIter->zError();
-    vtxIncCandLxySig[vtxIncCandN]  = std::sqrt( incIter->x() * incIter->x() + incIter->y() * incIter->y())
-      / std::sqrt(incIter->xError() * incIter->xError() + incIter->yError() * incIter->yError());
-    vtxIncCandLxyzSig[vtxIncCandN] = std::sqrt( incIter->x() * incIter->x() + incIter->y() * incIter->y() + incIter->z() * incIter->z())
-      / std::sqrt(incIter->xError() * incIter->xError() + incIter->yError() * incIter->yError() + incIter->zError() * incIter->zError());
-
-    vtxIncCandGenMatched[vtxIncCandN]	  = 0;
-    vtxIncCandGenMatchMetric[vtxIncCandN] = FAKE_HIGH_VAL;
-    vtxIncCandSimMatched[vtxIncCandN]	  = 0;
-    vtxIncCandSimMatchMetric[vtxIncCandN] = FAKE_HIGH_VAL;
-    
-    if (isSignalMC_ && doGenMatch_) {
-      //perform gen matching
-      for(Int_t gg = 0; gg < genPartN; gg++) {
-	if (genPartStatus[gg] != GEN_STATUS_CODE_MATCH) continue;
-	
-	float gx = genPartVX[gg], gy = genPartVY[gg], gz = genPartVZ[gg];
-	float metric = std::sqrt(((gx-vx)*(gx-vx))/(gx*gx) + ((gy-vy)*(gy-vy))/(gy*gy) + ((gz-vz)*(gz-vz))/(gz*gz));
-      
-	if (metric < VERTEX_MATCH_METRIC) {
-	  vtxIncCandGenMatched[vtxIncCandN] += 1;
-	}
-	if(metric < vtxIncCandGenMatchMetric[vtxIncCandN]) {
-	  vtxIncCandGenMatchMetric[vtxIncCandN] = metric;
-	}	
-      }
-
-      //do sim matching
-      for(Int_t ss = 0; ss < simVtxN; ss++) {
-	if (!doSimMatch_) break;
-	if (simVtxProcType[ss] != SIM_STATUS_CODE_MATCH) continue;
-	
-	float sx = simVtxX[ss], sy = simVtxY[ss], sz = genPartVZ[ss];
-	float metric = std::sqrt(((sx-vx)*(sx-vx))/(sx*sx) + ((sy-vy)*(sy-vy))/(sy*sy) + ((sz-vz)*(sz-vz))/(sz*sz));
-      
-	if (metric < VERTEX_MATCH_METRIC) {
-	  vtxIncCandSimMatched[vtxIncCandN] += 1;
-	}
-	if(metric < vtxIncCandGenMatchMetric[vtxIncCandN]) {
-	  vtxIncCandSimMatchMetric[vtxIncCandN] = metric;
-	}	
-      }
-    }
-
-    if (vtxIncCandGenMatched[vtxIncCandN] > 0) vtxIncCandNGenMatched += 1;
-    else vtxIncCandNGenFake += 1;
-    if (vtxIncCandSimMatched[vtxIncCandN] > 0) vtxIncCandNSimMatched += 1;
-    else vtxIncCandNSimFake += 1;
-    vtxIncCandN++;
-  }
-
-  if(debug > 1 ) std::cout << "[DEBUG] Inclusive Secondary Vertex Dumping" << std::endl;
-
-  // fill the vertex information for inclusive vertex secondary vertices
-  reco::VertexCollection::const_iterator incSVIter = incSV.begin();
-  vtxIncSecN	       = 0;
-  vtxIncSecNSimMatched = 0;
-  vtxIncSecNGenMatched = 0;
-  vtxIncSecNSimFake    = 0;
-  vtxIncSecNGenFake    = 0;
-
-  for(; incSVIter != incSV.end(); ++incSVIter){    
-    float vx = incSVIter->x(), vy = incSVIter->y(), vz = incSVIter->z();
-    
-    //qualities
-    vtxIncSecIsFake[vtxIncSecN]	 = incSVIter->isFake();
-    vtxIncSecNTracks[vtxIncSecN] = incSVIter->nTracks();
-    vtxIncSecChi2[vtxIncSecN]	 = incSVIter->chi2();
-    vtxIncSecNDof[vtxIncSecN]	 = incSVIter->ndof();
-
-    //positions
-    vtxIncSecX[vtxIncSecN]    = incSVIter->x();
-    vtxIncSecY[vtxIncSecN]    = incSVIter->y();
-    vtxIncSecZ[vtxIncSecN]    = incSVIter->z();
-    vtxIncSecLxy[vtxIncSecN]  = std::sqrt( vx*vx + vy*vy);
-    vtxIncSecLxyz[vtxIncSecN] = std::sqrt( vx*vx + vy*vy + vz*vz);
-
-    //significances
-    vtxIncSecXSig[vtxIncSecN]	 = incSVIter->x() / incSVIter->xError();
-    vtxIncSecYSig[vtxIncSecN]	 = incSVIter->y() / incSVIter->yError();
-    vtxIncSecZSig[vtxIncSecN]	 = incSVIter->z() / incSVIter->zError();
-    vtxIncSecLxySig[vtxIncSecN]	 = std::sqrt(vx*vx + vy*vy)
-      / std::sqrt(incSVIter->xError() * incSVIter->xError() + incSVIter->yError() * incSVIter->yError());
-    vtxIncSecLxyzSig[vtxIncSecN] = std::sqrt( vx*vx + vy*vy + vz*vz)
-      / std::sqrt(incSVIter->xError() * incSVIter->xError() + incSVIter->yError() * incSVIter->yError() + incSVIter->zError() * incSVIter->zError());
-
-    vtxIncSecGenMatched[vtxIncSecN] = 0;
-    vtxIncSecGenMatchMetric[vtxIncSecN] = FAKE_HIGH_VAL;
-    vtxIncSecSimMatched[vtxIncSecN] = 0;
-    vtxIncSecSimMatchMetric[vtxIncSecN] = FAKE_HIGH_VAL;
-    
-    //gen and sim vertex matchingw
-    if (isSignalMC_ && doGenMatch_) {
-      //perform gen matching
-      for(Int_t gg = 0; gg < genPartN; gg++) {
-	if (genPartStatus[gg] != GEN_STATUS_CODE_MATCH) continue;
-	
-	float gx = genPartVX[gg], gy = genPartVY[gg], gz = genPartVZ[gg];
-	float metric = std::sqrt(((gx-vx)*(gx-vx))/(gx*gx) + ((gy-vy)*(gy-vy))/(gy*gy) + ((gz-vz)*(gz-vz))/(gz*gz));
-      
-	if (metric < VERTEX_MATCH_METRIC) {
-	  vtxIncSecGenMatched[vtxIncSecN] += 1;
-	}
-	if(metric < vtxIncSecGenMatchMetric[vtxIncSecN]) {
-	  vtxIncSecGenMatchMetric[vtxIncSecN] = metric;
-	}	
-      }
-
-      //do sim matching
-      for(Int_t ss = 0; ss < simVtxN; ss++) {
-	if (!doSimMatch_) continue;
-	if (simVtxProcType[ss] != SIM_STATUS_CODE_MATCH) continue;
-	
-	float sx = simVtxX[ss], sy = simVtxY[ss], sz = genPartVZ[ss];
-	float metric = std::sqrt(((sx-vx)*(sx-vx))/(sx*sx) + ((sy-vy)*(sy-vy))/(sy*sy) + ((sz-vz)*(sz-vz))/(sz*sz));
-      
-	if (metric < VERTEX_MATCH_METRIC) {
-	  vtxIncSecSimMatched[vtxIncSecN] += 1;
-	}
-	if(metric < vtxIncSecGenMatchMetric[vtxIncSecN]) {
-	  vtxIncSecSimMatchMetric[vtxIncSecN] = metric;
-	}	
-      }
-    }
-
-    if (vtxIncSecGenMatched[vtxIncSecN] > 0) vtxIncSecNGenMatched += 1;
-    else vtxIncSecNGenFake += 1;
-    if (vtxIncSecSimMatched[vtxIncSecN] > 0) vtxIncSecNSimMatched += 1;
-    else vtxIncSecNSimFake += 1;
-
-    vtxIncSecN++;
-  }
-  
-  ///////////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////// JET TREE VARIABLES CALCULATIONS ///////////////////
-  ///////////////////////////////////////////////////////////////////////////////////
-
-  // loop over all calo jets
-  jetSvNGenMatched = 0;
-  jetSvNSimMatched = 0;
-  jetSvNGenFake	   = 0;
-  jetSvNSimFake	   = 0;
-
-  for(int jj = 0; jj < nCaloJets; jj++) {
-
-    if (caloJetPt[jj] < cut_jetPt || fabs(caloJetEta[jj]) > cut_jetEta) continue;
-    
-    //double check that all the pt's match up between the tags
-    bool    pt_equal  = caloJetPt[jj] == liJetPt[jj] && liJetPt[jj] == svJetPt[jj]; 
-    bool    eta_equal = caloJetEta[jj] == liJetEta[jj] && liJetEta[jj] == svJetEta[jj]; 
-    bool    phi_equal = caloJetPhi[jj] == liJetPhi[jj] && liJetPhi[jj] == svJetPhi[jj]; 
-    bool    all_match = pt_equal && eta_equal && phi_equal;
-
-    if (debug == 3 ) {
-      std::cout << "all_match " << all_match << " pt equal " << pt_equal << " eta_equal " << eta_equal << " phi equal " << phi_equal << std::endl;
-      std::cout << caloJetPt[jj] << " " << liJetPt[jj] << " " << svJetPt[jj] << std::endl;
-      std::cout << caloJetEta[jj] << " " << liJetEta[jj] << " " << svJetEta[jj] << std::endl;
-    }
-
-    // the calo jets, lifetime tags and secondary vertices must all match exactly!
-    assert(all_match);    
-    
-    // significance and aboslute IP weighted track energy
-    jetEIPSig2D[jj] = 0;
-    jetEIP2D[jj]    = 0;
-    jetEIPSig3D[jj] = 0;
-    jetEIP3D[jj]    = 0;
-
-    //significance log weighted
-    jetELogIPSig2D[jj] = 0;
-    jetELogIPSig3D[jj] = 0;
-
-    // signed versions of track weighting
-    jetEIPSignedSig2D[jj] = 0;
-    jetEIPSigned2D[jj]	  = 0;
-    jetEIPSignedSig3D[jj] = 0;
-    jetEIPSigned3D[jj]	  = 0;
-
-    // IP significance sums
-    jetIPSigSum2D[jj] = 0;
-    jetIPSigSum3D[jj] = 0;
-
-    // IP significance log sums
-    jetIPSigLogSum2D[jj] = 0;
-    jetIPSigLogSum3D[jj] = 0;
-
-    jetIPLogSum2D[jj] = 0;
-    jetIPLogSum3D[jj] = 0;
-
-    // IP signed significance sums
-    jetIPSignedSigSum2D[jj]    = 0;
-    jetIPSignedSigSum3D[jj]    = 0;
-
-    // IP significance averages
-    jetMeanIPSig2D[jj]	   = 0;
-    jetMeanIPSig3D[jj]	   = 0;
-    jetMedianIPSig2D[jj]   = 0;
-    jetMedianIPSig3D[jj]   = 0;
-    jetVarianceIPSig2D[jj] = 0;
-    jetVarianceIPSig3D[jj] = 0;
-
-    // signed averages 
-    jetMeanIPSignedSig2D[jj]	 = 0;
-    jetMeanIPSignedSig3D[jj]	 = 0;
-    jetMedianIPSignedSig2D[jj]	 = 0;
-    jetMedianIPSignedSig3D[jj]	 = 0;
-    jetVarianceIPSignedSig2D[jj] = 0;
-    jetVarianceIPSignedSig3D[jj] = 0;
-
-    if (caloJetPt[jj] != liJetPt[jj]) continue;
-
-    //  ip tag related
-    for(int tt = 0; tt < nLiTracks; tt++){            
-
-      // only look at tracks that correspond to the current jet
-      if( liTrackJetID[tt] != caloJetID[jj]) { continue; }
-
-      float pt	  = liTrackPt[tt];
-      float ip2d  = liTrackIP2D[tt];
-      float ip3d  = liTrackIP3D[tt];
-      float ip2ds = liTrackIPSig2D[tt];
-      float ip3ds = liTrackIPSig3D[tt];
-
-      // ip weighted track pt sums
-      jetEIPSig2D[jj] += fabs(ip2ds) *	pt;
-      jetEIPSig3D[jj] += fabs(ip3ds) *	pt;
-      jetEIP2D[jj]    += fabs(ip2d)  *	pt;
-      jetEIP3D[jj]    += fabs(ip3d)  *	pt;
-
-      // ip log weighted track pt sums
-      jetELogIPSig2D[jj] += (ip2ds ? log(fabs(ip2ds)) * pt : 0);
-      jetELogIPSig3D[jj] += (ip3ds ? log(fabs(ip3ds)) * pt : 0);
-
-      jetEIPSignedSig2D[jj] += (ip2ds) *    pt;
-      jetEIPSignedSig3D[jj] += (ip3ds) *    pt;
-      jetEIPSigned2D[jj]    += (ip2d)  *    pt;
-      jetEIPSigned3D[jj]    += (ip3d)  *    pt; 
-
-      // absolute ip averages
-      // unsigned
-      jetIPSum2D[jj]	   += fabs(ip2d);
-      jetIPSum3D[jj]	   += fabs(ip3d);
-      //signed
-      jetIPSignedSum2D[jj] += ip2d;
-      jetIPSignedSum3D[jj] += ip3d;
-
-      // ip significance sums
-      // unsigned 
-      jetIPSigSum2D[jj]	   += fabs(ip2ds);
-      jetIPSigSum3D[jj]	   += fabs(ip3ds);
-
-      // signed
-      jetIPSignedSigSum2D[jj]	 += (ip2ds);
-      jetIPSignedSigSum3D[jj]	 += (ip3ds);
-
-      // ip significance log sum
-      jetIPSigLogSum2D[jj] += (ip2ds ? log(fabs(ip2ds)) : 0);
-      jetIPSigLogSum3D[jj] += (ip3ds ? log(fabs(ip3ds)) : 0);
-
-      jetIPLogSum2D[jj] += (ip2ds ? log(fabs(ip2d)) : 0);
-      jetIPLogSum3D[jj] += (ip3ds ? log(fabs(ip3d)) : 0);
-
-      // unsigned averages
-      jetMeanIPSig2D[jj] += fabs(ip2ds) / float(liJetNSelTracks[jj]);
-      jetMeanIPSig3D[jj] += fabs(ip3ds) / float(liJetNSelTracks[jj]);          
-
-      // unsigned averages
-      jetMeanIPSignedSig2D[jj] += ip2ds / float(liJetNSelTracks[jj]);
-      jetMeanIPSignedSig3D[jj] += ip3ds / float(liJetNSelTracks[jj]);
-    }
-
-    bool    has_track = liJetNSelTracks[jj] > 0;
-
-    // do the average for the IP weighted
-    jetEIPSig2D[jj] /= (has_track ? jetIPSigSum2D[jj] : 1);
-    jetEIPSig3D[jj] /= (has_track ? jetIPSigSum3D[jj] : 1);
-    jetEIP2D[jj]    /= (has_track ? jetIPSum2D[jj]: 1);
-    jetEIP3D[jj]    /= (has_track ? jetIPSum3D[jj]: 1);
-
-    // do the average for the IP weighted
-    jetELogIPSig2D[jj] /= (has_track ? jetIPSigLogSum2D[jj] : 1);
-    jetELogIPSig3D[jj] /= (has_track ? jetIPSigLogSum3D[jj] : 1);
-    //jetELogIP2D[jj]  /= (has_track ?  jetIPLogSum2D[jj]: 1);
-    //jetELogIP3D[jj]  /= (has_track ?  jetIPLogSum3D[jj]: 1);
-
-    // averages for the signed values as well
-    jetEIPSignedSig2D[jj] /= (has_track ?  jetIPSignedSum2D[jj]: 1);
-    jetEIPSignedSig3D[jj] /= (has_track ?  jetIPSignedSum3D[jj]: 1);
-    jetEIPSigned2D[jj]	  /= (has_track ?  jetIPSignedSigSum2D[jj]: 1);
-    jetEIPSigned3D[jj]	  /= (has_track ?  jetIPSignedSigSum3D[jj]: 1);
-
-    // compute combination variables
-    jetMedianIPSignedSig2D[jj]	 = TrackAnalyzer::getJetMedian(liTrackIP2D, nLiTracks, caloJetID[jj], true);
-    jetMedianIPSignedSig3D[jj]	 = TrackAnalyzer::getJetMedian(liTrackIP3D, nLiTracks, caloJetID[jj], true);
-    jetVarianceIPSignedSig2D[jj] = TrackAnalyzer::getJetVariance(liTrackIP2D, jetMeanIPSignedSig2D[jj], nLiTracks, caloJetID[jj], true);
-    jetVarianceIPSignedSig3D[jj] = TrackAnalyzer::getJetVariance(liTrackIP3D, jetMeanIPSignedSig3D[jj], nLiTracks, caloJetID[jj], true);    
-
-    jetMedianIPSig2D[jj]   = TrackAnalyzer::getJetMedian(liTrackIP2D, nLiTracks, caloJetID[jj], false);
-    jetMedianIPSig3D[jj]   = TrackAnalyzer::getJetMedian(liTrackIP3D, nLiTracks, caloJetID[jj], false);
-    jetVarianceIPSig2D[jj] = TrackAnalyzer::getJetVariance(liTrackIP2D, jetMeanIPSig2D[jj], nLiTracks, caloJetID[jj], false);
-    jetVarianceIPSig3D[jj] = TrackAnalyzer::getJetVariance(liTrackIP3D, jetMeanIPSig3D[jj], nLiTracks, caloJetID[jj], false);    
-      
-    // set best SV information
-    jetSvLxy[jj]     = 0;
-    jetSvLxySig[jj]  = 0;
-    jetSvLxyz[jj]    = 0;
-    jetSvLxyzSig[jj] = 0;
-    jetSvNTrack[jj]  = 0;	
-
-    // SV position
-    jetSvX[jj]	  = 0;
-    jetSvY[jj]	  = 0;
-    jetSvZ[jj]	  = 0;
-    // error
-    jetSvZErr[jj] = 0;
-    jetSvYErr[jj] = 0;
-    jetSvXErr[jj] = 0;
-
-    //SV quality
-    jetSvChi2[jj]    = 0;
-    jetSvNChi2[jj]   = 0;
-    jetSvNDof[jj]    = 0;
-    jetSvIsValid[jj] = 0;           
-    jetNSv[jj]	     = 0;
-
-    int bestSV = -1;
-    int highestSum = -1;	
-    // loop over all SV in the event and find the one with highest number of tracks
-    // and assign it to the jet
-    for(int vvv = 0; vvv < nSV; vvv++) {
-      float sv_ntracks = svNTracks[vvv];
-
-      // check the jet ids match between the SV and current jet	
-      // require at least 2 tracks in the SV
-      if (svVertexJetID[vvv] != caloJetID[jj] || sv_ntracks < 2) continue;
-
-      // counter the number of SV collected      
-      jetNSv[jj]++;
-      //float sv_pt = svPt[vvv];
-	
-      if (sv_ntracks > highestSum) {
-	bestSV = vvv;
-	highestSum = sv_ntracks;
-
-	if(debug > 1) std::cout << "[JETS] -------- highest # tracks PV: " << highestSum << " index " << vvv << std::endl;
-      }
-    } // end vertex loop
-
-    // no SV, nothing to do
-    if (bestSV == -1) continue;
-
-    // SV information
-    jetSvMass[jj]    = svMass[bestSV];
-    jetSvLxy[jj]     = svFlight2D[bestSV];
-    jetSvLxySig[jj]  = svFlight2D[bestSV] / svFlight2DErr[bestSV];
-    jetSvLxyz[jj]    = svFlight[bestSV];
-    jetSvLxyzSig[jj] = svFlight[bestSV] / svFlightErr[bestSV];
-    jetSvNTrack[jj]  = svNTracks[bestSV];   //vertex track multiplicty
-
-    // SV position and error
-    jetSvX[jj] = svX[bestSV];
-    jetSvY[jj] = svY[bestSV];
-    jetSvZ[jj] = svZ[bestSV];
-
-    jetSvZErr[jj] = svXErr[bestSV];
-    jetSvYErr[jj] = svYErr[bestSV];
-    jetSvXErr[jj] = svZErr[bestSV];
-
-    //SV quality
-    jetSvChi2[jj]    = svChi2[bestSV];
-    jetSvNChi2[jj]   = svNChi2[bestSV];
-    jetSvNDof[jj]    = svNDof[bestSV];
-    jetSvIsValid[jj] = svIsValid[bestSV];                  
-
-    jetSvGenMatched[jj] = 0 ;
-    jetSvGenMatchMetric[jj] = FAKE_HIGH_VAL;
-    jetSvSimMatched[jj] = 0 ;
-    jetSvSimMatchMetric[jj] = FAKE_HIGH_VAL;
-
-    float vx = jetSvX[jj], vy = jetSvY[jj], vz = jetSvZ[jj];
-
-    //gen and sim vertex matchingw
-    if (isSignalMC_ && doGenMatch_) {
-      //perform gen matching
-      for(Int_t gg = 0; gg < genPartN; gg++) {
-	if (genPartStatus[gg] != GEN_STATUS_CODE_MATCH) continue;
-	
-	float gx = genPartVX[gg], gy = genPartVY[gg], gz = genPartVZ[gg];
-	float metric = std::sqrt(((gx-vx)*(gx-vx))/(gx*gx) + ((gy-vy)*(gy-vy))/(gy*gy) + ((gz-vz)*(gz-vz))/(gz*gz));
-      
-	if (metric < VERTEX_MATCH_METRIC) {
-	  jetSvGenMatched[jj] += 1;
-	}
-	if( metric < jetSvSimMatchMetric[jj]) {
-	  jetSvGenMatchMetric[jj] = metric;
-	}	
-      }
-
-      //do sim matching
-      for(Int_t ss = 0; ss < simVtxN; ss++) {
-	if (!doSimMatch_) continue;
-	if (simVtxProcType[ss] != SIM_STATUS_CODE_MATCH) continue;
-	
-	float sx = simVtxX[ss], sy = simVtxY[ss], sz = genPartVZ[ss];
-	float metric = std::sqrt(((sx-vx)*(sx-vx))/(sx*sx) + ((sy-vy)*(sy-vy))/(sy*sy) + ((sz-vz)*(sz-vz))/(sz*sz));
-      
-	if(metric < VERTEX_MATCH_METRIC) {
-	  jetSvSimMatched[jj] += 1;
-	}
-	if(metric < jetSvGenMatchMetric[jj]) {
-	  jetSvSimMatchMetric[jj] = metric;
-	}	
-      }
-    }
-
-    if (jetSvGenMatched[jj] > 0) jetSvNGenMatched += 1;
-    else jetSvNGenFake += 1;
-    if (jetSvSimMatched[jj] > 0) jetSvNSimMatched += 1;
-    else jetSvNSimFake += 1;
-
-  } // end loop over jets
+  // event information 
+  run	= iEvent.id().run();
+  lumi	= iEvent.id().luminosityBlock();
+  event = iEvent.id().event();      
+
+  // ncalo jets indexes every jet branch
+  nCaloJets = djEvent.getNJets();
+
+  // merge in the event info
+  djEvent.mergeCaloIPTagInfo(lifetimeTagInfo); // add the ip info built from the JTA
+  djEvent.mergeSVTagInfo(svTagInfo); // add the secondary vertexer from btag
+  djEvent.addIVFVertices(incSV); // add the inclusive secondary vertices (includes matching and calculations)
+
+  // mc matching (gen vertex and gen particle to calo jet matching) 
+  // (genparticles, particle matching, vtx matching, threshold for vtx)
+  if(isMC_ && doGenMatch_) djEvent.doGenMatching(genCollection, true, true, 0.05);    
+// only dump sim information for matching
+  if(isMC_ && doSimMatch_) dumpSimInfo(simVtxCollection);  
+
+  // dump the displaced jet info intro the correspondg branches by event
+  dumpCaloInfo(djEvent);
+  dumpIPInfo(djEvent);
+  dumpIVFInfo(djEvent);  
+  dumpSVTagInfo(djEvent);
+
+  // dump the tracks associated to jets
+
+  // dump the vertex info in the event
+  dumpPVInfo(pvCollection);  
+
+  // dump the gen Particle info
 
   evNum++;
+
   if(debug > 1) std::cout << "[DEBUG] Fill Track Tree" << std::endl;
   trackTree_->Fill();
   if(debug > 1) std::cout << "[DEBUG] Fill Jet Tree" << std::endl;
   jetTree_->Fill();
-  if(debug > 1) std::cout << "[DEBUG] Fill VTX Tree" << std::endl;
-  vertexTree_->Fill();
+  //  if(debug > 1) std::cout << "[DEBUG] Fill VTX Tree" << std::endl;
+  //  vertexTree_->Fill();
   if(debug > 1) std::cout << "[DEBUG] Fill GEN Tree" << std::endl;
-  genTree_->Fill();
+  //  genTree_->Fill();
 }
 
 void 
 TrackAnalyzer::beginJob()
 {
 
-  if(debug > 1) std::cout << "[DEBUG] Setting Up Output File And Tree" << std::endl;
+  if(debug > 1) std::cout << "[DEBUG 1] Setting Up Output File And Tree" << std::endl;
   
   // storage 
   outputFile_ = new TFile(outputFileName_.c_str(), "RECREATE");
@@ -1056,10 +291,10 @@ TrackAnalyzer::beginJob()
 
   trackTree_->Branch("genMatch", &genMatch, "genMatch[nCaloJets]/I");  
   trackTree_->Branch("genMatchTrack", &genMatchTrack, "genMatchTrack[nLiTracks]/I");  
-  trackTree_->Branch("genPt", &genPt, "genPt[nCaloJets]/I");  
-  trackTree_->Branch("genEta", &genEta, "genEta[nCaloJets]/I");  
-  trackTree_->Branch("genPhi", &genPhi, "genPhi[nCaloJets]/I");  
-  trackTree_->Branch("genM", &genM, "genM[nCaloJets]/I");  
+  trackTree_->Branch("caloGenPt", &caloGenPt, "caloGenPt[nCaloJets]/I");  
+  trackTree_->Branch("caloGenEta", &caloGenEta, "caloGenEta[nCaloJets]/I");  
+  trackTree_->Branch("caloGenPhi", &caloGenPhi, "caloGenPhi[nCaloJets]/I");  
+  trackTree_->Branch("caloGenM", &caloGenM, "caloGenM[nCaloJets]/I");  
 
   ////////////////////////////// LIFETIME Jet tags////////////////////////
 
@@ -1147,14 +382,6 @@ TrackAnalyzer::beginJob()
   jetTree_->Branch("evNum", &evNum, "evNum/I");
   jetTree_->Branch("jetID", &caloJetID, "jetID[nCaloJets]/I");
 
-  //////////////// GEN MATCHING ///////////////
-
-  jetTree_->Branch("genMatch", &genMatch, "genMatch[nCaloJets]/I");  
-  jetTree_->Branch("genPt", &genPt, "genPt[nCaloJets]/I");  
-  jetTree_->Branch("genEta", &genEta, "genEta[nCaloJets]/I");  
-  jetTree_->Branch("genPhi", &genPhi, "genPhi[nCaloJets]/I");  
-  jetTree_->Branch("genM", &genM, "genM[nCaloJets]/I");  
-
   //////////////// CALO JETS ///////////////////
   
   //jet kinematics
@@ -1171,6 +398,12 @@ TrackAnalyzer::beginJob()
   jetTree_->Branch("caloJetHfrac", &caloJetHfrac, "caloJetHfrac[nCaloJets]/F");
   jetTree_->Branch("caloJetEfrac", &caloJetEfrac, "caloJetEFrac[nCaloJets]/F");
 
+  jetTree_->Branch("caloGenMatch", &caloGenMatch, "caloGenMatch[nCaloJets]/I");  
+  jetTree_->Branch("caloGenPt", &caloGenPt, "caloGenPt[nCaloJets]/I");  
+  jetTree_->Branch("caloGenEta", &caloGenEta, "caloGenEta[nCaloJets]/I");  
+  jetTree_->Branch("caloGenPhi", &caloGenPhi, "caloGenPhi[nCaloJets]/I");  
+  jetTree_->Branch("caloGenM", &caloGenM, "caloGenM[nCaloJets]/I");  
+
   //////////////// IP TAG INFORMATION ////////////
 
   //number of selected tracks
@@ -1183,12 +416,6 @@ TrackAnalyzer::beginJob()
   jetTree_->Branch("jetEIPSig3D", &jetEIPSig3D, "jetEIPSig3D[nCaloJets]/F");
   jetTree_->Branch("jetEIP3D", &jetEIP3D, "jetEIP3D[nCaloJets]/F");
 
-  // signed
-  jetTree_->Branch("jetEIPSignedSig2D", &jetEIPSignedSig2D, "jetEIPSignedSig2D[nCaloJets]/F");
-  jetTree_->Branch("jetEIPSigned2D", &jetEIPSigned2D, "jetEIPSigned2D[nCaloJets]/F");
-  jetTree_->Branch("jetEIPSignedSig3D", &jetEIPSignedSig3D, "jetEIPSignedSig3D[nCaloJets]/F");
-  jetTree_->Branch("jetEIPSigned3D", &jetEIPSigned3D, "jetEIPSigned3D[nCaloJets]/F");
-
   // log weighted track pt 
   jetTree_->Branch("jetELogIPSig2D", &jetELogIPSig2D, "jetELogIPSig2D[nCaloJets]/F");
   jetTree_->Branch("jetELogIPSig3D", &jetELogIPSig3D, "jetELogIPSig3D[nCaloJets]/F");
@@ -1197,13 +424,13 @@ TrackAnalyzer::beginJob()
   jetTree_->Branch("jetIPSigSum2D", &jetIPSigSum2D, "jetIPSigSum2D[nCaloJets]/F");
   jetTree_->Branch("jetIPSigSum3D", &jetIPSigSum3D, "jetIPSigSum3D[nCaloJets]/F");
 
-  //signed ip significance sums  -- sum(IPsig)
-  jetTree_->Branch("jetIPSignedSigSum2D", &jetIPSignedSigSum2D, "jetIPSignedSigSum2D[nCaloJets]/F");
-  jetTree_->Branch("jetIPSignedSigSum3D", &jetIPSignedSigSum3D, "jetIPSignedSigSum3D[nCaloJets]/F");
-
   //ip sig log sums  -- sum(log(|IPsig|))
   jetTree_->Branch("jetIPSigLogSum2D", &jetIPSigLogSum2D, "jetIPSigLogSum2D[nCaloJets]/F");
   jetTree_->Branch("jetIPSigLogSum3D", &jetIPSigLogSum3D, "jetIPSigLogSum3D[nCaloJets]/F");
+
+  jetTree_->Branch("jetDistSigLogSum", &jetDistSigLogSum, "jetDistSigLogSum[nCaloJets]/F");
+  jetTree_->Branch("jetDistLogSum", &jetDistLogSum, "jetDistLogSum[nCaloJets]/F");
+
 
   jetTree_->Branch("jetIPLogSum2D", &jetIPLogSum2D, "jetIPLogSum2D[nCaloJets]/F");
   jetTree_->Branch("jetIPLogSum3D", &jetIPLogSum3D, "jetIPLogSum3D[nCaloJets]/F");
@@ -1215,26 +442,18 @@ TrackAnalyzer::beginJob()
   jetTree_->Branch("jetMedianIPSig3D", &jetMedianIPSig3D, "jetMedianIPSig3D[nCaloJets]/F");
   jetTree_->Branch("jetVarianceIPSig2D", &jetVarianceIPSig2D, "jetVarianceIPSig2D[nCaloJets]/F");
   jetTree_->Branch("jetVarianceIPSig3D", &jetVarianceIPSig3D, "jetVarianceIPSig3D[nCaloJets]/F");
-
-  // ip sig signed averages
-  jetTree_->Branch("jetMeanIPSignedSig2D", &jetMeanIPSignedSig2D, "jetMeanIPSignedSig2D[nCaloJets]/F");
-  jetTree_->Branch("jetMeanIPSignedSig3D", &jetMeanIPSignedSig3D, "jetMeanIPSignedSig3D[nCaloJets]/F");
-  jetTree_->Branch("jetMedianIPSignedSig2D", &jetMedianIPSignedSig2D, "jetMedianIPSignedSig2D[nCaloJets]/F");
-  jetTree_->Branch("jetMedianIPSignedSig3D", &jetMedianIPSignedSig3D, "jetMedianIPSignedSig3D[nCaloJets]/F");
-  jetTree_->Branch("jetVarianceIPSignedSig2D", &jetVarianceIPSignedSig2D, "jetVarianceIPSignedSig2D[nCaloJets]/F");
-  jetTree_->Branch("jetVarianceIPSignedSig3D", &jetVarianceIPSignedSig3D, "jetVarianceIPSignedSig3D[nCaloJets]/F");
+  jetTree_->Branch("jetVarianceJetDist", &jetVarianceJetDist, "jetVarianceJetDist[nCaloJets]/F");
+  jetTree_->Branch("jetVarianceJetDistSig", &jetVarianceJetDistSig, "jetVarianceJetDistSig[nCaloJets]/F");
 
   // ip value averages
   jetTree_->Branch("jetMeanIP2D", &jetMeanIP2D, "jetMeanIP2D[nCaloJets]/F");
   jetTree_->Branch("jetMeanIP3D", &jetMeanIP3D, "jetMeanIP3D[nCaloJets]/F");
+  jetTree_->Branch("jetMeanJetDist", &jetMeanJetDist, "jetMeanJetDist[nCaloJets]/F");
   jetTree_->Branch("jetMedianIP2D", &jetMedianIP2D, "jetMedianIP2D[nCaloJets]/F");
   jetTree_->Branch("jetMedianIP3D", &jetMedianIP3D, "jetMedianIP3D[nCaloJets]/F");
+  jetTree_->Branch("jetMedianJetDist", &jetMedianJetDist, "jetMedianJetDist[nCaloJets]/F");
 
-  // signed ip value averages
-  jetTree_->Branch("jetMeanIPSigned2D", &jetMeanIPSigned2D, "jetMeanIPSigned2D[nCaloJets]/F");
-  jetTree_->Branch("jetMeanIPSigned3D", &jetMeanIPSigned3D, "jetMeanIPSigned3D[nCaloJets]/F");
-  jetTree_->Branch("jetMedianIPSigned2D", &jetMedianIPSigned2D, "jetMedianIPSigned2D[nCaloJets]/F");
-  jetTree_->Branch("jetMedianIPSigned3D", &jetMedianIPSigned3D, "jetMedianIPSigned3D[nCaloJets]/F");
+
 
   //////////////SECONDARY VTX INFORMATION //////////////
 
@@ -1281,20 +500,22 @@ TrackAnalyzer::beginJob()
   jetTree_->Branch("jetIVFMatchingScore", &jetIVFMatchingScore, "jetIVFMatchingScore[nCaloJets]/F");  
 
   // IVF Gen Matching
-  jetTree_->Branch("jetIVFGenMatched", &jetIVFGenMatched, "jetIVFGenMatched[nCaloJets]/I");  
-  jetTree_->Branch("jetIVFGenMatchMetric", &jetIVFGenMatchMetric, "jetIVFGenMatchMetric[nCaloJets]/F");  
-  jetTree_->Branch("jetIVFSimMatched", &jetIVFSimMatched, "jetIVFSimMatched[nCaloJets]/I");  
-  jetTree_->Branch("jetIVFSimMatchMetric", &jetIVFSimMatchMetric, "jetIVFSimMatchMetric[nCaloJets]/F");  
+  jetTree_->Branch("jetIVFGenVertexMatched", &jetIVFGenVertexMatched, "jetIVFGenVertexMatched[nCaloJets]/I");  
+  jetTree_->Branch("jetIVFGenVertexMatchMetric", &jetIVFGenVertexMatchMetric, "jetIVFGenVertexMatchMetric[nCaloJets]/F");  
+  jetTree_->Branch("jetIVFSimVertexMatched", &jetIVFSimVertexMatched, "jetIVFSimVertexMatched[nCaloJets]/I");  
+  jetTree_->Branch("jetIVFSimVertexMatchMetric", &jetIVFSimVertexMatchMetric, "jetIVFSimVertexMatchMetric[nCaloJets]/F");  
 
   // Gen Matching
   jetTree_->Branch("jetSvNGenMatched", &jetSvNGenMatched, "jetSvNGenMatched/I");  
   jetTree_->Branch("jetSvNGenFake", &jetSvNGenFake, "jetSvNGenFake/I");  
-  jetTree_->Branch("jetSvGenMatched", &jetSvGenMatched, "jetSvGenMatched[nCaloJets]/I");  
-  jetTree_->Branch("jetSvGenMatchMetric", &jetSvGenMatchMetric, "jetSvGenMatchMetric[nCaloJets]/F");  
+  // gen
+  jetTree_->Branch("jetSvGenVertexMatched", &jetSvGenVertexMatched, "jetSvGenVertexMatched[nCaloJets]/I");  
+  jetTree_->Branch("jetSvGenVertexMatchMetric", &jetSvGenVertexMatchMetric, "jetSvGenVertexMatchMetric[nCaloJets]/F");  
+  // sim
   jetTree_->Branch("jetSvNSimMatched", &jetSvNSimMatched, "jetSvNSimMatched/I");  
   jetTree_->Branch("jetSvNSimFake", &jetSvNSimFake, "jetSvNSimFake/I");  
-  jetTree_->Branch("jetSvSimMatched", &jetSvSimMatched, "jetSvSimMatched[nCaloJets]/I");  
-  jetTree_->Branch("jetSvSimMatchMetric", &jetSvSimMatchMetric, "jetSvSimMatchMetric[nCaloJets]/F");  
+  jetTree_->Branch("jetSvSimMatched", &jetSvSimVertexMatched, "jetSvSimMatched[nCaloJets]/I");  
+  jetTree_->Branch("jetSvSimMatchMetric", &jetSvSimVertexMatchMetric, "jetSvSimMatchMetric[nCaloJets]/F");  
 
   ///////////  ///////////  ///////////  ///////////  ///////////  ///////////  ////
   //////////////////////////////// VTX TREE QUANITIES //////////////////////////////
@@ -1425,8 +646,8 @@ TrackAnalyzer::endJob()
   outputFile_->cd();
   jetTree_->Write();
   trackTree_->Write();
-  genTree_->Write();
-  vertexTree_->Write();
+  //  genTree_->Write();
+  //  vertexTree_->Write();
   outputFile_->Close();
 }
 
@@ -1438,77 +659,6 @@ TrackAnalyzer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   desc.setUnknown();
   descriptions.addDefault(desc);
 }
-
-Float_t TrackAnalyzer::getJetMedian(Float_t values[], int size, int jetid, bool is_signed) { 
-  //the real size is only the tracks corresponding to the specific jet
-  Int_t true_size = 0;
-  for (int i = 0; i < size; ++i) {
-    if (liTrackJetID[i] == jetid) {
-      true_size++; 
-    }
-  }
-
-  //loop over the full array but only fill with the corresponding jetid
-  Float_t* sorted = new Float_t[true_size];
-  int true_index = 0;
-  for (int i = 0; true_index < true_size; ++i) {
-    if (liTrackJetID[i] == jetid) {
-      sorted[true_index] = is_signed ? values[i] : fabs(values[i]);
-      true_index++; 
-    }
-  }
-
-  // sort the array
-  for (int i = true_size - 1; i > 0; --i) {
-    for (int j = 0; j < i; ++j) {
-      if (sorted[j] > sorted[j+1]) {
-	Float_t dTemp = sorted[j];
-	sorted[j] = sorted[j+1];
-	sorted[j+1] = dTemp;
-      }
-    }
-  }
-
-  if(true_size == 0) {
-    return 0; //no tracks
-  }
-
-  // Middle or average of middle values in the sorted array.
-  Float_t dMedian = 0.0;
-  if ((true_size % 2) == 0) {
-    dMedian = (sorted[true_size/2] + sorted[(true_size/2) - 1])/2.0;
-  } else {
-    dMedian = sorted[true_size/2];
-  }
-  delete [] sorted;
-
-  //safety check
-  if(!is_signed ) { 
-    if (dMedian < 0 ) std::cout << "ASSERT FAIL: "  << dMedian << std::endl;
-    assert( dMedian >= 0 ); 
-  }
-
-  return dMedian;
-}
-
-Float_t TrackAnalyzer::getJetVariance(Float_t values[], Float_t mean, int n, int jetid, bool is_signed) {
-  Float_t sum = 0;
-  Float_t true_n = 0;
-
-  for (int i = 0; i < n; i++)  {
-    if (liTrackJetID[i] == jetid) {
-      Float_t val = is_signed ? values[i] : fabs(values[i]);
-      sum += (val - mean) * (val - mean);
-      true_n++;
-    }
-  }
-
-  //safety check
-  if(!is_signed ) { assert( sum >= 0 ); }
-
-  return sum / (true_n - 1.0);
-}
-
 
 void
 TrackAnalyzer::dumpPVInfo(const reco::VertexCollection & pv) {
@@ -1530,6 +680,126 @@ TrackAnalyzer::dumpPVInfo(const reco::VertexCollection & pv) {
     }
   }
 }
+
+void TrackAnalyzer::dumpCaloInfo(DisplacedJetEvent & djEvent) {
+  if(debug > 1 ) std:: cout << "[DEBUG] Dumping Calo Info" << std::endl;
+
+  const DisplacedJetCollection djetCollection = djEvent.getDisplacedJets();
+  DisplacedJetCollection::const_iterator djet = djetCollection.begin();
+  int jj = 0;
+  for(; djet != djetCollection.end(); ++djet, ++jj) {        
+    // id
+    caloJetID[jj]    = djet->jetID;
+    // kinematics
+    caloJetPt[jj]    = djet->caloPt;
+    caloJetEta[jj]   = djet->caloEta;
+    caloJetPhi[jj]   = djet->caloPhi;        
+    // energy fractions
+    caloJetHfrac[jj] = djet->caloEMEnergyFrac;
+    caloJetEfrac[jj] = djet->caloHadEnergyFrac;
+    // gen matching to particle quantities
+    caloGenMatch[jj] = djet->isCaloGenMatched ? 1 : 0;       
+    caloGenPt[jj]    = djet->caloGenPt;
+    caloGenEta[jj]   = djet->caloGenEta;
+    caloGenPhi[jj]   = djet->caloGenPhi;
+  }
+
+}
+
+void TrackAnalyzer::dumpSVTagInfo(DisplacedJetEvent & djEvent) {
+  if(debug > 1 ) std:: cout << "[DEBUG] Dumping SV Info" << std::endl;
+  const DisplacedJetCollection djetCollection = djEvent.getDisplacedJets();
+  DisplacedJetCollection::const_iterator djet = djetCollection.begin();
+  int jj = 0;
+  for(; djet != djetCollection.end(); ++djet, ++jj) {    
+    // positional space
+    jetSvX[jj]			  = djet->svX;
+    jetSvY[jj]			  = djet->svY;
+    jetSvZ[jj]			  = djet->svZ;
+    jetSvXErr[jj]		  = djet->svXError;
+    jetSvYErr[jj]		  = djet->svYError;
+    jetSvZErr[jj]		  = djet->svZError;
+    // qualities
+    jetSvMass[jj]		  = djet->svMass;
+    jetSvLxy[jj]		  = djet->svLxy;
+    jetSvLxySig[jj]		  = djet->svLxySig;
+    jetSvLxyz[jj]		  = djet->svLxyz;
+    jetSvLxyzSig[jj]		  = djet->svLxyzSig;
+    jetSvNTrack[jj]		  = djet->svNTracks;    
+    // matching
+    jetSvGenVertexMatched[jj]	  = djet->svIsGenMatched;
+    jetSvGenVertexMatchMetric[jj] = djet->svGenVertexMatchMetric;
+  }  
+}
+
+void TrackAnalyzer::dumpIVFInfo(DisplacedJetEvent & djEvent) {
+  if(debug > 1 ) std:: cout << "[DEBUG] Dumping IVF Info" << std::endl;
+
+  const DisplacedJetCollection djetCollection = djEvent.getDisplacedJets();
+  DisplacedJetCollection::const_iterator djet = djetCollection.begin();
+  int jj = 0;
+  for(; djet != djetCollection.end(); ++djet, ++jj) {    
+    // IVF position
+    jetIVFX[jj]		    = djet->ivfX;
+    jetIVFY[jj]		    = djet->ivfY;
+    jetIVFZ[jj]		    = djet->ivfZ;
+    jetIVFXErr[jj]	    = djet->ivfXError;
+    jetIVFYErr[jj]	    = djet->ivfYError;
+    jetIVFZErr[jj]	    = djet->ivfZError;
+    
+    // qualities
+    jetIVFNTrack[jj]		   = djet->ivfNTracks;
+    jetIVFMass[jj]		   = djet->ivfMass;
+    jetIVFLxySig[jj]		   = djet->ivfLxySig;
+    jetIVFLxyzSig[jj]		   = djet->ivfLxyzSig;
+    jetIVFLxy[jj]		   = djet->ivfLxy;
+    jetIVFLxyz[jj]		   = djet->ivfLxyz;    
+    // track based matching score of vertex to the jet
+    jetIVFMatchingScore[jj]	   = djet->ivfMatchingScore;
+    // gen matching of the vertex position to the IVF chosen
+    jetIVFGenVertexMatched[jj]	   = djet->ivfIsGenMatched;
+    jetIVFGenVertexMatchMetric[jj] = djet->ivfGenVertexMatchMetric;
+    
+    // sim matching to vertex from sim
+    jetIVFSimVertexMatched[jj]    = djet->ivfIsSimMatched;
+  }
+}
+
+void TrackAnalyzer::dumpIPInfo(DisplacedJetEvent & djEvent) {
+  if(debug > 1 ) std:: cout << "[DEBUG] Dumping IP Info" << std::endl;
+
+  const DisplacedJetCollection djetCollection = djEvent.getDisplacedJets();
+  DisplacedJetCollection::const_iterator djet = djetCollection.begin();
+  int jj = 0;
+  for(; djet != djetCollection.end(); ++djet, ++jj) {    
+
+    if(debug > 4 ) std:: cout << "[DEBUG 4] djet->ipsiglogsum2d: " << djet->ipSigLogSum2D << std::endl;
+    // IP significance log sums
+    jetIPSigLogSum2D[jj]      = djet->ipSigLogSum2D;
+    jetIPSigLogSum3D[jj]      = djet->ipSigLogSum3D;    
+    jetDistLogSum[jj]	      = djet->jetDistLogSum;
+    jetDistSigLogSum[jj]      = djet->jetDistSigLogSum;
+
+    // IP significance averages
+    jetMeanIPSig2D[jj]	      = djet->meanIPSig2D;
+    jetMeanIPSig3D[jj]	      = djet->meanIPSig3D;
+    jetMedianIPSig2D[jj]      = djet->medianIPSig2D;
+    jetMedianIPSig3D[jj]      = djet->medianIPSig3D;
+    jetVarianceIPSig2D[jj]    = djet->varianceIPSig2D;
+    jetVarianceIPSig3D[jj]    = djet->varianceIPSig3D;
+    jetVarianceJetDistSig[jj] = djet->varianceJetDistSig;
+    
+    // IP value averages
+    jetMeanIP2D[jj]	      = djet->meanIP2D;
+    jetMeanIP3D[jj]	      = djet->meanIP3D;
+    jetMedianIP2D[jj]	      = djet->medianIP2D;
+    jetMedianIP3D[jj]	      = djet->medianIP3D;
+    jetVarianceIP2D[jj]	      = djet->varianceIP2D;
+    jetVarianceIP3D[jj]	      = djet->varianceIP3D;
+    jetVarianceJetDist[jj]    = djet->varianceJetDist;
+  }
+}
+
 
 void
 TrackAnalyzer::dumpSimInfo(const edm::SimVertexContainer & simVtx) {
@@ -1587,6 +857,7 @@ TrackAnalyzer::dumpGenInfo(const reco::GenParticleCollection & gen) {
     genPartN++;    
   }
 }
+
 
 //define this as a plug-in
 DEFINE_FWK_MODULE(TrackAnalyzer);

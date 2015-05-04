@@ -2,11 +2,11 @@ import FWCore.ParameterSet.Config as cms
 
 # output options (to be appended to the file name outputted)
 appendLifetime = "1500_30mm"
-appendBkg      = "120_170"
+appendBkg      = "470_600"
 
 # flags for running
 nevents       = -1
-debugLevel    = 3
+debugLevel    = 2
 isSignalMC    = False
 doGenMatch    = False
 doSimVtxMatch = False
@@ -22,13 +22,16 @@ input_file = None
 if isSignalMC:
 #    input_file = 'file:/afs/cern.ch/work/h/hardenbr/2015/DIJET/GEN_SIGNAL_TEST/dijet_700_300_ctau30.root'
 #    input_file = 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/group/phys_susy/razor/josh/RAZOR_DIJET/DIJET_MH700_MX300_CTAU1000_40BX25_AOD/dijet_700_300_ctau1000_94_1_3mG.root'
-    input_file = 'file:/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/SIGNAL_GENERATION/PAIR_XX/CMSSW_7_2_0/src/Configuration/GenProduction/python/ThirteenTeV/XXTo4J_M-1500_CTau-30mm_step3.root'
+#    input_file = 'file:/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/SIGNAL_GENERATION/PAIR_XX/CMSSW_7_2_0/src/Configuration/GenProduction/python/ThirteenTeV/XXTo4J_M-1500_CTau-30mm_step3.root'
 #   input_file = 'file:/afs/cern.ch/work/h/hardenbr/2015/DIJET/GEN_SIGNAL_TEST/dijet_700_300_ctau300.root'
 #   input_file = 'file:/afs/cern.ch/work/h/hardenbr/2015/DIJET/GEN_SIGNAL_TEST/dijet_700_300_ctau3000.root'
 #   input_file = 'file:/afs/cern.ch/work/h/hardenbr/2015/DIJET/GEN_SIGNAL_TEST/dijet_700_300_ctau3.root'
 #   input_file = 'file:/afs/cern.ch/user/t/tkolberg/public/hepmcreco_RAW2DIGI_RECO.root'
+   input_file = 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_98_1_zmW_step3.root'
+
 else:
-    input_file = 'root://xrootd-cms.infn.it//store/mc/Phys14DR/QCD_Pt-120to170_Tune4C_13TeV_pythia8/AODSIM/AVE20BX25_tsg_castor_PHYS14_25_V3-v1/00000/020D02CC-448E-E411-A7A8-002618943880.root'
+   input_file = 'root://xrootd-cms.infn.it//store/mc/Phys14DR/QCD_Pt-470to600_Tune4C_13TeV_pythia8/AODSIM/AVE20BX25_tsg_castor_PHYS14_25_V3-v1/00000/1E538A06-988E-E411-8F36-0025905B8562.root'
+#   input_file = 'root://xrootd-cms.infn.it//store/mc/Phys14DR/QCD_Pt-120to170_Tune4C_13TeV_pythia8/AODSIM/AVE20BX25_tsg_castor_PHYS14_25_V3-v1/00000/020D02CC-448E-E411-A7A8-002618943880.root'
 #    input_file = 'file:/afs/cern.ch/work/h/hardenbr/TEST_FILES/QCD_Pt-120to170_Tune4C_13TeV_pythia8_castor_tsg_PU40bx25_POSTLS162_V2-v1.root'
 #    "file:/afs/cern.ch/work/h/hardenbr/QCD_Pt-50to80_Tune4C_13TeV_pythia8_AOD.root'
 #    input_file =  'file:/afs/cern.ch/work/h/hardenbr/QCD_470_600_AOD_40bx25.root'
@@ -209,8 +212,6 @@ process.source = cms.Source("PoolSource",
         )
                             )
 
-
-
 ################################################################################################
 
 #configure the analyzers
@@ -224,33 +225,30 @@ process.analyzerCALO.debugLevel = cms.untracked.int32(debugLevel)
 if isSignalMC:
     process.analyzerVTX.outputFileName = cms.untracked.string('signalVTX%s.root' % appendLifetime)
     process.analyzerCALO.outputFileName = cms.untracked.string('signalCALO%s.root' % appendLifetime)
-
 else:
     process.analyzerVTX.outputFileName = cms.untracked.string('qcdVTX%s.root' % appendBkg)
     process.analyzerCALO.outputFileName = cms.untracked.string('qcdCALO%s.root' % appendBkg)
 
-process.analyzerCALO.jetTreeName = cms.untracked.string('jets')
-process.analyzerCALO.trackTreeName = cms.untracked.string('tracks')
+#tree names
+process.analyzerCALO.jetTreeName    = cms.untracked.string('jets')
+process.analyzerCALO.trackTreeName  = cms.untracked.string('tracks')
 process.analyzerCALO.vertexTreeName = cms.untracked.string('vtx')
-process.analyzerCALO.genTreeName = cms.untracked.string('gen')
+process.analyzerCALO.genTreeName    = cms.untracked.string('genp')
 
-process.analyzerVTX.jetTreeName = cms.untracked.string('jets')
-process.analyzerVTX.trackTreeName = cms.untracked.string('tracks')
-process.analyzerVTX.vertexTreeName = cms.untracked.string('vtx')
-process.analyzerVTX.genTreeName = cms.untracked.string('gen')
+process.analyzerVTX.jetTreeName     = cms.untracked.string('jets')
+process.analyzerVTX.trackTreeName   = cms.untracked.string('tracks')
+process.analyzerVTX.vertexTreeName  = cms.untracked.string('vtx')
+process.analyzerVTX.genTreeName     = cms.untracked.string('genp')
 
 # MC dependent flags
 process.analyzerVTX.isMC        = cms.untracked.bool(isMC)
 process.analyzerCALO.isMC       = cms.untracked.bool(isMC)
-
-process.analyzerVTX.doGenMatch  = cms.untracked.bool(doGenMatch)
-process.analyzerCALO.doGenMatch = cms.untracked.bool(doGenMatch)
-
-process.analyzerVTX.doSimMatch  = cms.untracked.bool(doSimVtxMatch)
-process.analyzerCALO.doSimMatch = cms.untracked.bool(doSimVtxMatch)
-
 process.analyzerVTX.isSignalMC  = cms.untracked.bool(isSignalMC)
 process.analyzerCALO.isSignalMC = cms.untracked.bool(isSignalMC)
+process.analyzerVTX.doGenMatch  = cms.untracked.bool(doGenMatch)
+process.analyzerCALO.doGenMatch = cms.untracked.bool(doGenMatch)
+process.analyzerVTX.doSimMatch  = cms.untracked.bool(doSimVtxMatch)
+process.analyzerCALO.doSimMatch = cms.untracked.bool(doSimVtxMatch)
 
 #tags
 process.analyzerVTX.generalTracks  = cms.untracked.InputTag('generalTracks', '', '')
@@ -303,22 +301,15 @@ if isMC:
 
 #output anything produced in the ANA process
 process.test_output = cms.OutputModule( "PoolOutputModule",
-    fileName = cms.untracked.string( "/afs/cern.ch/work/h/hardenbr/edmoutput.root" ),
-    fastCloning = cms.untracked.bool( False ),
-    dataset = cms.untracked.PSet(
-        filterName = cms.untracked.string( "" ),
-        dataTier = cms.untracked.string( "RAW" )
-    ),
-                                      outputCommands = cms.untracked.vstring(
-        'keep *_*_*_*'))#        'keep *_*_*_ANA'))
+                                        fileName = cms.untracked.string( "/afs/cern.ch/work/h/hardenbr/edmoutput.root" ),
+                                        fastCloning = cms.untracked.bool( False ),
+                                        dataset = cms.untracked.PSet(filterName = cms.untracked.string( "" ),
+                                                                      dataTier = cms.untracked.string( "RAW" )
+                                                                      ),
+                                        outputCommands = cms.untracked.vstring('keep *_*_*_*'))
 
-#run the displaced jet tags
+# run the displaced jet tags
 process.load('DisplacedJets.Configuration.RecoDJTag_cff')
-
-#config gen matching for the output displaced vertices 
-#if isSignalMC:
-#    process.displacedTagsToVertices.isSignalMC = cms.untracked.bool(True)
-#    process.displacedTagsToVertices.doGenMatch = cms.untracked.bool(False)
 
 if doedm:
     process.p = cms.Path(process.djtagging)    

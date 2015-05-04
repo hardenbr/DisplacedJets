@@ -1,7 +1,14 @@
 class DisplacedJet {
  public:
-  DisplacedJet(const reco::CaloJet & jet, const bool & isMC_) {
-    isMC    = isMC_;
+  DisplacedJet(const reco::CaloJet & jet_, const reco::Vertex & primaryVertex, const bool & isMC_, const int& jetID_, const int & debug_) {
+    debug = debug_;
+
+    jet	  = jet_;
+    isMC  = isMC_;
+    jetID = jetID_;
+
+    // primary vertex
+    selPV = primaryVertex;
 
     // initialize calo related variables
     caloPt  = jet.pt();
@@ -37,19 +44,46 @@ class DisplacedJet {
     varianceIPSig2D = 0, varianceIPSig3D = 0;
     varianceIP2D    = 0, varianceIP3D = 0;
     varianceJetDist = 0, varianceJetDistSig = 0;    
+
+    // ivf initialization
+    ivfX = 0, ivfY = 0, ivfZ = 0;
+    ivfXError = 0, ivfYError = 0, ivfZError = 0;
+    ivfLxy = 0, ivfLxyz = 0;
+    ivfLxySig = 0, ivfLxyzSig = 0;
+    ivfMass = 0;
+    ivfNTracks = 0;
+    ivfIsGenMatched = false;
+    ivfIsSimMatched = false;
+    ivfGenVertexMatchMetric = FAKE_HIGH_NUMBER;
+    
+    // sv initialization
+    svX = 0, svY = 0, svZ = 0;
+    svXError = 0, svYError = 0, svZError = 0;
+    svLxy = 0, svLxyz = 0;
+    svLxySig = 0, svLxyzSig = 0;
+    svMass = 0;
+    svNTracks = 0;
+    svIsGenMatched = false;
+    svIsSimMatched = false;
+    svGenVertexMatchMetric = FAKE_HIGH_NUMBER;    
   }
 
   // jet info integration
   void addCaloTrackInfo(const reco::TrackRefVector&);
-  void addSVTagInfo();
-  void addIVFCollection();
+  void addIVFCollection(const reco::VertexCollection&);
   void addIPTagInfo(const reco::TrackIPTagInfo&);
+  void addSVTagInfo(const reco::SecondaryVertexTagInfo&);
+
+  // generator matching
+  bool doGenCaloJetMatching(const float& ptMatch, const float& dRMatch, const reco::GenParticleCollection& genParticles);
+  bool doGenVertexJetMatching(const float& metricThreshold, const reco::GenParticleCollection& genParticles);
+  float genMatchMetric(const reco::GenParticle& gen, const reco::Vertex & vertex);
 
   // jet info extraction
-  reco::TrackCollection getCaloMatchedTracks() { return caloMatchedTracks;}
-  reco::TrackCollection getVertexMatchedTracks() { return vertexMatchedTracks;}
-  reco::Vertex          getIVFVertexSelected() { return selIVF };
-  reco::Vertex          getSVVertex() { return selSV};
+  reco::TrackCollection getCaloMatchedTracks() { return caloMatchedTracks; }
+  reco::TrackCollection getVertexMatchedTracks() { return vertexMatchedTracks; }
+  reco::Vertex          getIVFVertexSelected() { return selIVF; }
+  reco::Vertex          getSVVertex() { return selSV; }
   
   // jet distribution calculator
   float getJetMedian(const std::vector<float>, bool);
@@ -57,8 +91,8 @@ class DisplacedJet {
   float getJetVariance(const std::vector<float>, bool);
 
   //////////////CALO INFORMATION////////////
-
   bool isMC;
+  int jetID;
   
   // calo related variables
   float caloPt, caloEta, caloPhi;
@@ -101,8 +135,11 @@ class DisplacedJet {
   bool  ivfIsGenMatched;
   bool  ivfIsSimMatched;
   float ivfMatchingScore;
+  float ivfGenVertexMatchMetric;
 
   // sv related variables
+  // multiple vertices
+  int svNVertex;
   // position
   float svX, svY, svZ;
   float svXError, svYError, svZError;  
@@ -114,13 +151,23 @@ class DisplacedJet {
   // matching
   bool  svIsGenMatched;
   bool  svIsSimMatched;   
+  float svGenVertexMatchMetric;
   
-  //////////////JET MATCH VARIABLES///////////
+  //////////////GEN MATCH VARIABLES///////////
 
   bool isCaloGenMatched;
   bool isCaloPVGenMatched;
+  // matched gen particle kinematics
+  float caloGenPt, caloGenEta, caloGenPhi, caloGenMass;
+
 
  private: 
+  int debug;
+  static const int GEN_STATUS_CODE_MATCH = 23; 
+  const float FAKE_HIGH_NUMBER = 999999999;
+  // calo jet the displaced jet is built upon
+  reco::CaloJet jet;
+
   // related vertices
   reco::Vertex selIVF;
   reco::Vertex selSV;
@@ -134,25 +181,198 @@ class DisplacedJet {
   std::vector<float> jetAxisDistVector, jetAxisDistSigVector; 
 };
 
-void
-DisplacedJet::addCaloTrackInfo(const reco::TrackRefVector & trackRefs) {
+float DisplacedJet::genMatchMetric(const reco::GenParticle & particle, const reco::Vertex& vertex) {
+  float vx = vertex.x(), vy = vertex.y(), vz = vertex.z();
+  float gx = particle.vx(), gy = particle.vy(), gz = particle.vz();
+  float metric = std::sqrt(((gx-vx)*(gx-vx))/(gx*gx) + ((gy-vy)*(gy-vy))/(gy*gy) + ((gz-vz)*(gz-vz))/(gz*gz));  
+  return metric;
+}
+
+bool DisplacedJet::doGenVertexJetMatching(const float & metricThreshold, const reco::GenParticleCollection& genParticles) {
+  svIsGenMatched = false;
+  ivfIsGenMatched = false;
+
+  // loop over each gen particle
+  reco::GenParticleCollection::const_iterator genIter = genParticles.begin();
+  for(; genIter != genParticles.end(); ++genIter) {
+    if (genIter->status() != GEN_STATUS_CODE_MATCH) continue;
+    
+    // calculate the score
+    float   ivfMatch_temp   = genMatchMetric(*genIter, selIVF);
+    float   svMatch_temp    = genMatchMetric(*genIter, selSV);
+    // check for a match
+    bool    ivfMatch	    = fabs(ivfMatch_temp) < metricThreshold;
+    bool    svMatch	    = fabs(svMatch_temp) < metricThreshold;
+    // only one needs to match
+    ivfIsGenMatched	    = ivfIsGenMatched || ivfMatch;
+    svIsGenMatched	    = svIsGenMatched || svMatch;
+    // store the best matching Metric
+    ivfGenVertexMatchMetric = std::min(ivfMatch_temp, ivfGenVertexMatchMetric);
+    svGenVertexMatchMetric  = std::min(svMatch_temp, svGenVertexMatchMetric);      
+
+    if (ivfMatch || svMatch ) return true; // if there was any match return true
+  } // loop over gen particles
+
+  return false; 
+}
+
+bool DisplacedJet::doGenCaloJetMatching(const float& ptMatch, const float& dRMatch, const reco::GenParticleCollection& genParticles) {
+  
+  reco::GenParticleCollection::const_iterator genIter = genParticles.begin();
+  
+  for(; genIter != genParticles.end(); ++genIter) {
+
+    int id = genIter->pdgId();
+    int st = genIter->status();
+  
+    if (st != GEN_STATUS_CODE_MATCH) continue;
+
+    // const reco::Candidate * mom = genIter->mother();                                         
+    double genPt = genIter->pt(), genEta = genIter->eta(), genPhi = genIter->phi(), genMass = genIter->mass();
+    float   dr     = reco::deltaR(genEta, genPhi, caloEta, caloPhi);
+    float   dpt    = fabs(caloPt - genPt) / genPt;
+
+    // found a match
+    if (dr < dRMatch && dpt < ptMatch) {
+      if(debug > 1) std::cout << "[GEN MATCHED] id " << id << " status " << st << " pt " << genPt << " eta " << genEta  <<  " phi " << genPhi << std::endl;
+
+      isCaloGenMatched = true;
+      caloGenPt	       = genPt;
+      caloGenEta       = genEta;
+      caloGenPhi       = genPhi;
+      caloGenMass      = genMass;
+
+      return true;
+    }
+  } // loop over gen particles 
+  
+  return false;
+}
+
+void DisplacedJet::addCaloTrackInfo(const reco::TrackRefVector & trackRefs) {
+  if (debug > 2) std::cout << "[DEBUG] Adding Track Info  " << std::endl;
     reco::TrackRefVector::const_iterator trackIter = trackRefs.begin();
     for(; trackIter != trackRefs.end(); ++trackIter) {
       caloMatchedTracks.push_back(**trackIter);
     }    
 }
 
-void
-DisplacedJet::addIPTagInfo(const reco::TrackIPTagInfo & ipTagInfo) {
+void DisplacedJet::addIVFCollection(const reco::VertexCollection & vertices) {
+  if (debug > 2) std::cout << "[DEBUG] Building Jet Vertex Association  " << std::endl;
+  // build the jet vertex association
+  JetVertexAssociation JVAIVF("IVF", selPV, debug);    
+  reco::VertexCollection::const_iterator vtxIter = vertices.begin();
+  for(; vtxIter != vertices.end(); ++vtxIter ) {
+    JVAIVF.addVertex(*vtxIter);
+  }
+
+  if (debug > 2) std::cout << "[DEBUG 2] Extracting Best Association  " << std::endl;
+  // best vertex selection from JVA 
+  const std::pair<reco::Vertex, float>    bestVertexPair  = JVAIVF.getBestVertex(jet, "oneOverR");
+  const reco::Vertex                      bestVertex      = bestVertexPair.first;
+  const float                             bestVertexScore = bestVertexPair.second;
+
+  // set the global IVF to the best vertex
+  selIVF = bestVertex;
+
+  if (debug > 2) std::cout << "[DEBUG 2] Best IVF Vertex Score:" << bestVertexScore << std::endl;
+  //flight distance from the firstPV
+  float x  = bestVertex.x(), y = bestVertex.y(), z = bestVertex.z();    
+  float dx = x - selPV.x() , dy = y - selPV.y(), dz = z - selPV.z();
+    
+  //build the total error
+  float svxE = bestVertex.xError(), svyE = bestVertex.yError(), svzE = bestVertex.zError();
+  float pvxE = selPV.xError(), pvyE = selPV.yError(), pvzE = selPV.zError();
+  float xE   = std::sqrt(svxE * svxE + pvxE * pvxE), yE = std::sqrt(svyE * svyE + pvyE * pvyE), zE = std::sqrt(svzE * svzE + pvzE * pvzE);
+
+  ivfX = x;
+  ivfY = y;
+  ivfZ = z;
+  ivfXError = svxE;
+  ivfYError = svyE;
+  ivfZError = svzE;  
+
+  ivfNTracks = bestVertex.nTracks();  
+  ivfMass    = bestVertex.p4().mass();    
+  ivfLxySig  = std::sqrt( dx * dx + dy * dy ) / std::sqrt(xE * xE + yE * yE);
+  ivfLxyzSig = std::sqrt( dx * dx + dy * dy + dz * dz) / std::sqrt(xE * xE + yE * yE + zE * zE);
+  ivfLxy     = std::sqrt( dx * dx + dy * dy );
+  ivfLxyz    = std::sqrt( dx * dx + dy * dy + dz * dz );
+
+  // matching score
+  ivfMatchingScore = bestVertexScore;
+}
+
+void DisplacedJet::addSVTagInfo(const reco::SecondaryVertexTagInfo& svTagInfo) {
+  if (debug > 1) std::cout << "[DEBUG 1] Adding SV Tag Info To Jet  " << std::endl;
+  // number of vertices reconstructed
+  svNVertex = svTagInfo.nVertices();
+  if (svNVertex == 0) return;
+
+  // track the best vertex reconstructed
+  int svi = 0;
+  int mostTracks = 0;
+  int tieBreaker = 0;
+
+  if (debug > 1) std::cout << "[DEBUG 1] Choosing best SV Vertex  " << std::endl;
+  // loop over all the reconstructed vertices and pick 1
+  for(int vv = 0; vv < svNVertex; vv++) {
+    reco::Vertex vtx = svTagInfo.secondaryVertex(vv);   
+    float pt = vtx.p4().pt();
+    int nTracks = vtx.nTracks();
+
+    // take the vertex with the most tracks, tie breaker is the sum pt of vertex
+    if ( (nTracks > mostTracks) || (nTracks == mostTracks && pt > tieBreaker) ){
+      mostTracks = nTracks;
+      tieBreaker = pt;
+      svi = vv;
+    }     
+  }
+  
+  // pick the selected vertex
+  const reco::Vertex & selVertex = svTagInfo.secondaryVertex(svi);
+
+  // set the global vertex to the selected vertex
+  selSV = selVertex;
+
+  if (debug > 2) std::cout << "[DEBUG 2] Filling SV Vertex Information into DJet  " << std::endl;
+  // with the one vertex, store the quantities
+  // position
+  svX = selVertex.x();
+  svY = selVertex.y();
+  svZ = selVertex.z();
+  
+  svXError = selVertex.xError();
+  svYError = selVertex.yError();
+  svZError = selVertex.zError();
+
+  float pvxE = selPV.xError(), pvyE = selPV.yError(), pvzE = selPV.zError();
+  float xE   = std::sqrt(svXError * svXError + pvxE * pvxE), 
+    yE = std::sqrt(svYError * svYError + pvyE * pvyE), 
+    zE = std::sqrt(svZError * svZError + pvzE * pvzE);
+  float dx = svX - selPV.x() , dy = svY - selPV.y(), dz = svZ - selPV.z();
+
+  svMass    = selVertex.p4().mass();    
+  svLxySig  = std::sqrt( dx * dx + dy * dy ) / std::sqrt(xE * xE + yE * yE);
+  svLxyzSig = std::sqrt( dx * dx + dy * dy + dz * dz) / std::sqrt(xE * xE + yE * yE + zE * zE);
+  svLxy     = std::sqrt( dx * dx + dy * dy );
+  svLxyz    = std::sqrt( dx * dx + dy * dy + dz * dz );  
+  if (debug > 2) std::cout << "[DEBUG 2] Filling SV Vertex Information into DJet -- Complete  " << std::endl;
+}
+
+void DisplacedJet::addIPTagInfo(const reco::TrackIPTagInfo & ipTagInfo) {
+  if (debug > 2) std::cout << "[DEBUG 2] Adding SV IP Info into DJet  " << std::endl;
+
   // pull the impact parameter data
   lifetimeIPData = ipTagInfo.impactParameterData();
 
   // loop over each tracks ip information
   std::vector<reco::btag::TrackIPData>::const_iterator ipIter = lifetimeIPData.begin();
   for(; ipIter != lifetimeIPData.end(); ++ipIter)  {
+    if (debug > 3) std::cout << "[DEBUG] Filing IP INFO  " << std::endl;
     float ip3d = ipIter->ip3d.value(), ip3ds = ipIter->ip3d.significance();
     float ip2d = ipIter->ip2d.value(), ip2ds = ipIter->ip2d.significance();
-    float jetAxisDist = ipIter->distanceToJetAxis.value(), jetAxisDistSig = ipIter->distanceToJetAxis.value();
+    float jetAxisDist = ipIter->distanceToJetAxis.value(), jetAxisDistSig = ipIter->distanceToJetAxis.significance();
 
     // fill the vectors
     ip3dVector.push_back(ip3d);
@@ -163,14 +383,17 @@ DisplacedJet::addIPTagInfo(const reco::TrackIPTagInfo & ipTagInfo) {
     jetAxisDistSigVector.push_back(jetAxisDistSig);
 
     // ip log sums 3d and 2d
+    if (debug > 4) std::cout << "[DEBUG 4] ipsiglogsum2d: " << ipSigLogSum2D << std::endl;
+    if (debug > 4) std::cout << "[DEBUG 4] jetdistsig: " << jetAxisDistSig << std::endl;
     ipSigLogSum2D    += (ip3d ? log(fabs(ip2ds)) : 0);
     ipSigLogSum3D    += (ip3ds? log(fabs(ip3ds)) : 0);    
     ipLogSum2D	     += (ip2d ? log(fabs(ip2d)) : 0);
     ipLogSum3D	     += (ip3d ? log(fabs(ip3d)) : 0);
-    jetDistSigLogSum += (jetAxisDist ? log(jetAxisDistSig) : 0);
-    jetDistLogSum    += (jetAxisDist ? log(jetAxisDist) : 0);
+    jetDistSigLogSum += fabs(jetAxisDistSig);
+    jetDistLogSum    += fabs(jetAxisDist);
   }
-  
+
+  if (debug > 2) std::cout << "[DEBUG 2] Deriving Distributional Quantities of IP Info  " << std::endl;  
   // distributional quantities 
   // mean
   meanIPSig2D	     = getJetMean(ip2dsVector, false);
@@ -199,6 +422,7 @@ DisplacedJet::addIPTagInfo(const reco::TrackIPTagInfo & ipTagInfo) {
 
 
 float DisplacedJet::getJetMedian(std::vector<float> values, bool is_signed) {   
+  if (values.size() == 0) return -999;
   
   int size = values.size();
 
@@ -235,19 +459,25 @@ float DisplacedJet::getJetMedian(std::vector<float> values, bool is_signed) {
     if (dMedian < 0 ) std::cout << "ASSERT FAIL: "  << dMedian << std::endl;
     assert( dMedian >= 0 ); 
   }
-  
+
+  if (debug > 4) std::cout << "[DEBUG] jet median:  " << dMedian << std::endl;
   return dMedian;
 }
 
 float DisplacedJet::getJetMean(std::vector<float> values, bool is_signed) {
+  if (values.size() == 0) return -9999;
   float sum = 0;
   std::vector<float>::const_iterator val = values.begin();
   for (; val != values.end(); ++val) sum += is_signed ? *val : fabs(*val);  
 
-  return sum / float(values.size());
+  float mean = sum / float(values.size());
+  if (debug > 4) std::cout << "[DEBUG] jet mean:  " << mean << std::endl;
+  return mean;
 }
 
 float DisplacedJet::getJetVariance(std::vector<float> values, bool is_signed) {
+  if (values.size() == 0) return -9999;
+
   float sum = 0;
   float mean = getJetMean(values, is_signed);
 
@@ -258,6 +488,8 @@ float DisplacedJet::getJetVariance(std::vector<float> values, bool is_signed) {
 
   //safety check
   if(!is_signed ) { assert( sum >= 0 ); }
+  float variance = sum / (values.size() - 1.0);
 
-  return sum / (values.size() - 1.0);
+  if (debug > 4) std::cout << "[DEBUG] jet variance:  " << variance << std::endl;
+  return variance;
 }

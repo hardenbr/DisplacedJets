@@ -13,13 +13,13 @@ class TrackAnalyzer : public edm::EDAnalyzer {
   void dumpPVInfo(const reco::VertexCollection &);
   void dumpGenInfo(const reco::GenParticleCollection &); 
   void dumpSimInfo(const edm::SimVertexContainer &);
-  
 
-  // jet methods
-  Float_t getJetMedian(Float_t daArray[], int size, int jetid, bool is_signed);
-  Float_t getJetVariance(Float_t values[], Float_t mean, int size, int jetid, bool is_signed);
-  //  virtual Float_t getJetMax(Float_t daArray[], int size, int jetid, bool is_signed);
-  //  virtual Float_t getJetTopQ(Float_t daArray[], int size, int jetid, bool is_signed);
+
+  // tree dumping displaced jet quantities
+  void dumpCaloInfo(DisplacedJetEvent&);
+  void dumpSVTagInfo(DisplacedJetEvent&);
+  void dumpIPInfo(DisplacedJetEvent&);
+  void dumpIVFInfo(DisplacedJetEvent&);
 
   virtual void beginJob() override;
   virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
@@ -62,8 +62,8 @@ class TrackAnalyzer : public edm::EDAnalyzer {
   edm::InputTag tag_simVertex_;    
 
   //cuts
-  Double_t  cut_jetPt;
-  Double_t  cut_jetEta;
+  float cut_jetPt;
+  float cut_jetEta;
   
   //output related
   TTree*    trackTree_;   
@@ -74,10 +74,10 @@ class TrackAnalyzer : public edm::EDAnalyzer {
   static const Int_t    SIM_STATUS_CODE_MATCH = 0; 
   static const Int_t    GEN_STATUS_CODE_MATCH = 23; 
   const float		VERTEX_MATCH_METRIC   = 0.05;
-  static const Int_t	MAX_TRACKS	      = 9999;
-  static const Int_t	MAX_JETS	      = 999;
-  static const Int_t	MAX_VTX		      = 999;
-  static const Int_t	MAX_GEN		      = 9999;
+  static const Int_t	MAX_TRACKS	      = 2000;
+  static const Int_t	MAX_JETS	      = 40;
+  static const Int_t	MAX_VTX		      = 100;
+  static const Int_t	MAX_GEN		      = 500;
   static const Int_t	FAKE_HIGH_VAL	      = 9999;
 
   Int_t	debug = 0; 
@@ -114,10 +114,11 @@ class TrackAnalyzer : public edm::EDAnalyzer {
   Int_t genMatch[MAX_JETS];
   Int_t genMatchTrack[MAX_TRACKS];
 
-  Float_t   genPt[MAX_JETS];
-  Float_t   genEta[MAX_JETS];
-  Float_t   genPhi[MAX_JETS];
-  Float_t   genM[MAX_JETS];
+  Int_t     caloGenMatch[MAX_JETS];
+  Float_t   caloGenPt[MAX_JETS];
+  Float_t   caloGenEta[MAX_JETS];
+  Float_t   caloGenPhi[MAX_JETS];
+  Float_t   caloGenM[MAX_JETS];
 
   //////////////////// LIFETIME TAG /////////////////
   
@@ -214,59 +215,48 @@ class TrackAnalyzer : public edm::EDAnalyzer {
   Float_t   jetELogIPSig2D[MAX_JETS];
   Float_t   jetELogIPSig3D[MAX_JETS];
   
-  // signed weighted pt 
-  Float_t   jetEIPSignedSig2D[MAX_JETS];
-  Float_t   jetEIPSigned2D[MAX_JETS];
-  Float_t   jetEIPSignedSig3D[MAX_JETS];
-  Float_t   jetEIPSigned3D[MAX_JETS];
-
   // absolute IP sums
   Float_t   jetIPSum2D[MAX_JETS];
   Float_t   jetIPSum3D[MAX_JETS];
-  Float_t   jetIPSignedSum2D[MAX_JETS];
-  Float_t   jetIPSignedSum3D[MAX_JETS];
-
   // IP significance sums
   Float_t   jetIPSigSum2D[MAX_JETS];
   Float_t   jetIPSigSum3D[MAX_JETS];
-
   // IP significance log sums
   Float_t   jetIPSigLogSum2D[MAX_JETS];
   Float_t   jetIPSigLogSum3D[MAX_JETS];
   Float_t   jetIPLogSum2D[MAX_JETS];
   Float_t   jetIPLogSum3D[MAX_JETS];
 
-  // IP signed significance sums
-  Float_t   jetIPSignedSigSum2D[MAX_JETS];
-  Float_t   jetIPSignedSigSum3D[MAX_JETS];
+  Float_t   jetDistLogSum[MAX_JETS];
+  Float_t   jetDistSigLogSum[MAX_JETS];
 
   // IP significance averages
+  // means
   Float_t   jetMeanIPSig2D[MAX_JETS];
   Float_t   jetMeanIPSig3D[MAX_JETS];
+  Float_t   jetMeanJetDistSig[MAX_JETS];
+  // median
   Float_t   jetMedianIPSig2D[MAX_JETS];
   Float_t   jetMedianIPSig3D[MAX_JETS];
+  Float_t   jetMedianJetDistSig[MAX_JETS];
+  // variance
   Float_t   jetVarianceIPSig2D[MAX_JETS];
   Float_t   jetVarianceIPSig3D[MAX_JETS];
-
-  // signed averages 
-  Float_t   jetMeanIPSignedSig2D[MAX_JETS];
-  Float_t   jetMeanIPSignedSig3D[MAX_JETS];
-  Float_t   jetMedianIPSignedSig2D[MAX_JETS];
-  Float_t   jetMedianIPSignedSig3D[MAX_JETS];
-  Float_t   jetVarianceIPSignedSig2D[MAX_JETS];
-  Float_t   jetVarianceIPSignedSig3D[MAX_JETS];
+  Float_t   jetVarianceJetDistSig[MAX_JETS];
 
   // Absolute IP averages
+  // mean
   Float_t   jetMeanIP2D[MAX_JETS];
   Float_t   jetMeanIP3D[MAX_JETS];
+  Float_t   jetMeanJetDist[MAX_JETS];
+  // median
   Float_t   jetMedianIP2D[MAX_JETS];
   Float_t   jetMedianIP3D[MAX_JETS];
-
-  // Absolute Signed IP averages
-  Float_t   jetMeanIPSigned2D[MAX_JETS];
-  Float_t   jetMeanIPSigned3D[MAX_JETS];
-  Float_t   jetMedianIPSigned2D[MAX_JETS];
-  Float_t   jetMedianIPSigned3D[MAX_JETS];
+  Float_t   jetMedianJetDist[MAX_JETS];
+  // variance
+  Float_t   jetVarianceIP2D[MAX_JETS];
+  Float_t   jetVarianceIP3D[MAX_JETS];
+  Float_t   jetVarianceJetDist[MAX_JETS];
 
   // SV information
   Int_t	    jetNSv[MAX_JETS];
@@ -292,14 +282,20 @@ class TrackAnalyzer : public edm::EDAnalyzer {
   Float_t   jetSvNDof[MAX_JETS];
   Int_t	    jetSvIsValid[MAX_JETS];
 
+  // gen vertex matching and score
+  Int_t	    jetSvGenVertexMatched[MAX_JETS];
+  Float_t   jetSvGenVertexMatchMetric[MAX_JETS];
+  // sim vtx matching
+  Int_t	    jetSvSimVertexMatched[MAX_JETS];
+  Float_t   jetSvSimVertexMatchMetric[MAX_JETS];
+
+  // total number matched
+  //n gen matched
   Int_t	    jetSvNGenMatched;
   Int_t	    jetSvNGenFake;
-  Int_t	    jetSvGenMatched[MAX_JETS];
-  Float_t   jetSvGenMatchMetric[MAX_JETS];
+  // n sim matched
   Int_t	    jetSvNSimMatched;
   Int_t	    jetSvNSimFake;
-  Int_t	    jetSvSimMatched[MAX_JETS];
-  Float_t   jetSvSimMatchMetric[MAX_JETS];
 
   ///////////////////////////// IVF ///////////////////////
 
@@ -324,10 +320,10 @@ class TrackAnalyzer : public edm::EDAnalyzer {
   Float_t   jetIVFMatchingScore[MAX_JETS];
 
   // IVF gen matching
-  Int_t	    jetIVFGenMatched[MAX_JETS];
-  Float_t   jetIVFGenMatchMetric[MAX_JETS];
-  Int_t	    jetIVFSimMatched[MAX_JETS];
-  Float_t   jetIVFSimMatchMetric[MAX_JETS];
+  Int_t	    jetIVFGenVertexMatched[MAX_JETS];
+  Float_t   jetIVFGenVertexMatchMetric[MAX_JETS];
+  Int_t	    jetIVFSimVertexMatched[MAX_JETS];
+  Float_t   jetIVFSimVertexMatchMetric[MAX_JETS];
 
   ///////////////// VERTEX TREE SPECIFIC MEMBERS /////////////////
   

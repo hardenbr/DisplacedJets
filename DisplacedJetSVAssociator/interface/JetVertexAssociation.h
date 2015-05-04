@@ -16,8 +16,10 @@
 
 class JetVertexAssociation {
  public:
-  JetVertexAssociation(std::string nameString) { 
+  JetVertexAssociation(std::string nameString, const reco::Vertex & PV, const int& debug_) { 
+    primaryVertex   = PV;
     name	    = nameString;
+    debug           = debug_;
   }
 
   // fillers
@@ -43,6 +45,7 @@ class JetVertexAssociation {
   reco::Vertex   	    bestVertex;
   float			    bestVertexScore;  
   std::string		    name;
+  int			    debug;
 };
 
 void JetVertexAssociation::addCaloJet(const reco::CaloJet & jet) { caloJetCollection.push_back(jet); }
@@ -56,22 +59,25 @@ float JetVertexAssociation::getVertexJetScore(const reco::CaloJet & jet, const r
   float			    jet_phi = p4.phi();
   float			    score   = 0;
 
-  std::cout << "[DEBUG] [JVA] iterating over tracks" << std::endl;
+  if (debug > 2) std::cout << "[DEBUG 2] [JVA] Jet Eta=" <<jet_eta << " Jet Phi: " << jet_phi <<  std::endl;
+  if (debug > 2) std::cout << "[DEBUG] [JVA] iterating over tracks" << std::endl;
   reco::Vertex::trackRef_iterator tt = vertex.tracks_begin();
   for(; tt != vertex.tracks_end(); ++tt) {
-  std::cout << "[DEBUG] [JVA] Accessing kinematics" << std::endl;
+    if (debug > 3) std::cout << "[DEBUG] [JVA] Accessing kinematics" << std::endl;
     // float   track_outerPt  = (*tt)->outerPt();
-  float   eta = (*tt)->eta();
-  float   phi = (*tt)->phi();    
-  std::cout << "[DEBUG] [JVA] DR Calc" << std::endl;
-  float   dR		   = reco::deltaR(jet_eta, jet_phi, eta, phi);
+    float   eta = (*tt)->eta();
+    float   phi = (*tt)->phi();    
+    if (debug > 3)std::cout << "[DEBUG] [JVA] DR Calc" << std::endl;
+    if (debug > 3)std::cout << "[DEBUG] [JVA] Track Eta=" << eta << " Jet Phi: " << phi <<  std::endl;
+    float   dR		   = reco::deltaR(jet_eta, jet_phi, eta, phi);
   
-  if (dR > 1.0) 
+    if (dR > 1.0) 
       continue;
-  else 
-    score += 1.0 / dR;	 	  	 
+    else 
+      score += 1.0 / dR;	 	  	 
   }
   
+  if (debug > 2) std::cout << "[DEBUG 2] [JVA] Return SCORE: " << score <<  std::endl;
   return score;
 }
 
@@ -80,7 +86,8 @@ const std::pair<const reco::Vertex, const float> JetVertexAssociation::getBestVe
   float		bestScore = -1;
   reco::Vertex	bestVertex;
 
-  std::cout << "[DEBUG] [JVA] iterating over Vertices" << std::endl;
+  std::cout << "[DEBUG LEVEL = " << debug << std::endl;
+  if (debug > 1) std::cout << "[DEBUG 1] [JVA] iterating over Vertices" << std::endl;
   reco::VertexCollection::const_iterator ss = vertexCollection.begin();
   for(; ss != vertexCollection.end(); ++ss) {
     float score = getVertexJetScore(jet, *ss, algo);

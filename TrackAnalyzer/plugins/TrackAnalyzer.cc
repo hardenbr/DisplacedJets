@@ -16,8 +16,6 @@
 //
 //
 
-//#define DEBUG
-
 //root includes
 #include "TFile.h"  
 #include "TH2F.h"   
@@ -169,8 +167,7 @@ TrackAnalyzer::fillHandles(const edm::Event & iEvent ) {
 void 
 TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
-  std::cout << "[----------------- ANALYZE EVENT BEGIN -----------------]" << std::endl;
-  std::cout << "[----------------- DEBUG LEVEL = " << debug << "--------------]" << std::endl;
+  if(debug > 0) std::cout << "[----------------- ANALYZE EVENT DEBUG LEVEL: " << debug  << " --------------------]" << std::endl;
    
   /////////////////////////////////
   // Event Setup
@@ -239,7 +236,7 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   jetTree_->Fill();
   //  if(debug > 1) std::cout << "[DEBUG] Fill VTX Tree" << std::endl;
   //  vertexTree_->Fill();
-  if(debug > 1) std::cout << "[DEBUG] Fill GEN Tree" << std::endl;
+  //   if(debug > 1) std::cout << "[DEBUG] Fill GEN Tree" << std::endl;
   //  genTree_->Fill();
 }
 
@@ -438,22 +435,30 @@ TrackAnalyzer::beginJob()
   // ip sig averages 
   jetTree_->Branch("jetMeanIPSig2D", &jetMeanIPSig2D, "jetMeanIPSig2D[nCaloJets]/F");
   jetTree_->Branch("jetMeanIPSig3D", &jetMeanIPSig3D, "jetMeanIPSig3D[nCaloJets]/F");
+  jetTree_->Branch("jetMeanIPLogSig2D", &jetMeanIPLogSig2D, "jetMeanIPLogSig2D[nCaloJets]/F");
+  jetTree_->Branch("jetMeanIPLogSig3D", &jetMeanIPLogSig3D, "jetMeanIPLogSig3D[nCaloJets]/F");
   jetTree_->Branch("jetMedianIPSig2D", &jetMedianIPSig2D, "jetMedianIPSig2D[nCaloJets]/F");
   jetTree_->Branch("jetMedianIPSig3D", &jetMedianIPSig3D, "jetMedianIPSig3D[nCaloJets]/F");
+  jetTree_->Branch("jetMedianIPLogSig2D", &jetMedianIPLogSig2D, "jetMedianIPLogSig2D[nCaloJets]/F");
+  jetTree_->Branch("jetMedianIPLogSig3D", &jetMedianIPLogSig3D, "jetMedianIPLogSig3D[nCaloJets]/F");
   jetTree_->Branch("jetVarianceIPSig2D", &jetVarianceIPSig2D, "jetVarianceIPSig2D[nCaloJets]/F");
   jetTree_->Branch("jetVarianceIPSig3D", &jetVarianceIPSig3D, "jetVarianceIPSig3D[nCaloJets]/F");
+  jetTree_->Branch("jetVarianceIPLogSig2D", &jetVarianceIPLogSig2D, "jetVarianceIPLogSig2D[nCaloJets]/F");
+  jetTree_->Branch("jetVarianceIPLogSig3D", &jetVarianceIPLogSig3D, "jetVarianceIPLogSig3D[nCaloJets]/F");
   jetTree_->Branch("jetVarianceJetDist", &jetVarianceJetDist, "jetVarianceJetDist[nCaloJets]/F");
   jetTree_->Branch("jetVarianceJetDistSig", &jetVarianceJetDistSig, "jetVarianceJetDistSig[nCaloJets]/F");
 
   // ip value averages
   jetTree_->Branch("jetMeanIP2D", &jetMeanIP2D, "jetMeanIP2D[nCaloJets]/F");
   jetTree_->Branch("jetMeanIP3D", &jetMeanIP3D, "jetMeanIP3D[nCaloJets]/F");
+  jetTree_->Branch("jetMeanIPLog2D", &jetMeanIPLog2D, "jetMeanIPLog2D[nCaloJets]/F");
+  jetTree_->Branch("jetMeanIPLog3D", &jetMeanIPLog3D, "jetMeanIPLog3D[nCaloJets]/F");
   jetTree_->Branch("jetMeanJetDist", &jetMeanJetDist, "jetMeanJetDist[nCaloJets]/F");
   jetTree_->Branch("jetMedianIP2D", &jetMedianIP2D, "jetMedianIP2D[nCaloJets]/F");
   jetTree_->Branch("jetMedianIP3D", &jetMedianIP3D, "jetMedianIP3D[nCaloJets]/F");
+  jetTree_->Branch("jetMedianIPLog2D", &jetMedianIPLog2D, "jetMedianIPLog2D[nCaloJets]/F");
+  jetTree_->Branch("jetMedianIPLog3D", &jetMedianIPLog3D, "jetMedianIPLog3D[nCaloJets]/F");
   jetTree_->Branch("jetMedianJetDist", &jetMedianJetDist, "jetMedianJetDist[nCaloJets]/F");
-
-
 
   //////////////SECONDARY VTX INFORMATION //////////////
 
@@ -779,23 +784,33 @@ void TrackAnalyzer::dumpIPInfo(DisplacedJetEvent & djEvent) {
     jetIPSigLogSum3D[jj]      = djet->ipSigLogSum3D;    
     jetDistLogSum[jj]	      = djet->jetDistLogSum;
     jetDistSigLogSum[jj]      = djet->jetDistSigLogSum;
-
     // IP significance averages
     jetMeanIPSig2D[jj]	      = djet->meanIPSig2D;
     jetMeanIPSig3D[jj]	      = djet->meanIPSig3D;
+    jetMeanIPLogSig2D[jj]     = djet->meanIPLogSig2D;
+    jetMeanIPLogSig3D[jj]     = djet->meanIPLogSig3D;
     jetMedianIPSig2D[jj]      = djet->medianIPSig2D;
     jetMedianIPSig3D[jj]      = djet->medianIPSig3D;
+    jetMedianIPLogSig2D[jj]   = djet->medianIPLogSig2D;
+    jetMedianIPLogSig3D[jj]   = djet->medianIPLogSig3D;
     jetVarianceIPSig2D[jj]    = djet->varianceIPSig2D;
     jetVarianceIPSig3D[jj]    = djet->varianceIPSig3D;
-    jetVarianceJetDistSig[jj] = djet->varianceJetDistSig;
-    
+    jetVarianceIPLogSig2D[jj] = djet->varianceIPLogSig2D;
+    jetVarianceIPLogSig3D[jj] = djet->varianceIPLogSig3D;
+    jetVarianceJetDistSig[jj] = djet->varianceJetDistSig;    
     // IP value averages
     jetMeanIP2D[jj]	      = djet->meanIP2D;
     jetMeanIP3D[jj]	      = djet->meanIP3D;
+    jetMeanIPLog2D[jj]	      = djet->meanIPLog2D;
+    jetMeanIPLog3D[jj]	      = djet->meanIPLog3D;
     jetMedianIP2D[jj]	      = djet->medianIP2D;
     jetMedianIP3D[jj]	      = djet->medianIP3D;
+    jetMedianIPLog2D[jj]      = djet->medianIPLog2D;
+    jetMedianIPLog3D[jj]      = djet->medianIPLog3D;
     jetVarianceIP2D[jj]	      = djet->varianceIP2D;
     jetVarianceIP3D[jj]	      = djet->varianceIP3D;
+    jetVarianceIPLog2D[jj]    = djet->varianceIPLog2D;
+    jetVarianceIPLog3D[jj]    = djet->varianceIPLog3D;
     jetVarianceJetDist[jj]    = djet->varianceJetDist;
   }
 }

@@ -4,9 +4,11 @@ import FWCore.ParameterSet.Config as cms
 appendLifetime = "1500_30mm"
 appendBkg      = "470_600"
 
+outputfile_string = "minbias"
+
 # flags for running
-nevents       = -1
-debugLevel    = 2
+nevents       = 500
+debugLevel    = 0
 isSignalMC    = False
 doGenMatch    = False
 doSimVtxMatch = False
@@ -226,8 +228,9 @@ if isSignalMC:
     process.analyzerVTX.outputFileName = cms.untracked.string('signalVTX%s.root' % appendLifetime)
     process.analyzerCALO.outputFileName = cms.untracked.string('signalCALO%s.root' % appendLifetime)
 else:
-    process.analyzerVTX.outputFileName = cms.untracked.string('qcdVTX%s.root' % appendBkg)
+#    process.analyzerVTX.outputFileName = cms.untracked.string('qcdVTX%s.root' % appendBkg)
     process.analyzerCALO.outputFileName = cms.untracked.string('qcdCALO%s.root' % appendBkg)
+#   process.analyzerCALO.outputFileName = cms.untracked.string(outputfile_string)
 
 #tree names
 process.analyzerCALO.jetTreeName    = cms.untracked.string('jets')
@@ -268,11 +271,11 @@ process.analyzerCALO.lifetimeIPTagInfo        = cms.untracked.InputTag('displace
 
 ##reconstructed vertex information
 process.analyzerCALO.secondaryVertex          = cms.untracked.InputTag('displacedTagsToVerticesCaloFace', '', 'ANA')
-process.analyzerCALO.inclusiveVertexCand      = cms.untracked.InputTag('displacedInclusiveVertexFinderJetMatchedTracksCaloFace', '', 'ANA')
+process.analyzerCALO.inclusiveVertexCand      = cms.untracked.InputTag('displacedInclusiveVertexFinder', '', 'ANA')
 process.analyzerCALO.inclusiveVertexSecondary = cms.untracked.InputTag('displacedInclusiveSecondaryVertices', '', 'ANA')
 
 process.analyzerVTX.secondaryVertex          = cms.untracked.InputTag('displacedTagsToVertices', '', 'ANA')
-process.analyzerVTX.inclusiveVertexCand      = cms.untracked.InputTag('displacedInclusiveVertexFinderJetMatchedTracks', '', 'ANA')
+process.analyzerVTX.inclusiveVertexCand      = cms.untracked.InputTag('displacedInclusiveVertexFinder', '', 'ANA')
 process.analyzerVTX.inclusiveVertexSecondary = cms.untracked.InputTag('displacedInclusiveSecondaryVertices', '', 'ANA')
 
 # primary vertex

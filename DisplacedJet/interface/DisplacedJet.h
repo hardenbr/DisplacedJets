@@ -33,17 +33,23 @@ class DisplacedJet {
 
     // initalize ip distributional variable
     //mean
-    meanIPSig2D	    = 0, meanIPSig3D = 0;
-    meanIP2D	    = 0, meanIP3D = 0;
-    meanJetDist	    = 0, meanJetDistSig = 0;
+    meanIPSig2D	       = 0, meanIPSig3D = 0;
+    meanIP2D	       = 0, meanIP3D = 0;
+    meanIPLogSig2D     = 0, meanIPLogSig3D = 0;
+    meanIPLog2D	       = 0, meanIPLog3D = 0;
+    meanJetDist	       = 0, meanJetDistSig = 0;
     //median
-    medianIPSig2D   = 0, medianIPSig3D = 0;  
-    medianIP2D      = 0, medianIP3D = 0;  
-    medianJetDist   = 0, medianJetDistSig = 0;
+    medianIPSig2D      = 0, medianIPSig3D = 0;  
+    medianIP2D	       = 0, medianIP3D = 0;  
+    medianIPLogSig2D   = 0, medianIPLogSig3D = 0;  
+    medianIPLog2D      = 0, medianIPLog3D = 0;  
+    medianJetDist      = 0, medianJetDistSig = 0;
     //variance
-    varianceIPSig2D = 0, varianceIPSig3D = 0;
-    varianceIP2D    = 0, varianceIP3D = 0;
-    varianceJetDist = 0, varianceJetDistSig = 0;    
+    varianceIPSig2D    = 0, varianceIPSig3D = 0;
+    varianceIP2D       = 0, varianceIP3D = 0;
+    varianceIPLogSig2D = 0, varianceIPLogSig3D = 0;
+    varianceIPLog2D    = 0, varianceIPLog3D = 0;
+    varianceJetDist    = 0, varianceJetDistSig = 0;    
 
     // ivf initialization
     ivfX = 0, ivfY = 0, ivfZ = 0;
@@ -86,9 +92,9 @@ class DisplacedJet {
   reco::Vertex          getSVVertex() { return selSV; }
   
   // jet distribution calculator
-  float getJetMedian(const std::vector<float>, bool);
-  float getJetMean(const std::vector<float>, bool);
-  float getJetVariance(const std::vector<float>, bool);
+  float getJetMedian(const std::vector<float>&, bool);
+  float getJetMean(const std::vector<float>&, bool);
+  float getJetVariance(const std::vector<float>&, bool);
 
   //////////////CALO INFORMATION////////////
   bool isMC;
@@ -110,14 +116,20 @@ class DisplacedJet {
   // mean 
   float meanIPSig2D, meanIPSig3D;
   float meanIP2D, meanIP3D;
+  float meanIPLogSig2D, meanIPLogSig3D;
+  float meanIPLog2D, meanIPLog3D;
   float meanJetDist, meanJetDistSig;
   // median
   float medianIPSig2D, medianIPSig3D;  
   float medianIP2D, medianIP3D;
+  float medianIPLogSig2D, medianIPLogSig3D;  
+  float medianIPLog2D, medianIPLog3D;
   float medianJetDist, medianJetDistSig;
   // variance
   float varianceIPSig2D, varianceIPSig3D;  
   float varianceIP2D, varianceIP3D;
+  float varianceIPLogSig2D, varianceIPLogSig3D;  
+  float varianceIPLog2D, varianceIPLog3D;
   float varianceJetDist, varianceJetDistSig;
 
   //////////////VERTEX VARIABLES//////////////
@@ -178,6 +190,7 @@ class DisplacedJet {
   reco::TrackCollection vertexMatchedTracks; 
   std::vector<reco::btag::TrackIPData> lifetimeIPData; 
   std::vector<float> ip3dVector, ip3dsVector, ip2dVector, ip2dsVector;
+  std::vector<float> ipLog3dVector, ipLog3dsVector, ipLog2dVector, ipLog2dsVector;
   std::vector<float> jetAxisDistVector, jetAxisDistSigVector; 
 };
 
@@ -379,6 +392,18 @@ void DisplacedJet::addIPTagInfo(const reco::TrackIPTagInfo & ipTagInfo) {
     ip2dVector.push_back(ip2d);
     ip3dsVector.push_back(ip3ds);
     ip2dsVector.push_back(ip2ds);
+
+    float   ipSigLog2D = (ip3d ? log(fabs(ip2ds)) : 0);
+    float   ipSigLog3D = (ip3ds? log(fabs(ip3ds)) : 0);    
+    float   ipLog2D    = (ip2d ? log(fabs(ip2d)) : 0);
+    float   ipLog3D    = (ip3d ? log(fabs(ip3d)) : 0);
+
+    ipLog2dsVector.push_back(ipSigLog2D);
+    ipLog3dsVector.push_back(ipSigLog3D);
+    ipLog3dVector.push_back(ipLog3D);
+    ipLog2dVector.push_back(ipLog2D);
+
+
     jetAxisDistVector.push_back(jetAxisDist);
     jetAxisDistSigVector.push_back(jetAxisDistSig);
 
@@ -396,20 +421,29 @@ void DisplacedJet::addIPTagInfo(const reco::TrackIPTagInfo & ipTagInfo) {
   if (debug > 2) std::cout << "[DEBUG 2] Deriving Distributional Quantities of IP Info  " << std::endl;  
   // distributional quantities 
   // mean
-  meanIPSig2D	     = getJetMean(ip2dsVector, false);
-  meanIPSig3D	     = getJetMean(ip3dsVector, false);
-  meanIP2D	     = getJetMean(ip2dVector, false);
-  meanIP3D	     = getJetMean(ip3dVector, false);
-  meanJetDist	     = getJetMean(jetAxisDistVector, false);
-  meanJetDistSig     = getJetMean(jetAxisDistSigVector, false);
+  meanIPSig2D	   = getJetMean(ip2dsVector, false);
+  meanIPSig3D	   = getJetMean(ip3dsVector, false);
+  meanIP2D	   = getJetMean(ip2dVector, false);
+  meanIP3D	   = getJetMean(ip3dVector, false);
+  meanJetDist	   = getJetMean(jetAxisDistVector, false);
+  meanJetDistSig   = getJetMean(jetAxisDistSigVector, false);
+  meanIPLogSig2D   = getJetMean(ipLog2dsVector, true);	//signed value matters
+  meanIPLogSig3D   = getJetMean(ipLog3dsVector, true);	//signed value matters
+  meanIPLog2D      = getJetMean(ipLog2dVector, true);	//signed value matters
+  meanIPLog3D      = getJetMean(ipLog3dVector, true);	//signed value matters  
 
   // median
-  medianIPSig2D	     = getJetMedian(ip2dsVector, false);
-  medianIPSig3D	     = getJetMedian(ip3dsVector, false);
-  medianIP2D	     = getJetMedian(ip2dVector, false);
-  medianIP3D	     = getJetMedian(ip3dVector, false);
-  medianJetDist	     = getJetMedian(jetAxisDistVector, false);
-  medianJetDistSig   = getJetMedian(jetAxisDistSigVector, false);
+  medianIPSig2D	   = getJetMedian(ip2dsVector, false);
+  medianIPSig3D	   = getJetMedian(ip3dsVector, false);
+  medianIP2D	   = getJetMedian(ip2dVector, false);
+  medianIP3D	   = getJetMedian(ip3dVector, false);
+  medianJetDist	   = getJetMedian(jetAxisDistVector, false);
+  medianJetDistSig = getJetMedian(jetAxisDistSigVector, false);
+  medianIPLogSig2D = getJetMedian(ipLog2dsVector, true);	//signed value matters
+  medianIPLogSig3D = getJetMedian(ipLog3dsVector, true);	//signed value matters
+  medianIPLog2D    = getJetMedian(ipLog2dVector, true);	//signed value matters
+  medianIPLog3D    = getJetMedian(ipLog3dVector, true);	//signed value matters
+
 
   // variance
   varianceIPSig2D    = getJetVariance(ip2dsVector, false);
@@ -418,10 +452,15 @@ void DisplacedJet::addIPTagInfo(const reco::TrackIPTagInfo & ipTagInfo) {
   varianceIP3D	     = getJetVariance(ip3dVector, false);
   varianceJetDist    = getJetVariance(jetAxisDistVector, false);
   varianceJetDistSig = getJetVariance(jetAxisDistSigVector, false);
+  varianceIPLogSig2D = getJetVariance(ipLog2dsVector, true);	//signed value matters
+  varianceIPLogSig3D = getJetVariance(ipLog3dsVector, true);	//signed value matters
+  varianceIPLog2D    = getJetVariance(ipLog2dVector, true);	//signed value matters
+  varianceIPLog3D    = getJetVariance(ipLog3dVector, true);	//signed value matters
+
 }
 
 
-float DisplacedJet::getJetMedian(std::vector<float> values, bool is_signed) {   
+float DisplacedJet::getJetMedian(const std::vector<float>& values, bool is_signed) {   
   if (values.size() == 0) return -999;
   
   int size = values.size();
@@ -464,8 +503,9 @@ float DisplacedJet::getJetMedian(std::vector<float> values, bool is_signed) {
   return dMedian;
 }
 
-float DisplacedJet::getJetMean(std::vector<float> values, bool is_signed) {
-  if (values.size() == 0) return -9999;
+float DisplacedJet::getJetMean(const std::vector<float> & values, bool is_signed) {
+  if (values.size() == 0) return 0.0;
+
   float sum = 0;
   std::vector<float>::const_iterator val = values.begin();
   for (; val != values.end(); ++val) sum += is_signed ? *val : fabs(*val);  
@@ -475,20 +515,24 @@ float DisplacedJet::getJetMean(std::vector<float> values, bool is_signed) {
   return mean;
 }
 
-float DisplacedJet::getJetVariance(std::vector<float> values, bool is_signed) {
-  if (values.size() == 0) return -9999;
+float DisplacedJet::getJetVariance(const std::vector<float>& values, bool is_signed) {
+  if (values.size() == 0 || values.size() == 1) return 0.0;
 
   float sum = 0;
   float mean = getJetMean(values, is_signed);
 
   std::vector<float>::const_iterator val = values.begin();
   for (; val != values.end(); ++val) {
-    sum += (*val - mean) * (*val - mean);
+    float temp =  (*val - mean) * (*val - mean);
+    if (debug > 5) std::cout << "[DEBUG 5] value:" << *val << std::endl;
+    if (debug > 5) std::cout << "[DEBUG 5] mean: " << mean << std::endl;
+    if (debug > 5) std::cout << "[DEBUG 5] variance element: " << temp << std::endl;
+    sum += temp;
   }
 
   //safety check
   if(!is_signed ) { assert( sum >= 0 ); }
-  float variance = sum / (values.size() - 1.0);
+  float variance = std::sqrt(sum / float((values.size() - 1.0)));
 
   if (debug > 4) std::cout << "[DEBUG] jet variance:  " << variance << std::endl;
   return variance;

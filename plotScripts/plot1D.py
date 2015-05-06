@@ -50,6 +50,15 @@ parser.add_option( "--genmatch", dest="genmatch",
 		                    help="Do generator matching for the signal MC",
 		                    action="store_true", default=False)
 
+parser.add_option( "--ivfvtxmatch", dest="ivfvtxmatch",
+		                    help="Do generator vertex matching for the signal MC",
+		                    action="store_true", default=False)
+
+parser.add_option( "--svvtxmatch", dest="svvtxmatch",
+		                    help="Do generator vertex matching for the signal MC",
+		                    action="store_true", default=False)
+
+
 parser.add_option( "--genmatchtrack", dest="genmatchtrack",
 		                    help="Do generator matching for the signal MC track collections",
 		                    action="store_true", default=False)
@@ -163,10 +172,17 @@ for key in stacks.keys():
         #add in the gen amtching requirement to the cut
         if samp.isSignal and options.genmatch:
             print samp.file_name, isSignal
-            thisCut = "(" + options.cut + ") && ( genMatch > 0 )" 
+            thisCut = "(" + options.cut + ") && ( caloGenMatch > 0 )" 
         if samp.isSignal and options.genmatchtrack:
             print samp.file_name, isSignal
             thisCut = "(" + options.cut + ") && ( genMatchTrack > 0 )" 
+        if samp.isSignal and options.ivfvtxmatch:
+            print samp.file_name, isSignal
+            thisCut = "(" + options.cut + ") && ( jetIVFGenVertexMatched > 0 )" 
+        if samp.isSignal and options.svvtxmatch:
+            print samp.file_name, isSignal
+            thisCut = "(" + options.cut + ") && ( jetSvGenVertexMatched > 0 )" 
+
 
         print "Sample: ", samp.file_name,  "Cut: ", thisCut
 

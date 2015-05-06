@@ -6,8 +6,8 @@ displacedInclusiveVertexFinder  = cms.EDProducer("InclusiveVertexFinder",
        tracks = cms.InputTag("generalTracks"),
        minHits = cms.uint32(0), #djet 8 -> 0 AOD produciton has problems with nhits
        maximumLongitudinalImpactParameter = cms.double(9999), #djet  .3 -> infty
-       minPt = cms.double(1.0), #djet .8 -> 1 
-       maxNTracks = cms.uint32(9999), #djet 30 -> infty
+       minPt = cms.double(0.8), #djet .8 -> 1 
+       maxNTracks = cms.uint32(50), #djet 30 -> 50
 
        clusterizer = cms.PSet(
            seedMax3DIPSignificance = cms.double(9999.),

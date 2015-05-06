@@ -234,28 +234,40 @@ class TrackAnalyzer : public edm::EDAnalyzer {
   // means
   Float_t   jetMeanIPSig2D[MAX_JETS];
   Float_t   jetMeanIPSig3D[MAX_JETS];
+  Float_t   jetMeanIPLogSig2D[MAX_JETS];
+  Float_t   jetMeanIPLogSig3D[MAX_JETS];
   Float_t   jetMeanJetDistSig[MAX_JETS];
   // median
   Float_t   jetMedianIPSig2D[MAX_JETS];
   Float_t   jetMedianIPSig3D[MAX_JETS];
+  Float_t   jetMedianIPLogSig2D[MAX_JETS];
+  Float_t   jetMedianIPLogSig3D[MAX_JETS];
   Float_t   jetMedianJetDistSig[MAX_JETS];
   // variance
   Float_t   jetVarianceIPSig2D[MAX_JETS];
   Float_t   jetVarianceIPSig3D[MAX_JETS];
+  Float_t   jetVarianceIPLogSig2D[MAX_JETS];
+  Float_t   jetVarianceIPLogSig3D[MAX_JETS];
   Float_t   jetVarianceJetDistSig[MAX_JETS];
 
   // Absolute IP averages
   // mean
   Float_t   jetMeanIP2D[MAX_JETS];
   Float_t   jetMeanIP3D[MAX_JETS];
+  Float_t   jetMeanIPLog2D[MAX_JETS];
+  Float_t   jetMeanIPLog3D[MAX_JETS];
   Float_t   jetMeanJetDist[MAX_JETS];
   // median
   Float_t   jetMedianIP2D[MAX_JETS];
   Float_t   jetMedianIP3D[MAX_JETS];
+  Float_t   jetMedianIPLog2D[MAX_JETS];
+  Float_t   jetMedianIPLog3D[MAX_JETS];
   Float_t   jetMedianJetDist[MAX_JETS];
   // variance
   Float_t   jetVarianceIP2D[MAX_JETS];
   Float_t   jetVarianceIP3D[MAX_JETS];
+  Float_t   jetVarianceIPLog2D[MAX_JETS];
+  Float_t   jetVarianceIPLog3D[MAX_JETS];
   Float_t   jetVarianceJetDist[MAX_JETS];
 
   // SV information

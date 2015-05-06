@@ -32,7 +32,6 @@ class JetVertexAssociation {
   int	getNJets() { return caloJetCollection.size(); } 
   float getBestVertexScore() { return bestVertexScore; }
 
-
   std::string getName() { return name; }
   // score
   const std::pair<const reco::Vertex, const float> getBestVertex(const reco::CaloJet&, const std::string&);
@@ -60,15 +59,12 @@ float JetVertexAssociation::getVertexJetScore(const reco::CaloJet & jet, const r
   float			    score   = 0;
 
   if (debug > 2) std::cout << "[DEBUG 2] [JVA] Jet Eta=" <<jet_eta << " Jet Phi: " << jet_phi <<  std::endl;
-  if (debug > 2) std::cout << "[DEBUG] [JVA] iterating over tracks" << std::endl;
+  if (debug > 2) std::cout << "[DEBUG 2] [JVA] iterating over tracks" << std::endl;
   reco::Vertex::trackRef_iterator tt = vertex.tracks_begin();
   for(; tt != vertex.tracks_end(); ++tt) {
-    if (debug > 3) std::cout << "[DEBUG] [JVA] Accessing kinematics" << std::endl;
-    // float   track_outerPt  = (*tt)->outerPt();
     float   eta = (*tt)->eta();
     float   phi = (*tt)->phi();    
-    if (debug > 3)std::cout << "[DEBUG] [JVA] DR Calc" << std::endl;
-    if (debug > 3)std::cout << "[DEBUG] [JVA] Track Eta=" << eta << " Jet Phi: " << phi <<  std::endl;
+    if (debug > 3) std::cout << "[DEBUG 3] [JVA] Track Eta=" << eta << " Jet Phi: " << phi <<  std::endl;
     float   dR		   = reco::deltaR(jet_eta, jet_phi, eta, phi);
   
     if (dR > 1.0) 
@@ -77,7 +73,7 @@ float JetVertexAssociation::getVertexJetScore(const reco::CaloJet & jet, const r
       score += 1.0 / dR;	 	  	 
   }
   
-  if (debug > 2) std::cout << "[DEBUG 2] [JVA] Return SCORE: " << score <<  std::endl;
+  if (debug > 2) std::cout << "[DEBUG 2] [JVA] Vertex Matching Score: " << score <<  std::endl;
   return score;
 }
 
@@ -86,7 +82,6 @@ const std::pair<const reco::Vertex, const float> JetVertexAssociation::getBestVe
   float		bestScore = -1;
   reco::Vertex	bestVertex;
 
-  std::cout << "[DEBUG LEVEL = " << debug << std::endl;
   if (debug > 1) std::cout << "[DEBUG 1] [JVA] iterating over Vertices" << std::endl;
   reco::VertexCollection::const_iterator ss = vertexCollection.begin();
   for(; ss != vertexCollection.end(); ++ss) {
@@ -106,9 +101,3 @@ const std::pair<const reco::Vertex, const float> JetVertexAssociation::getBestVe
   const std::pair<const reco::Vertex, const float> vertexPair(primaryVertex, 0);
   return vertexPair;
 }
-
-
-
-
-
-  

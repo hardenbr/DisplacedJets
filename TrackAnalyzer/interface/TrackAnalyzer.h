@@ -120,6 +120,12 @@ class TrackAnalyzer : public edm::EDAnalyzer {
   Float_t   caloGenPhi[MAX_JETS];
   Float_t   caloGenM[MAX_JETS];
 
+
+  ///////////////////// TRACK MATCHING ////////////////////
+
+  Int_t   jetNTracks[MAX_JETS];
+  
+
   //////////////////// LIFETIME TAG /////////////////
   
 
@@ -207,9 +213,9 @@ class TrackAnalyzer : public edm::EDAnalyzer {
 
   // significance and aboslute IP weighted track energy
   Float_t   jetEIPSig2D[MAX_JETS];
-  Float_t   jetEIP2D[MAX_JETS];
+  Float_t   jetEIPSigLog2D[MAX_JETS];
   Float_t   jetEIPSig3D[MAX_JETS];
-  Float_t   jetEIP3D[MAX_JETS];
+  Float_t   jetEIPSigLog3D[MAX_JETS];
 
   // significance log IP weighted track energy
   Float_t   jetELogIPSig2D[MAX_JETS];

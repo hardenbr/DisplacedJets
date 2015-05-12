@@ -17,7 +17,9 @@ class DisplacedJetEvent {
   void addIVFVertices(const reco::VertexCollection & vertices);
   
   // matching
-  void doGenMatching(const reco::GenParticleCollection & genParticleCollection, const bool & doCaloJetMatch, const bool & doGenVtxMatch, const float& ptMatch, const float& drMatch, const float& vtxMatchThreshold); 
+  void doGenMatching(const reco::GenParticleCollection & genParticleCollection, 
+		     const bool & doCaloJetMatch, const bool & doGenVtxMatch, const bool & doGenVtxID,
+		     const float& ptMatch, const float& drMatch, const float& vtxMatchThreshold); 
   void doSimMatching(const edm::SimVertexContainer & simVertexCollection);
   
   // helper method
@@ -126,7 +128,7 @@ DisplacedJet & DisplacedJetEvent::findDisplacedJetByPtEtaPhi(const float& pt, co
 }
 
 void DisplacedJetEvent::doGenMatching( const reco::GenParticleCollection& genParticles, 
-				       const bool& doCaloJetMatch = true, const bool& doGenVtxMatch = true,
+				       const bool& doCaloJetMatch = true, const bool& doGenVtxMatch = true, const bool& doGenVtxID = true,
 				       const float& ptMatch = 0.2, const float& dRMatch = 0.7,
 				       const float& vtxMatchThreshold = 0.05) {
 
@@ -145,6 +147,9 @@ void DisplacedJetEvent::doGenMatching( const reco::GenParticleCollection& genPar
       isIVFGenVertexMatched = djetIter->ivfIsGenMatched;
       isSVGenVertexMatched  = djetIter->svIsGenMatched;      
     }    
+    if(doGenVtxID) {
+      djetIter->doGenVertexID(vtxMatchThreshold, genParticles);
+    }
     if(debug > 1) std::cout <<  "[GEN MATCH] isCalomatch: " << isCaloGenMatched << " isIVFGenVertexMatched "
 			  << isIVFGenVertexMatched << " isSVGEnVertexMatched " << isSVGenVertexMatched << std::endl;
 

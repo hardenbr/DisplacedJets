@@ -10,11 +10,17 @@ class DisplacedJet {
     // primary vertex
     selPV = primaryVertex;
 
-    // initialize calo related variables
-    caloPt  = jet.pt();
-    caloEta = jet.eta();
-    caloPhi = jet.phi();
+    // track association variables
+    nTracks       = 0;
 
+    // initialize calo related variables
+    caloPt	  = jet.pt();
+    caloEta	  = jet.eta();
+    caloPhi	  = jet.phi();
+    caloN60	  = 0; //jet.n60();
+    caloN90	  = 0; //jet.n90();
+    caloTowerArea = 0; //jet.towersArea();
+    
     // store quantites based on detector geometry (rather than vprimary vertex)
     ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<double>> detP4 = jet.detectorP4();
     detPt  = detP4.pt();
@@ -30,6 +36,8 @@ class DisplacedJet {
     ipLogSum2D	     = 0, ipLogSum3D = 0;
     jetDistLogSum    = 0, jetDistLogSum = 0;
     jetDistSigLogSum = 0, jetDistSigLogSum = 0;
+    eipSigLogSum2D   = 0, eipSigLogSum3D = 0;
+    eipSigSum2D	     = 0, eipSigSum3D = 0;
 
     // initalize ip distributional variable
     //mean
@@ -51,7 +59,7 @@ class DisplacedJet {
     varianceIPLog2D    = 0, varianceIPLog3D = 0;
     varianceJetDist    = 0, varianceJetDistSig = 0;    
 
-    // ivf initialization
+    // ivf init
     ivfX = 0, ivfY = 0, ivfZ = 0;
     ivfXError = 0, ivfYError = 0, ivfZError = 0;
     ivfLxy = 0, ivfLxyz = 0;
@@ -61,10 +69,14 @@ class DisplacedJet {
     ivfIsGenMatched = false;
     ivfIsSimMatched = false;
     ivfGenVertexMatchMetric = FAKE_HIGH_NUMBER;
+    selIVFIsPVScore = FAKE_HIGH_NUMBER;
+    selIVFIsPV = true;
     
-    // sv initialization
+    // sv init
+    svNVertex= 0;
     svX = 0, svY = 0, svZ = 0;
     svXError = 0, svYError = 0, svZError = 0;
+    svChi2 = 0, svNDof = 0;
     svLxy = 0, svLxyz = 0;
     svLxySig = 0, svLxyzSig = 0;
     svMass = 0;
@@ -72,6 +84,15 @@ class DisplacedJet {
     svIsGenMatched = false;
     svIsSimMatched = false;
     svGenVertexMatchMetric = FAKE_HIGH_NUMBER;    
+
+    // matching gen particles init
+    caloGenPt	     = -999;
+    caloGenEta	     = -999;
+    caloGenPhi	     = -999;
+    caloGenMass	     = -999;
+    isCaloGenMatched = 0;
+
+    genMotherPointer = NULL;
   }
 
   // jet info integration
@@ -83,8 +104,9 @@ class DisplacedJet {
   // generator matching
   bool doGenCaloJetMatching(const float& ptMatch, const float& dRMatch, const reco::GenParticleCollection& genParticles);
   bool doGenVertexJetMatching(const float& metricThreshold, const reco::GenParticleCollection& genParticles);
-  float genMatchMetric(const reco::GenParticle& gen, const reco::Vertex & vertex);
-
+  void doGenVertexID(const float& metricThreshold, const reco::GenParticleCollection& genParticles);
+  float genMatchMetric(const reco::GenParticle & particle, const reco::Vertex& vertex);
+  
   // jet info extraction
   reco::TrackCollection getCaloMatchedTracks() { return caloMatchedTracks; }
   reco::TrackCollection getVertexMatchedTracks() { return vertexMatchedTracks; }
@@ -99,10 +121,14 @@ class DisplacedJet {
   //////////////CALO INFORMATION////////////
   bool isMC;
   int jetID;
+
+  // track association variables
+  int nTracks;
   
   // calo related variables
   float caloPt, caloEta, caloPhi;
   float caloN60, caloN90;  
+  float caloTowerArea;
   float detPt, detEta, detPhi;
   float caloEMEnergyFrac, caloHadEnergyFrac;
 
@@ -112,6 +138,9 @@ class DisplacedJet {
   float ipSigLogSum2D, ipSigLogSum3D;
   float ipLogSum2D, ipLogSum3D;  
   float jetDistLogSum, jetDistSigLogSum;
+  float eipSigLogSum2D, eipSigLogSum3D;
+  float eipSigSum2D, eipSigSum3D;
+
   // ip distribution variables
   // mean 
   float meanIPSig2D, meanIPSig3D;
@@ -155,6 +184,7 @@ class DisplacedJet {
   // position
   float svX, svY, svZ;
   float svXError, svYError, svZError;  
+  float svChi2, svNDof;
   float svLxy, svLxyz;
   float svLxySig, svLxyzSig;
   // qualities
@@ -171,7 +201,8 @@ class DisplacedJet {
   bool isCaloPVGenMatched;
   // matched gen particle kinematics
   float caloGenPt, caloGenEta, caloGenPhi, caloGenMass;
-
+  
+  const reco::Candidate * genMotherPointer; 
 
  private: 
   int debug;
@@ -182,8 +213,11 @@ class DisplacedJet {
 
   // related vertices
   reco::Vertex selIVF;
+  bool selIVFIsPV;
+  float selIVFIsPVScore;
   reco::Vertex selSV;
   reco::Vertex selPV;
+
 
   // related track collections
   reco::TrackCollection caloMatchedTracks; 
@@ -192,6 +226,10 @@ class DisplacedJet {
   std::vector<float> ip3dVector, ip3dsVector, ip2dVector, ip2dsVector;
   std::vector<float> ipLog3dVector, ipLog3dsVector, ipLog2dVector, ipLog2dsVector;
   std::vector<float> jetAxisDistVector, jetAxisDistSigVector; 
+
+  std::vector<int> genVtxSonIDs;
+  std::vector<int> genVtxMotherIDs;
+
 };
 
 float DisplacedJet::genMatchMetric(const reco::GenParticle & particle, const reco::Vertex& vertex) {
@@ -223,14 +261,70 @@ bool DisplacedJet::doGenVertexJetMatching(const float & metricThreshold, const r
     ivfGenVertexMatchMetric = std::min(ivfMatch_temp, ivfGenVertexMatchMetric);
     svGenVertexMatchMetric  = std::min(svMatch_temp, svGenVertexMatchMetric);      
 
-    if (ivfMatch || svMatch ) return true; // if there was any match return true
+    if (ivfMatch || svMatch) {            
+      return true; 
+    }
   } // loop over gen particles
 
   return false; 
 }
 
+void DisplacedJet::doGenVertexID(const float & metricThreshold, const reco::GenParticleCollection& genParticles) {
+  // loop over each gen particle
+  reco::GenParticleCollection::const_iterator genIter = genParticles.begin();
+  if (debug > 2) std::cout << "\n[GEN VTX MATCHING 2] STARTING NEW JET MATCHING FOR IVF / SV --- IVF LXY: " << ivfLxy << std::endl;
+  if (debug > 2) std::cout << "[GEN VTX MATCHING 2] IVF NOT CONSITENT WITH PV --- SCORE:" << selIVFIsPVScore << std::endl;
+  for(; genIter != genParticles.end(); ++genIter) {
+    if (debug > 3) std::cout << "\n[GEN VTX MATCHING 3] checking status and charge " << std::endl;
+    int	    status = genIter->status();
+    int     charge = genIter->charge();
+    if (charge == 0) continue; //hardest subprocess or neutral particle
+
+    if (debug > 3) std::cout << "\n[GEN VTX MATCHING 3] parsing id and momid " << std::endl;
+    int id     = genIter->pdgId();
+    int momid  = genIter->mother()->pdgId();   
+
+    // dont do matching if there is no IVF (not consistent with the PV)
+    if(selIVFIsPV) {
+      if (debug > 2 && selIVFIsPVScore == 0 ) std::cout << "[GEN VTX MATCHING 3] IVF not found" <<  std::endl;
+      if (debug > 2 && selIVFIsPVScore > 0 ) std::cout << "[GEN VTX MATCHING 3] IVF consistent with PV" <<  std::endl;
+      break; // if there is no IVF selected (the PV is selected) then dont do matching
+    }
+
+
+    if (debug > 3) std::cout << "\n[GEN VTX MATCHING 3] checking matching score to gen particles " << std::endl;
+
+    // calculate the score
+    float   ivfMatch_temp   = genMatchMetric(*genIter, selIVF);
+    float   svMatch_temp    = genMatchMetric(*genIter, selSV);
+    // check for a match
+    bool    ivfMatch	    = fabs(ivfMatch_temp) < metricThreshold;
+    bool    svMatch	    = fabs(svMatch_temp) < metricThreshold;
+    // only one needs to match
+    ivfIsGenMatched	    = ivfIsGenMatched || ivfMatch;
+    svIsGenMatched	    = svIsGenMatched || svMatch;
+
+    if (ivfMatch) {
+
+      if (debug > 2) std::cout << "[GEN VTX MATCHING 2] STATUS:" << 
+		       status << " ID " << id  << " MOM ID: " << momid << 
+		       " MATCHING METRIC: " << std::min(fabs(ivfMatch_temp), fabs(svMatch_temp)) << std::endl;
+
+      genVtxSonIDs.push_back(genIter->pdgId());
+
+      if(genIter->mother() != genMotherPointer) { // should not be multiple mothers at same vtx
+	if (debug > 2) std::cout << "[GEN VTX MATCHING 2] ADDING MOTHER: " << momid << std:: endl;
+	//	assert(genMotherPointer == NULL); // if this fails, there are multiple mothers at vtx
+	genVtxMotherIDs.push_back(genIter->mother()->pdgId());
+	genMotherPointer = genIter->mother();	
+      }                  
+    }    
+  } // loop over gen particles
+}
+
+
 bool DisplacedJet::doGenCaloJetMatching(const float& ptMatch, const float& dRMatch, const reco::GenParticleCollection& genParticles) {
-  
+  if (debug > 2) std::cout << "\n[GEN MATCHING] CALO JET INFO  " << " pt " << caloPt << " eta " << caloEta <<  " phi " << caloPhi << std::endl;
   reco::GenParticleCollection::const_iterator genIter = genParticles.begin();
   
   for(; genIter != genParticles.end(); ++genIter) {
@@ -244,6 +338,7 @@ bool DisplacedJet::doGenCaloJetMatching(const float& ptMatch, const float& dRMat
     double genPt = genIter->pt(), genEta = genIter->eta(), genPhi = genIter->phi(), genMass = genIter->mass();
     float   dr     = reco::deltaR(genEta, genPhi, caloEta, caloPhi);
     float   dpt    = fabs(caloPt - genPt) / genPt;
+    if (debug > 2) std::cout << "[GEN MATCHING] Candidate ID " << id <<   " dR " << dr << " dpt" << dpt << " eta " << genEta << " phi " << genPhi << std::endl; 
 
     // found a match
     if (dr < dRMatch && dpt < ptMatch) {
@@ -292,7 +387,10 @@ void DisplacedJet::addIVFCollection(const reco::VertexCollection & vertices) {
   //flight distance from the firstPV
   float x  = bestVertex.x(), y = bestVertex.y(), z = bestVertex.z();    
   float dx = x - selPV.x() , dy = y - selPV.y(), dz = z - selPV.z();
-    
+  
+  selIVFIsPVScore = std::sqrt((dx/x)*(dx/x) + (dy/y)*(dy/y) + (dz/z)*(dz/z));  
+  selIVFIsPV = selIVFIsPVScore < .05; // default 5% consitency check 
+  
   //build the total error
   float svxE = bestVertex.xError(), svyE = bestVertex.yError(), svzE = bestVertex.zError();
   float pvxE = selPV.xError(), pvyE = selPV.yError(), pvzE = selPV.zError();
@@ -305,8 +403,8 @@ void DisplacedJet::addIVFCollection(const reco::VertexCollection & vertices) {
   ivfYError = svyE;
   ivfZError = svzE;  
 
-  ivfNTracks = bestVertex.nTracks();  
-  ivfMass    = bestVertex.p4().mass();    
+  ivfNTracks = selIVFIsPV ? 0 : bestVertex.nTracks();  
+  ivfMass    = selIVFIsPV ? 0 : bestVertex.p4().mass();    
   ivfLxySig  = std::sqrt( dx * dx + dy * dy ) / std::sqrt(xE * xE + yE * yE);
   ivfLxyzSig = std::sqrt( dx * dx + dy * dy + dz * dz) / std::sqrt(xE * xE + yE * yE + zE * zE);
   ivfLxy     = std::sqrt( dx * dx + dy * dy );
@@ -354,6 +452,9 @@ void DisplacedJet::addSVTagInfo(const reco::SecondaryVertexTagInfo& svTagInfo) {
   svX = selVertex.x();
   svY = selVertex.y();
   svZ = selVertex.z();
+
+  svChi2 = selVertex.chi2();
+  svNDof = selVertex.ndof();
   
   svXError = selVertex.xError();
   svYError = selVertex.yError();
@@ -375,14 +476,20 @@ void DisplacedJet::addSVTagInfo(const reco::SecondaryVertexTagInfo& svTagInfo) {
 
 void DisplacedJet::addIPTagInfo(const reco::TrackIPTagInfo & ipTagInfo) {
   if (debug > 2) std::cout << "[DEBUG 2] Adding SV IP Info into DJet  " << std::endl;
+  
+  // if for some reason n tracks is not zero, reset it.
+  nTracks = 0;
 
   // pull the impact parameter data
   lifetimeIPData = ipTagInfo.impactParameterData();
-
+  
   // loop over each tracks ip information
   std::vector<reco::btag::TrackIPData>::const_iterator ipIter = lifetimeIPData.begin();
   for(; ipIter != lifetimeIPData.end(); ++ipIter)  {
+    nTracks++;
+
     if (debug > 3) std::cout << "[DEBUG] Filing IP INFO  " << std::endl;
+    // ip and jet distance information
     float ip3d = ipIter->ip3d.value(), ip3ds = ipIter->ip3d.significance();
     float ip2d = ipIter->ip2d.value(), ip2ds = ipIter->ip2d.significance();
     float jetAxisDist = ipIter->distanceToJetAxis.value(), jetAxisDistSig = ipIter->distanceToJetAxis.significance();
@@ -393,6 +500,7 @@ void DisplacedJet::addIPTagInfo(const reco::TrackIPTagInfo & ipTagInfo) {
     ip3dsVector.push_back(ip3ds);
     ip2dsVector.push_back(ip2ds);
 
+    // log quantities
     float   ipSigLog2D = (ip3d ? log(fabs(ip2ds)) : 0);
     float   ipSigLog3D = (ip3ds? log(fabs(ip3ds)) : 0);    
     float   ipLog2D    = (ip2d ? log(fabs(ip2d)) : 0);
@@ -403,12 +511,12 @@ void DisplacedJet::addIPTagInfo(const reco::TrackIPTagInfo & ipTagInfo) {
     ipLog3dVector.push_back(ipLog3D);
     ipLog2dVector.push_back(ipLog2D);
 
-
     jetAxisDistVector.push_back(jetAxisDist);
     jetAxisDistSigVector.push_back(jetAxisDistSig);
 
     // ip log sums 3d and 2d
     if (debug > 4) std::cout << "[DEBUG 4] ipsiglogsum2d: " << ipSigLogSum2D << std::endl;
+    if (debug > 4) std::cout << "[DEBUG 4] jetdist: " << jetAxisDist << std::endl;
     if (debug > 4) std::cout << "[DEBUG 4] jetdistsig: " << jetAxisDistSig << std::endl;
     ipSigLogSum2D    += (ip3d ? log(fabs(ip2ds)) : 0);
     ipSigLogSum3D    += (ip3ds? log(fabs(ip3ds)) : 0);    
@@ -416,6 +524,18 @@ void DisplacedJet::addIPTagInfo(const reco::TrackIPTagInfo & ipTagInfo) {
     ipLogSum3D	     += (ip3d ? log(fabs(ip3d)) : 0);
     jetDistSigLogSum += fabs(jetAxisDistSig);
     jetDistLogSum    += fabs(jetAxisDist);
+    /* eipSigLogSum2D   += ip2ds  ? (pt * log(fabs(ip2ds))) : 0; */
+    /* eipSigLogSum3D   += ip3ds  ? (pt * log(fabs(ip3ds))) : 0; */
+    /* eipSigSum2D      += (pt * fabs(ip3ds)) */
+    /* eipSigSum3D      += (pt * fabs(ip3ds)) */
+
+  }
+
+  // loop over associated tracks
+  reco::TrackRefVector selectedTracks = ipTagInfo.selectedTracks();   
+  reco::TrackRefVector::const_iterator trackIter = selectedTracks.begin();
+  for(; trackIter != selectedTracks.end(); ++trackIter) {    
+    
   }
 
   if (debug > 2) std::cout << "[DEBUG 2] Deriving Distributional Quantities of IP Info  " << std::endl;  

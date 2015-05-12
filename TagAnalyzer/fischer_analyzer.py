@@ -17,23 +17,18 @@ parser = OptionParser()
 parser.add_option("-s", "--signal", dest="sig_file",
                   help="input signal root file",default="signal.root",
                   action="store",type="string")
-
 parser.add_option("-b", "--background", dest="bkg_file",
                   help="input background root file",default="qcd.root",
                   action="store",type="string")
-
 parser.add_option("-t", "--tree", dest="tree",
                   help="tree inside the input file to use",default="jets",
                   action="store",type="string")
-
 parser.add_option("-o", "--output", dest="output",
                   help="output file ",default="jets",
                   action="store",type="string")
-
 parser.add_option( "--roc", dest="do_roc",
                   help="build the roc curves ",default=False,
                   action="store_true")
-
 parser.add_option( "--gidout", dest="output_GID",
                   help="name of output file to give combinations of weights ",
                   action="store", type="string", default="GID.txt")
@@ -174,7 +169,7 @@ class analysis:
 
             #total number of jets
 #            nsig_tot = sig_tree.GetEntries("genMatch > 0 && %sID == 1" % disc)
-            nsig_tot = sig_tree.GetEntries("genMatch == 0 && %sID == 1" % disc)
+            nsig_tot = sig_tree.GetEntries("caloGenMatch == 0 && %sID == 1" % disc)
             nbkg_tot = bkg_tree.GetEntries(" %sID == 1" % disc)        
 
             print "-- Looping GID -- " 
@@ -187,7 +182,7 @@ class analysis:
 
                 # one point per threshold
                 for threshold in scan_points:
-                    sig_cut = "genMatch > 0 && %sID == %i && %s > %s" % (disc, gid, disc, threshold)
+                    sig_cut = "caloGenMatch > 0 && %sID == %i && %s > %s" % (disc, gid, disc, threshold)
                     bkg_cut = "%sID == %i && %s > %s" % (disc, gid, disc, threshold)
                     
                     nsig_pass = sig_tree.GetEntries(sig_cut)
@@ -322,13 +317,6 @@ class roc_curve:
         if bkg_rej > bincontent:
             self.sig_hist.SetBinContent(bin, bkg_rej)
         
-
-    # def build_arrays(self):
-    #     for key in self.eff_dict.keys():
-    #         (x, y) = self.eff_dict[key] 
-    #         self.x.append(x)
-    #         self.y.append(y)
-
     def build_tgraph(self):
         print "building tgraph" 
 
@@ -380,7 +368,7 @@ class jet_collection:
         tree = rt.TTree(tree_name, tree_name)    
     
             # Create a struct for the run information
-        line_to_process = "struct MyStruct{ Int_t id;Int_t genmatch;Float_t pt;Float_t eta;Float_t phi;Float_t ipsiglog;Float_t ipelog;Float_t ipmed;Int_t genmatch; Int_t nGrid; Int_t evNum; Int_t svntrack; Float_t svlxy; Float_t svlxysig; Float_t svmass; Int_t event; Int_t lumi; Int_t run;"
+        line_to_process = "struct MyStruct{ Int_t id;Int_t caloGenMatch;Float_t pt;Float_t eta;Float_t phi;Float_t ipsiglog;Float_t ipelog;Float_t ipmed; Int_t nGrid; Int_t evNum; Int_t svntrack; Float_t svlxy; Float_t svlxysig; Float_t svmass; Int_t event; Int_t lumi; Int_t run;"
 
         for disc in self.disc_list:
             line_to_process += " Float_t %s[1000];" % disc
@@ -412,7 +400,7 @@ class jet_collection:
         tree.Branch("ipsiglog",rt.AddressOf(s,"ipsiglog"),"ipsiglog/F")
         tree.Branch("ipmed",rt.AddressOf(s,"ipmed"),"ipmed/F")
         tree.Branch("ipelog",rt.AddressOf(s,"ipelog"),"ipelog/F")
-        tree.Branch("genMatch",rt.AddressOf(s,"genmatch"),"genMatch/I")
+        tree.Branch("caloGenMatch",rt.AddressOf(s,"caloGenMatch"),"caloGenMatch/I")
 
         # sv information
         tree.Branch("svlxy",rt.AddressOf(s,"svlxy"),"svlxy/F")
@@ -426,7 +414,7 @@ class jet_collection:
             tree.Branch(disc+"ID", eval("s.%sID" % disc) ,"%sID[nGrid]/I" % disc )
 
         # fill  the information common to every discriminant
-        s.id = s.genmatch = s.pt = s.eta = s.phi = 0
+        s.id = s.caloGenMatch = s.pt = s.eta = s.phi = 0
         s.ipsiglog = s.ipmed = s.ipelog = 0
         s.run = s.ls = s.event = -1
 
@@ -439,7 +427,7 @@ class jet_collection:
             s.eta = jet.jetvars["caloJetEta"]
             s.phi = jet.jetvars["caloJetPhi"]
             s.id = jet.jetvars["jetID"] 
-            s.genmatch = jet.jetvars["genMatch"]
+            s.caloGenMatch = jet.jetvars["caloGenMatch"]
             s.evNum = jet.jetvars["evNum"]
             s.svlxysig = jet.jetvars["jetSvLxySig"] 
             s.svlxy = jet.jetvars["jetSvLxy"] 
@@ -504,22 +492,26 @@ class jet_collection:
             for jj in range(tree.nCaloJets):
                 jetvars = {}
                 jetID = tree.jetID[jj]
-                jetvars["jetIPSigLogSum2D"] = tree.jetIPSigLogSum2D[jj]
-                jetvars["jetMedianIPSig2D"] = tree.jetMedianIPSig2D[jj]
-                jetvars["jetELogIPSig2D"] = tree.jetELogIPSig2D[jj]
-                jetvars["caloJetPt"] = tree.caloJetPt[jj]
-                jetvars["caloJetEta"] = tree.caloJetEta[jj]
-                jetvars["caloJetPhi"] = tree.caloJetPhi[jj]
-                jetvars["jetID"] = tree.jetID[jj]
-                jetvars["genMatch"] = tree.genMatch[jj]
-                jetvars["evNum"] = tree.evNum
-                jetvars["jetSvLxySig"] = tree.jetSvLxySig[jj]
-                jetvars["jetSvLxy"] = tree.jetSvLxy[jj]
-                jetvars["jetSvNTrack"] = tree.jetSvNTrack[jj]
-                jetvars["jetSvMass"] = tree.jetSvMass[jj]
-                jetvars["event"] = tree.event
-                jetvars["run"] = tree.run
-                jetvars["lumi"] = tree.lumi
+
+                jetvars["jetIVFLxySig"]        = tree.jetIVFLxySig[jj]
+                jetvars["jetIVFNTrack"]        = tree.jetIVFNTrack[jj]
+                jetvars["jetMedianIPLogSig2D"] = tree.jetMedianIPLogSig2D[jj]
+                jetvars["jetIPSigLogSum2D"]    = tree.jetIPSigLogSum2D[jj]
+                jetvars["jetMedianIPSig2D"]    = tree.jetMedianIPSig2D[jj]
+                jetvars["jetELogIPSig2D"]      = tree.jetELogIPSig2D[jj]
+                jetvars["caloJetPt"]           = tree.caloJetPt[jj]
+                jetvars["caloJetEta"]          = tree.caloJetEta[jj]
+                jetvars["caloJetPhi"]          = tree.caloJetPhi[jj]
+                jetvars["jetID"]               = tree.jetID[jj]
+                jetvars["caloGenMatch"]        = tree.caloGenMatch[jj]
+                jetvars["evNum"]               = tree.evNum
+                jetvars["jetSvLxySig"]         = tree.jetSvLxySig[jj]
+                jetvars["jetSvLxy"]            = tree.jetSvLxy[jj]
+                jetvars["jetSvNTrack"]         = tree.jetSvNTrack[jj]
+                jetvars["jetSvMass"]           = tree.jetSvMass[jj]
+                jetvars["event"]               = tree.event
+                jetvars["run"]                 = tree.run
+                jetvars["lumi"]                = tree.lumi
 
                 thisJet = jet(tree.jetID[jj], jetvars)
 
@@ -564,6 +556,20 @@ class jet:
         return val
 
 
+
+    def calc_metric_ivf(self, pars):
+        #(w1, w2, w3) = pars
+        (w1, w3) = pars
+
+        x1 = self.jetvars["jetMedianIPLogSig2D"]
+        # x2 = self.jetvars["jetIVFLxySig"]
+        x3 = self.jetvars["jetIVFNTrack"]
+
+        val = w1*x1 + w3*x3
+
+        return val
+
+
     def fill_disc(self, disc, weight_space):        
         wgrid = weight_space.grid
         #go over each point in the weight space            
@@ -573,6 +579,8 @@ class jet:
                 self.disc_dict[disc, wvector] = self.calc_metric_simple(wvector)
             elif disc == "vtx":
                 self.disc_dict[disc, wvector] = self.calc_metric_vtx(wvector)
+            elif disc == "ivf":
+                self.disc_dict[disc, wvector] = self.calc_metric_ivf(wvector)
             else:
                 print "FALSE DISCRIMINANT: ", disc, "---EXITING----"
                 exit(1)
@@ -587,9 +595,17 @@ ana.build_jetcollections()
 ######################SIMPLE DISCRIMINANT###################
 
 #build a dummy range for the simple discriminant
-med_range = weight_range("jetMedianIPSig2D", 0, 1, 2, 1, explicit=[0])
-ipsiglog_range = weight_range("jetIPSigLogSum2D", 0, 1, 2, 1, explicit=[0])
-disc_simple_tuple = (med_range, ipsiglog_range)
+#med_range        = weight_range("jetMedianIPSig2D", 0, 1, 2, 1, explicit=[0])
+#ipsiglog_range   = weight_range("jetIPSigLogSum2D", 0, 1, 2, 1, explicit=[0])
+
+mediplog_range   = weight_range("jetMedianIPLogSig2D", 0, 1, 2, 1, explicit=[0])
+ivflxysig_range  = weight_range("jetIVFLxySig", 0, 1, 2, 1, explicit=[0])
+#ivfntracks_range = weight_range("jetIVFNTrack", 0, 1, 2, 1, explicit=[0])
+
+#disc_simple_tuple = (med_range, ipsiglog_range)
+#disc_simple_tuple = (mediplog_range, ivflxysig_range, ivfntracks_range ) 
+#disc_simple_tuple = (mediplog_range, ivfntracks_range ) 
+disc_simple_tuple = (mediplog_range, ivflxysig_range) 
 
 #calculate the fischer weights for this range
 print "-- Building Weights --"
@@ -597,13 +613,20 @@ fweights = ana.get_fischer_weights(disc_simple_tuple)
 print "Fischer Weights: ", fweights 
 
 #build the new fischer ranges with the weights
-fischer_med_range = weight_range("jetMedianIPSig2D", 0, 1, 2, 1, explicit=[fweights[0]])
-fischer_ipsiglog_range = weight_range("jetIPSigLogSum2D", 0, 1, 2, 1, explicit=[fweights[1]])
-fischer_tuple = (fischer_med_range, fischer_ipsiglog_range)
+#fischer_med_range = weight_range("jetMedianIPSig2D", 0, 1, 2, 1, explicit=[fweights[0]])
+#fischer_ipsiglog_range = weight_range("jetIPSigLogSum2D", 0, 1, 2, 1, explicit=[fweights[1]])
+#fischer_tuple = (fischer_med_range, fischer_ipsiglog_range)
+
+fischer_mediplog_range    = weight_range("jetMedianIPLogSig2D", 0, 1, 2, 1, [-1 * fweights[0]])
+fischer_ivflxysig_range   = weight_range("jetIVFLxySig", 0, 1, 2, 1, [-1 * fweights[1]])
+#fischer_ivfntracks_range = weight_range("jetIVFNTrack", 0, 1, 2, 1, [fweights[1]])
+#fischer_tuple            = (fischer_mediplog_range, fischer_ivflxysig_range, fischer_ivfntracks_range)
+#fischer_tuple            = (fischer_mediplog_range, fischer_ivfntracks_range)
+fischer_tuple             = (fischer_mediplog_range, fischer_ivflxysig_range)
 
 #build the weight space to fill the discriminant
-disc_simple_weight_space = weight_space("simple", 2, fischer_tuple)
-ana.fill_discriminant("simple", disc_simple_weight_space)
+disc_simple_weight_space = weight_space("ivf", 2, fischer_tuple)
+ana.fill_discriminant("ivf", disc_simple_weight_space)
 
 #disc_simple_weight_space.write_output(options.output_GID)
 
@@ -633,13 +656,9 @@ output_file.cd()
 sig_tree.Write()
 bkg_tree.Write()
 
-
-if options.do_roc:
-
-    
+if options.do_roc:    
     ana.build_roc_curves(sig_tree, bkg_tree, -.001, .005 , 1000)
     tgraphs = ana.generate_tgraphs() 
-
 #    roc_canvas = ana.build_roc_canvas()
 #    roc_canvas.Write()
 

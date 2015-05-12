@@ -135,7 +135,7 @@ TrackAnalyzer::TrackAnalyzer(const edm::ParameterSet& iConfig)
     //tag_genMetCalo_ = iConfig.getUntrackedParameter<edm::InputTag>("genMetCalo");
     tag_genParticles_ = iConfig.getUntrackedParameter<edm::InputTag>("genParticles");
     tag_simVertex_    = iConfig.getUntrackedParameter<edm::InputTag>("simVertices");
-  }
+  } 
 }
 
 TrackAnalyzer::~TrackAnalyzer(){ }
@@ -210,8 +210,8 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   djEvent.addIVFVertices(incSV); // add the inclusive secondary vertices (includes matching and calculations)
 
   // mc matching (gen vertex and gen particle to calo jet matching) 
-  // (genparticles, particle matching, vtx matching, threshold for vtx)
-  if(isMC_ && doGenMatch_) djEvent.doGenMatching(genCollection, true, true, 0.05);    
+  // (genparticles, particle matching, vtx matching, vtx id matching, threshold for vtx match)
+  if(isMC_ && doGenMatch_) djEvent.doGenMatching(genCollection, true, true, true, 0.3, 0.7, 0.05);    
 // only dump sim information for matching
   if(isMC_ && doSimMatch_) dumpSimInfo(simVtxCollection);  
 
@@ -288,10 +288,10 @@ TrackAnalyzer::beginJob()
 
   trackTree_->Branch("genMatch", &genMatch, "genMatch[nCaloJets]/I");  
   trackTree_->Branch("genMatchTrack", &genMatchTrack, "genMatchTrack[nLiTracks]/I");  
-  trackTree_->Branch("caloGenPt", &caloGenPt, "caloGenPt[nCaloJets]/I");  
-  trackTree_->Branch("caloGenEta", &caloGenEta, "caloGenEta[nCaloJets]/I");  
-  trackTree_->Branch("caloGenPhi", &caloGenPhi, "caloGenPhi[nCaloJets]/I");  
-  trackTree_->Branch("caloGenM", &caloGenM, "caloGenM[nCaloJets]/I");  
+  trackTree_->Branch("caloGenPt", &caloGenPt, "caloGenPt[nCaloJets]/F");  
+  trackTree_->Branch("caloGenEta", &caloGenEta, "caloGenEta[nCaloJets]/F");  
+  trackTree_->Branch("caloGenPhi", &caloGenPhi, "caloGenPhi[nCaloJets]/F");  
+  trackTree_->Branch("caloGenM", &caloGenM, "caloGenM[nCaloJets]/F");  
 
   ////////////////////////////// LIFETIME Jet tags////////////////////////
 
@@ -327,7 +327,7 @@ TrackAnalyzer::beginJob()
 
   // quality
   trackTree_->Branch("svChi2", &svChi2, "svChi2[nSV]/F");
-  trackTree_->Branch("svNChi2", &svNChi2, "svNChi2[nSV]/F");
+  //  trackTree_->Branch("svNChi2", &svNChi2, "svNChi2[nSV]/F"); // what is this?
   trackTree_->Branch("svNDof", &svNDof, "svNDof[nSV]/F");
   trackTree_->Branch("svIsValid", &svIsValid, "svIsValid[nSV]/I");
 
@@ -396,41 +396,40 @@ TrackAnalyzer::beginJob()
   jetTree_->Branch("caloJetEfrac", &caloJetEfrac, "caloJetEFrac[nCaloJets]/F");
 
   jetTree_->Branch("caloGenMatch", &caloGenMatch, "caloGenMatch[nCaloJets]/I");  
-  jetTree_->Branch("caloGenPt", &caloGenPt, "caloGenPt[nCaloJets]/I");  
-  jetTree_->Branch("caloGenEta", &caloGenEta, "caloGenEta[nCaloJets]/I");  
-  jetTree_->Branch("caloGenPhi", &caloGenPhi, "caloGenPhi[nCaloJets]/I");  
-  jetTree_->Branch("caloGenM", &caloGenM, "caloGenM[nCaloJets]/I");  
+  jetTree_->Branch("caloGenPt", &caloGenPt, "caloGenPt[nCaloJets]/F");  
+  jetTree_->Branch("caloGenEta", &caloGenEta, "caloGenEta[nCaloJets]/F");  
+  jetTree_->Branch("caloGenPhi", &caloGenPhi, "caloGenPhi[nCaloJets]/F");  
+  jetTree_->Branch("caloGenM", &caloGenM, "caloGenM[nCaloJets]/F");  
 
   //////////////// IP TAG INFORMATION ////////////
 
   //number of selected tracks
-  jetTree_->Branch("jetNTracks", &liJetNSelTracks, "jetNTracks[nCaloJets]/I");  
+  jetTree_->Branch("jetNTracks", &jetNTracks, "jetNTracks[nCaloJets]/I");  
 
   // significance and absolute IP weighted track energy
   // unsigned 
   jetTree_->Branch("jetEIPSig2D", &jetEIPSig2D, "jetEIPSig2D[nCaloJets]/F");
-  jetTree_->Branch("jetEIP2D", &jetEIP2D, "jetEIP2D[nCaloJets]/F");
+  jetTree_->Branch("jetEIPSigLog2D", &jetEIPSigLog2D, "jetEIPSigLog2D[nCaloJets]/F");
   jetTree_->Branch("jetEIPSig3D", &jetEIPSig3D, "jetEIPSig3D[nCaloJets]/F");
-  jetTree_->Branch("jetEIP3D", &jetEIP3D, "jetEIP3D[nCaloJets]/F");
+  jetTree_->Branch("jetEIPSigLog3D", &jetEIPSigLog3D, "jetEIPSigLog3D[nCaloJets]/F");
 
   // log weighted track pt 
   jetTree_->Branch("jetELogIPSig2D", &jetELogIPSig2D, "jetELogIPSig2D[nCaloJets]/F");
   jetTree_->Branch("jetELogIPSig3D", &jetELogIPSig3D, "jetELogIPSig3D[nCaloJets]/F");
 
   //ip significance sums -- sum(|IPsig|)
-  jetTree_->Branch("jetIPSigSum2D", &jetIPSigSum2D, "jetIPSigSum2D[nCaloJets]/F");
-  jetTree_->Branch("jetIPSigSum3D", &jetIPSigSum3D, "jetIPSigSum3D[nCaloJets]/F");
+  // jetTree_->Branch("jetIPSigSum2D", &jetIPSigSum2D, "jetIPSigSum2D[nCaloJets]/F");
+  // jetTree_->Branch("jetIPSigSum3D", &jetIPSigSum3D, "jetIPSigSum3D[nCaloJets]/F");
 
-  //ip sig log sums  -- sum(log(|IPsig|))
+  // ip sig log sums  -- sum(log(|IPsig|))
   jetTree_->Branch("jetIPSigLogSum2D", &jetIPSigLogSum2D, "jetIPSigLogSum2D[nCaloJets]/F");
   jetTree_->Branch("jetIPSigLogSum3D", &jetIPSigLogSum3D, "jetIPSigLogSum3D[nCaloJets]/F");
 
   jetTree_->Branch("jetDistSigLogSum", &jetDistSigLogSum, "jetDistSigLogSum[nCaloJets]/F");
   jetTree_->Branch("jetDistLogSum", &jetDistLogSum, "jetDistLogSum[nCaloJets]/F");
 
-
-  jetTree_->Branch("jetIPLogSum2D", &jetIPLogSum2D, "jetIPLogSum2D[nCaloJets]/F");
-  jetTree_->Branch("jetIPLogSum3D", &jetIPLogSum3D, "jetIPLogSum3D[nCaloJets]/F");
+  //jetTree_->Branch("jetIPLogSum2D", &jetIPLogSum2D, "jetIPLogSum2D[nCaloJets]/F");
+  //jetTree_->Branch("jetIPLogSum3D", &jetIPLogSum3D, "jetIPLogSum3D[nCaloJets]/F");
 
   // ip sig averages 
   jetTree_->Branch("jetMeanIPSig2D", &jetMeanIPSig2D, "jetMeanIPSig2D[nCaloJets]/F");
@@ -481,9 +480,9 @@ TrackAnalyzer::beginJob()
 
   // SV Quality
   jetTree_->Branch("jetSvChi2", &jetSvChi2, "jetSvChi2[nCaloJets]/F");
-  jetTree_->Branch("jetSvNChi2", &jetSvNChi2, "jetSvNChi2[nCaloJets]/F");
+  //  jetTree_->Branch("jetSvNChi2", &jetSvNChi2, "jetSvNChi2[nCaloJets]/F");
   jetTree_->Branch("jetSvNDof", &jetSvNDof, "jetSvNDof[nCaloJets]/F");  
-  jetTree_->Branch("jetSvIsValid", &jetSvIsValid, "jetSvIsValid[nCaloJets]/I");  
+  //jetTree_->Branch("jetSvIsValid", &jetSvIsValid, "jetSvIsValid[nCaloJets]/I");  
 
   // IVF Information
   jetTree_->Branch("jetIVFNTrack", &jetIVFNTrack, "jetIVFNTrack[nCaloJets]/I");
@@ -507,20 +506,20 @@ TrackAnalyzer::beginJob()
   // IVF Gen Matching
   jetTree_->Branch("jetIVFGenVertexMatched", &jetIVFGenVertexMatched, "jetIVFGenVertexMatched[nCaloJets]/I");  
   jetTree_->Branch("jetIVFGenVertexMatchMetric", &jetIVFGenVertexMatchMetric, "jetIVFGenVertexMatchMetric[nCaloJets]/F");  
-  jetTree_->Branch("jetIVFSimVertexMatched", &jetIVFSimVertexMatched, "jetIVFSimVertexMatched[nCaloJets]/I");  
-  jetTree_->Branch("jetIVFSimVertexMatchMetric", &jetIVFSimVertexMatchMetric, "jetIVFSimVertexMatchMetric[nCaloJets]/F");  
+  // jetTree_->Branch("jetIVFSimVertexMatched", &jetIVFSimVertexMatched, "jetIVFSimVertexMatched[nCaloJets]/I");  
+  // jetTree_->Branch("jetIVFSimVertexMatchMetric", &jetIVFSimVertexMatchMetric, "jetIVFSimVertexMatchMetric[nCaloJets]/F");  
 
   // Gen Matching
-  jetTree_->Branch("jetSvNGenMatched", &jetSvNGenMatched, "jetSvNGenMatched/I");  
-  jetTree_->Branch("jetSvNGenFake", &jetSvNGenFake, "jetSvNGenFake/I");  
+  //  jetTree_->Branch("jetSvNGenMatched", &jetSvNGenMatched, "jetSvNGenMatched/I");  
+  //  jetTree_->Branch("jetSvNGenFake", &jetSvNGenFake, "jetSvNGenFake/I");  
   // gen
   jetTree_->Branch("jetSvGenVertexMatched", &jetSvGenVertexMatched, "jetSvGenVertexMatched[nCaloJets]/I");  
   jetTree_->Branch("jetSvGenVertexMatchMetric", &jetSvGenVertexMatchMetric, "jetSvGenVertexMatchMetric[nCaloJets]/F");  
   // sim
-  jetTree_->Branch("jetSvNSimMatched", &jetSvNSimMatched, "jetSvNSimMatched/I");  
-  jetTree_->Branch("jetSvNSimFake", &jetSvNSimFake, "jetSvNSimFake/I");  
-  jetTree_->Branch("jetSvSimMatched", &jetSvSimVertexMatched, "jetSvSimMatched[nCaloJets]/I");  
-  jetTree_->Branch("jetSvSimMatchMetric", &jetSvSimVertexMatchMetric, "jetSvSimMatchMetric[nCaloJets]/F");  
+  //  jetTree_->Branch("jetSvNSimMatched", &jetSvNSimMatched, "jetSvNSimMatched/I");  
+  //  jetTree_->Branch("jetSvNSimFake", &jetSvNSimFake, "jetSvNSimFake/I");  
+  // jetTree_->Branch("jetSvSimMatched", &jetSvSimVertexMatched, "jetSvSimMatched[nCaloJets]/I");  
+  // jetTree_->Branch("jetSvSimMatchMetric", &jetSvSimVertexMatchMetric, "jetSvSimMatchMetric[nCaloJets]/F");  
 
   ///////////  ///////////  ///////////  ///////////  ///////////  ///////////  ////
   //////////////////////////////// VTX TREE QUANITIES //////////////////////////////
@@ -580,8 +579,8 @@ TrackAnalyzer::beginJob()
   vertexTree_->Branch("vtxIncCandGenMatchMetric", &vtxIncCandGenMatchMetric, "vtxIncCandGenMatchMetric[vtxIncCandN]/F");
   vertexTree_->Branch("vtxIncCandNSimMatched", &vtxIncCandNSimMatched, "vtxIncCandNSimMatched/I");
   vertexTree_->Branch("vtxIncCandNSimFake", &vtxIncCandNSimFake, "vtxIncCandNSimFake/I");
-  vertexTree_->Branch("vtxIncCandSimMatched", &vtxIncCandSimMatched, "vtxIncCandSimMatched[vtxIncCandN]/I");
-  vertexTree_->Branch("vtxIncCandSimMatchMetric", &vtxIncCandSimMatchMetric, "vtxIncCandSimMatchMetric[vtxIncCandN]/F");
+  //  vertexTree_->Branch("vtxIncCandSimMatched", &vtxIncCandSimMatched, "vtxIncCandSimMatched[vtxIncCandN]/I");
+  // vertexTree_->Branch("vtxIncCandSimMatchMetric", &vtxIncCandSimMatchMetric, "vtxIncCandSimMatchMetric[vtxIncCandN]/F");
 
   //inclusive secondary vertices (after merging and arbitration) 
   vertexTree_->Branch("vtxIncSecN", &vtxIncSecN, "vtxIncSecN/I");
@@ -603,10 +602,10 @@ TrackAnalyzer::beginJob()
   vertexTree_->Branch("vtxIncSecNGenFake", &vtxIncSecNGenFake, "vtxIncSecNGenFake/I");
   vertexTree_->Branch("vtxIncSecGenMatched", &vtxIncSecGenMatched, "vtxIncSecGenMatched[vtxIncSecN]/I");
   vertexTree_->Branch("vtxIncSecGenMatchMetric", &vtxIncSecGenMatchMetric, "vtxIncSecGenMatchMetric[vtxIncSecN]/F");
-  vertexTree_->Branch("vtxIncSecNSimMatched", &vtxIncSecNSimMatched, "vtxIncSecNSimMatched/I");
-  vertexTree_->Branch("vtxIncSecNSimFake", &vtxIncSecNSimFake, "vtxIncSecNSimFake/I");
-  vertexTree_->Branch("vtxIncSecSimMatched", &vtxIncSecSimMatched, "vtxIncSecSimMatched[vtxIncSecN]/I");
-  vertexTree_->Branch("vtxIncSecSimMatchMetric", &vtxIncSecSimMatchMetric, "vtxIncSecSimMatchMetric[vtxIncSecN]/F");
+  // vertexTree_->Branch("vtxIncSecNSimMatched", &vtxIncSecNSimMatched, "vtxIncSecNSimMatched/I");
+  // vertexTree_->Branch("vtxIncSecNSimFake", &vtxIncSecNSimFake, "vtxIncSecNSimFake/I");
+  // vertexTree_->Branch("vtxIncSecSimMatched", &vtxIncSecSimMatched, "vtxIncSecSimMatched[vtxIncSecN]/I");
+  // vertexTree_->Branch("vtxIncSecSimMatchMetric", &vtxIncSecSimMatchMetric, "vtxIncSecSimMatchMetric[vtxIncSecN]/F");
 
 
   ///////////  ///////////  ///////////  ///////////  ///////////  ///////////  ////
@@ -694,19 +693,23 @@ void TrackAnalyzer::dumpCaloInfo(DisplacedJetEvent & djEvent) {
   int jj = 0;
   for(; djet != djetCollection.end(); ++djet, ++jj) {        
     // id
-    caloJetID[jj]    = djet->jetID;
+    caloJetID[jj]	 = djet->jetID;
     // kinematics
-    caloJetPt[jj]    = djet->caloPt;
-    caloJetEta[jj]   = djet->caloEta;
-    caloJetPhi[jj]   = djet->caloPhi;        
+    caloJetPt[jj]	 = djet->caloPt;
+    caloJetEta[jj]	 = djet->caloEta;
+    caloJetPhi[jj]	 = djet->caloPhi;        
     // energy fractions
-    caloJetHfrac[jj] = djet->caloEMEnergyFrac;
-    caloJetEfrac[jj] = djet->caloHadEnergyFrac;
+    caloJetHfrac[jj]	 = djet->caloEMEnergyFrac;
+    caloJetEfrac[jj]	 = djet->caloHadEnergyFrac;
+    // jet size
+    caloJetN60[jj]	 = djet->caloN60;
+    caloJetN90[jj]	 = djet->caloN90;
+    caloJetTowerArea[jj] = djet->caloTowerArea;
     // gen matching to particle quantities
-    caloGenMatch[jj] = djet->isCaloGenMatched ? 1 : 0;       
-    caloGenPt[jj]    = djet->caloGenPt;
-    caloGenEta[jj]   = djet->caloGenEta;
-    caloGenPhi[jj]   = djet->caloGenPhi;
+    caloGenMatch[jj]	 = djet->isCaloGenMatched ? 1 : 0;       
+    caloGenPt[jj]	 = djet->caloGenPt;
+    caloGenEta[jj]	 = djet->caloGenEta;
+    caloGenPhi[jj]	 = djet->caloGenPhi;
   }
 
 }
@@ -717,7 +720,8 @@ void TrackAnalyzer::dumpSVTagInfo(DisplacedJetEvent & djEvent) {
   DisplacedJetCollection::const_iterator djet = djetCollection.begin();
   int jj = 0;
   for(; djet != djetCollection.end(); ++djet, ++jj) {    
-    // positional space
+    // positional space    
+    jetNSv[jj]                    = djet->svNVertex; 
     jetSvX[jj]			  = djet->svX;
     jetSvY[jj]			  = djet->svY;
     jetSvZ[jj]			  = djet->svZ;
@@ -731,6 +735,8 @@ void TrackAnalyzer::dumpSVTagInfo(DisplacedJetEvent & djEvent) {
     jetSvLxyz[jj]		  = djet->svLxyz;
     jetSvLxyzSig[jj]		  = djet->svLxyzSig;
     jetSvNTrack[jj]		  = djet->svNTracks;    
+    jetSvChi2[jj]                 = djet->svChi2;
+    jetSvNDof[jj]                 = djet->svNDof;
     // matching
     jetSvGenVertexMatched[jj]	  = djet->svIsGenMatched;
     jetSvGenVertexMatchMetric[jj] = djet->svGenVertexMatchMetric;
@@ -779,39 +785,57 @@ void TrackAnalyzer::dumpIPInfo(DisplacedJetEvent & djEvent) {
   for(; djet != djetCollection.end(); ++djet, ++jj) {    
 
     if(debug > 4 ) std:: cout << "[DEBUG 4] djet->ipsiglogsum2d: " << djet->ipSigLogSum2D << std::endl;
+
+    // jet track association
+    jetNTracks[jj]	      = djet->nTracks;
     // IP significance log sums
     jetIPSigLogSum2D[jj]      = djet->ipSigLogSum2D;
     jetIPSigLogSum3D[jj]      = djet->ipSigLogSum3D;    
+    // distance from jet axis
     jetDistLogSum[jj]	      = djet->jetDistLogSum;
     jetDistSigLogSum[jj]      = djet->jetDistSigLogSum;
+    //2d eip
+    jetEIPSig2D[jj]	      = djet->eipSigSum2D;
+    jetEIPSigLog2D[jj]	      = djet->eipSigLogSum2D;
+    // 3d eip
+    jetEIPSig3D[jj]	      = djet->eipSigSum3D;
+    jetEIPSigLog3D[jj]	      = djet->eipSigLogSum3D;
     // IP significance averages
     jetMeanIPSig2D[jj]	      = djet->meanIPSig2D;
     jetMeanIPSig3D[jj]	      = djet->meanIPSig3D;
     jetMeanIPLogSig2D[jj]     = djet->meanIPLogSig2D;
     jetMeanIPLogSig3D[jj]     = djet->meanIPLogSig3D;
+    // edian
     jetMedianIPSig2D[jj]      = djet->medianIPSig2D;
     jetMedianIPSig3D[jj]      = djet->medianIPSig3D;
     jetMedianIPLogSig2D[jj]   = djet->medianIPLogSig2D;
     jetMedianIPLogSig3D[jj]   = djet->medianIPLogSig3D;
+    // variance
     jetVarianceIPSig2D[jj]    = djet->varianceIPSig2D;
     jetVarianceIPSig3D[jj]    = djet->varianceIPSig3D;
     jetVarianceIPLogSig2D[jj] = djet->varianceIPLogSig2D;
     jetVarianceIPLogSig3D[jj] = djet->varianceIPLogSig3D;
     jetVarianceJetDistSig[jj] = djet->varianceJetDistSig;    
+
     // IP value averages
-    jetMeanIP2D[jj]	      = djet->meanIP2D;
-    jetMeanIP3D[jj]	      = djet->meanIP3D;
-    jetMeanIPLog2D[jj]	      = djet->meanIPLog2D;
-    jetMeanIPLog3D[jj]	      = djet->meanIPLog3D;
-    jetMedianIP2D[jj]	      = djet->medianIP2D;
-    jetMedianIP3D[jj]	      = djet->medianIP3D;
-    jetMedianIPLog2D[jj]      = djet->medianIPLog2D;
-    jetMedianIPLog3D[jj]      = djet->medianIPLog3D;
-    jetVarianceIP2D[jj]	      = djet->varianceIP2D;
-    jetVarianceIP3D[jj]	      = djet->varianceIP3D;
-    jetVarianceIPLog2D[jj]    = djet->varianceIPLog2D;
-    jetVarianceIPLog3D[jj]    = djet->varianceIPLog3D;
-    jetVarianceJetDist[jj]    = djet->varianceJetDist;
+    // mean
+    jetMeanIP2D[jj]	   = djet->meanIP2D;
+    jetMeanIP3D[jj]	   = djet->meanIP3D;
+    jetMeanIPLog2D[jj]	   = djet->meanIPLog2D;
+    jetMeanIPLog3D[jj]	   = djet->meanIPLog3D;
+    jetMeanJetDist[jj]     = djet->meanJetDist;
+    // median
+    jetMedianIP2D[jj]	   = djet->medianIP2D;
+    jetMedianIP3D[jj]	   = djet->medianIP3D;
+    jetMedianIPLog2D[jj]   = djet->medianIPLog2D;
+    jetMedianIPLog3D[jj]   = djet->medianIPLog3D;
+    jetMedianJetDist[jj]   = djet->medianJetDist;
+    // variance
+    jetVarianceIP2D[jj]	   = djet->varianceIP2D;
+    jetVarianceIP3D[jj]	   = djet->varianceIP3D;
+    jetVarianceIPLog2D[jj] = djet->varianceIPLog2D;
+    jetVarianceIPLog3D[jj] = djet->varianceIPLog3D;
+    jetVarianceJetDist[jj] = djet->varianceJetDist;
   }
 }
 

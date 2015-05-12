@@ -1,42 +1,52 @@
 import FWCore.ParameterSet.Config as cms
 
-# output options (to be appended to the file name outputted)
-appendLifetime = "1500_30mm"
-appendBkg      = "470_600"
 
+
+# output options (to be appended to the file name outputted)
+appendLifetime = "300_100mm"
+appendBkg      = "470_600"
 outputfile_string = "minbias"
 
-# flags for running
-nevents       = 500
-debugLevel    = 0
-isSignalMC    = False
-doGenMatch    = False
-doSimVtxMatch = False
-isMC          = True
-doedm         = False
-
+##### FLAGS #####
+# run related
+nevents             = 100
+debugLevel          = 4
+doedm               = False
+# sample related
+isSignalMC          = True
+isMC                = True
+# analysis related
+doEventPreSelection = False
+doJetBaseLineCuts   = False
+doApplyTrigger      = False
+doGenMatch          = True
+doSimVtxMatch       = False
 # analysis cuts
-cut_jetPt  = 80
-cut_jetEta = 2.0
+cut_jetPt           = 80
+cut_jetEta          = 2.0
 
-input_file = None
+######### signal input lists ####
+input_file_list = None
+input_file_list = '/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDIES/CMSSW_7_4_0_patch1/src/DisplacedJets/SignalMCLists/740patch1/mx300_100mm_aod.list'
+#input_file_list = '/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDIES/CMSSW_7_4_0_patch1/src/DisplacedJets/SignalMCLists/740patch1/mx300_300mm_aod.list'
+#input_file_list = '/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDIES/CMSSW_7_4_0_patch1/src/DisplacedJets/SignalMCLists/740patch1/mx300_30mm_aod.list'
 
-if isSignalMC:
-#    input_file = 'file:/afs/cern.ch/work/h/hardenbr/2015/DIJET/GEN_SIGNAL_TEST/dijet_700_300_ctau30.root'
-#    input_file = 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/group/phys_susy/razor/josh/RAZOR_DIJET/DIJET_MH700_MX300_CTAU1000_40BX25_AOD/dijet_700_300_ctau1000_94_1_3mG.root'
-#    input_file = 'file:/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/SIGNAL_GENERATION/PAIR_XX/CMSSW_7_2_0/src/Configuration/GenProduction/python/ThirteenTeV/XXTo4J_M-1500_CTau-30mm_step3.root'
-#   input_file = 'file:/afs/cern.ch/work/h/hardenbr/2015/DIJET/GEN_SIGNAL_TEST/dijet_700_300_ctau300.root'
-#   input_file = 'file:/afs/cern.ch/work/h/hardenbr/2015/DIJET/GEN_SIGNAL_TEST/dijet_700_300_ctau3000.root'
-#   input_file = 'file:/afs/cern.ch/work/h/hardenbr/2015/DIJET/GEN_SIGNAL_TEST/dijet_700_300_ctau3.root'
-#   input_file = 'file:/afs/cern.ch/user/t/tkolberg/public/hepmcreco_RAW2DIGI_RECO.root'
-   input_file = 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_98_1_zmW_step3.root'
+# parse the input files to the file list
+myfilelist = cms.untracked.vstring()
+if input_file_list != None:
+   list_from_input_list = open(input_file_list, "r") 
+   lines = list_from_input_list.readlines()
+   stripped_lines = map(lambda x: x.rstrip("\n"), lines)
+   for line in stripped_lines:
+      myfilelist.extend([line])
 
-else:
-   input_file = 'root://xrootd-cms.infn.it//store/mc/Phys14DR/QCD_Pt-470to600_Tune4C_13TeV_pythia8/AODSIM/AVE20BX25_tsg_castor_PHYS14_25_V3-v1/00000/1E538A06-988E-E411-8F36-0025905B8562.root'
-#   input_file = 'root://xrootd-cms.infn.it//store/mc/Phys14DR/QCD_Pt-120to170_Tune4C_13TeV_pythia8/AODSIM/AVE20BX25_tsg_castor_PHYS14_25_V3-v1/00000/020D02CC-448E-E411-A7A8-002618943880.root'
-#    input_file = 'file:/afs/cern.ch/work/h/hardenbr/TEST_FILES/QCD_Pt-120to170_Tune4C_13TeV_pythia8_castor_tsg_PU40bx25_POSTLS162_V2-v1.root'
-#    "file:/afs/cern.ch/work/h/hardenbr/QCD_Pt-50to80_Tune4C_13TeV_pythia8_AOD.root'
-#    input_file =  'file:/afs/cern.ch/work/h/hardenbr/QCD_470_600_AOD_40bx25.root'
+#fillter for the file list
+if isSignalMC and input_file_list == None :
+   myfilelist.extend(['file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/MC_PRODUCTION/XXTo4J_M-300_CTau_30mm/AODSIM/XXTo4J_M-300_CTau-30mm_reco_102_1_ne5.root',
+                      'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/MC_PRODUCTION/XXTo4J_M-300_CTau_30mm/AODSIM/XXTo4J_M-300_CTau-30mm_reco_105_1_1MO.root' ])
+if not isSignalMC and input_file_list == None:
+#   myfilelist.extend(['root://xrootd-cms.infn.it//store/mc/Fall13dr/QCD_Pt-470to600_Tune4C_13TeV_pythia8/AODSIM/castor_tsg_PU20bx25_POSTLS162_V2-v1/00000/005646AA-EB79-E311-A788-00304867924E.root'])
+   myfilelist.extend(['root://xrootd-cms.infn.it//store/mc/Phys14DR/QCD_Pt-470to600_Tune4C_13TeV_pythia8/AODSIM/AVE20BX25_tsg_castor_PHYS14_25_V3-v1/00000/1E538A06-988E-E411-8F36-0025905B8562.root'])
 
 process = cms.Process("ANA")
 
@@ -61,7 +71,7 @@ process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_condD
 #process.GlobalTag.globaltag = 'MCRUN2_72_V1A::All'
 
 process.GlobalTag = cms.ESSource( "PoolDBESSource",
-    globaltag = cms.string( "auto:run2_mc" ),
+    globaltag = cms.string( "MCRUN2_74_V7" ), #auto:run2_mc
     RefreshEachRun = cms.untracked.bool( True ),
     RefreshOpenIOVs = cms.untracked.bool( False ),
     toGet = cms.VPSet( 
@@ -96,8 +106,8 @@ process.GlobalTag = cms.ESSource( "PoolDBESSource",
 # Deliver the missing payloads fro the globaltag (TO BE REMOVED)
 if 'GlobalTag' in process.__dict__:
     from Configuration.AlCa.GlobalTag_condDBv2 import GlobalTag as customiseGlobalTag
-#    process.GlobalTag = customiseGlobalTag(process.GlobalTag, globaltag = 'MCRUN2_72_V4A')
-    process.GlobalTag = customiseGlobalTag(process.GlobalTag, globaltag = 'auto:run2_mc',conditions='TrackerAlignmentExtendedError_2011Realistic_v1_mc,TrackerAlignmentErrorExtendedRcd,frontier://FrontierProd/CMS_CONDITIONS+MuonDTAPEObjectsExtended_v0_mc,DTAlignmentErrorExtendedRcd,frontier://FrontierProd/CMS_CONDITIONS+MuonCSCAPEObjectsExtended_v0_mc,CSCAlignmentErrorExtendedRcd,frontier://FrontierProd/CMS_CONDITIONS+EcalSamplesCorrelation_mc,EcalSamplesCorrelationRcd,frontier://FrontierProd/CMS_CONDITIONS+EcalPulseShapes_mc,EcalPulseShapesRcd,frontier://FrontierProd/CMS_CONDITIONS+EcalPulseCovariances_mc,EcalPulseCovariancesRcd,frontier://FrontierProd/CMS_CONDITIONS')
+#    process.GlobalTag = customiseGlobalTag(process.GlobalTag, globaltag = 'MCRUN2_72_V4A') #MCRUN2_74_V7
+    process.GlobalTag = customiseGlobalTag(process.GlobalTag, globaltag = 'MCRUN2_74_V7',conditions='TrackerAlignmentExtendedError_2011Realistic_v1_mc,TrackerAlignmentErrorExtendedRcd,frontier://FrontierProd/CMS_CONDITIONS+MuonDTAPEObjectsExtended_v0_mc,DTAlignmentErrorExtendedRcd,frontier://FrontierProd/CMS_CONDITIONS+MuonCSCAPEObjectsExtended_v0_mc,CSCAlignmentErrorExtendedRcd,frontier://FrontierProd/CMS_CONDITIONS+EcalSamplesCorrelation_mc,EcalSamplesCorrelationRcd,frontier://FrontierProd/CMS_CONDITIONS+EcalPulseShapes_mc,EcalPulseShapesRcd,frontier://FrontierProd/CMS_CONDITIONS+EcalPulseCovariances_mc,EcalPulseCovariancesRcd,frontier://FrontierProd/CMS_CONDITIONS')
 #    process.GlobalTag = customiseGlobalTag(process.GlobalTag, globaltag = 'MCRUN2_72_V1A')
     process.GlobalTag.connect   = 'frontier://FrontierProd/CMS_CONDITIONS'
     process.GlobalTag.pfnPrefix = cms.untracked.string('frontier://FrontierProd/')
@@ -109,110 +119,7 @@ if 'GlobalTag' in process.__dict__:
 
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(nevents))
 
-process.source = cms.Source("PoolSource",
-    fileNames = cms.untracked.vstring(
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_100_1_3ZU_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_101_1_6TZ_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_102_1_gm6_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_103_1_Wo4_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_104_1_FqX_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_105_1_d3J_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_106_1_X70_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_107_1_ufI_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_108_1_w0s_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_109_1_VAv_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_10_1_5Kw_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_110_1_Qlg_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_111_1_Nry_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_112_1_umx_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_113_1_5BV_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_114_1_a8z_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_115_1_pN5_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_116_1_Rjy_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_117_1_Xyc_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_118_1_eEC_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_119_1_7aP_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_11_1_jua_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_120_1_ENk_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_12_1_iN5_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_13_1_RY4_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_14_1_xXA_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_15_1_gDg_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_16_1_aH7_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_17_1_W14_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_18_1_ysT_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_1_1_It9_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_20_1_ber_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_21_1_mSO_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_22_1_vVX_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_23_1_H6o_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_24_1_nSJ_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_26_1_76D_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_27_1_pEF_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_28_1_EWK_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_29_1_e5i_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_2_1_3TK_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_30_1_P2A_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_32_1_5f9_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_33_1_5TZ_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_34_1_xN1_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_35_1_xMn_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_36_1_CQV_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_37_1_70q_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_38_1_iwv_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_39_1_wzj_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_3_1_JOv_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_40_1_Wnx_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_41_1_ioC_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_42_1_kXz_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_43_1_K2c_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_44_1_r75_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_45_1_Ob9_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_46_1_mrG_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_47_1_DTU_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_48_1_yoc_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_4_1_KgE_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_50_1_HF7_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_51_1_OVk_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_53_1_1KW_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_55_1_m4L_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_57_1_e5y_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_5_1_Bf4_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_61_1_UjV_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_62_1_WlE_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_63_1_oc9_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_67_1_vEr_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_68_1_FQc_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_6_1_fCq_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_70_1_hvv_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_71_1_n7f_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_72_1_Skw_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_73_1_CVZ_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_74_1_67S_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_75_1_ZEa_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_76_1_TyT_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_78_1_NMd_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_79_1_YtE_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_7_1_ylH_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_80_1_t0H_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_81_1_REX_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_82_1_C8V_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_83_1_VNy_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_85_1_wQl_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_86_1_sxt_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_88_1_HWa_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_8_1_GYa_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_90_1_E5x_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_92_1_HzY_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_93_1_a1c_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_96_1_aRb_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_97_1_RZJ_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_98_1_zmW_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_99_1_UcV_step3.root',
-# 'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/FOR_EXO/XXTo4J_MX1500_1000mm/XXTo4J_M-1500_CTau-1000mm_step2_9_1_B59_step3.root'
-        input_file
-        )
-                            )
+process.source = cms.Source("PoolSource", fileNames = myfilelist )
 
 ################################################################################################
 
@@ -313,12 +220,20 @@ process.test_output = cms.OutputModule( "PoolOutputModule",
 
 # run the displaced jet tags
 process.load('DisplacedJets.Configuration.RecoDJTag_cff')
+#process.load('DisplacedJets/DisplacedTriggerFilters/displacedTriggers_cff')
 
-if doedm:
-    process.p = cms.Path(process.djtagging)    
-    process.btag_output = cms.EndPath( process.test_output)
-else:
-    process.p = cms.Path(process.djtagging + process.analyzerCALO) #process.analyzerVTX 
+#create the main path to run
+process.p = cms.Path()
+
+if doApplyTrigger: #apply the triggers and run dj tagging
+   process.p *= process.InclusiveTrigger * process.DisplacedTracktrigger * process.djtagging
+else: #just run the tagging sequence
+   process.p *= process.djtagging
+
+if doedm: #just dump the edm output of the djtagging sequence
+    process.btag_output = cms.EndPath(process.test_output)
+else: # run the analysis and tree dumper 
+    process.p *= process.analyzerCALO
 
 
 # Automatic addition of the customisation function from SLHCUpgradeSimulations.Configuration.postLS1Customs                                                                  

@@ -58,13 +58,13 @@ float JetVertexAssociation::getVertexJetScore(const reco::CaloJet & jet, const r
   float			    jet_phi = p4.phi();
   float			    score   = 0;
 
-  if (debug > 2) std::cout << "[DEBUG 2] [JVA] Jet Eta=" <<jet_eta << " Jet Phi: " << jet_phi <<  std::endl;
-  if (debug > 2) std::cout << "[DEBUG 2] [JVA] iterating over tracks" << std::endl;
+  if (debug > 3) std::cout << "[DEBUG 3] [JVA] Jet Eta=" <<jet_eta << " Jet Phi: " << jet_phi <<  std::endl;
+  if (debug > 3) std::cout << "[DEBUG 3] [JVA] iterating over tracks" << std::endl;
   reco::Vertex::trackRef_iterator tt = vertex.tracks_begin();
   for(; tt != vertex.tracks_end(); ++tt) {
     float   eta = (*tt)->eta();
     float   phi = (*tt)->phi();    
-    if (debug > 3) std::cout << "[DEBUG 3] [JVA] Track Eta=" << eta << " Jet Phi: " << phi <<  std::endl;
+    if (debug > 4) std::cout << "[DEBUG 4] [JVA] Track Eta=" << eta << " Jet Phi: " << phi <<  std::endl;
     float   dR		   = reco::deltaR(jet_eta, jet_phi, eta, phi);
   
     if (dR > 1.0) 
@@ -73,7 +73,7 @@ float JetVertexAssociation::getVertexJetScore(const reco::CaloJet & jet, const r
       score += 1.0 / dR;	 	  	 
   }
   
-  if (debug > 2) std::cout << "[DEBUG 2] [JVA] Vertex Matching Score: " << score <<  std::endl;
+  if (debug > 3) std::cout << "[DEBUG 3] [JVA] Vertex Matching Score: " << score <<  std::endl;
   return score;
 }
 

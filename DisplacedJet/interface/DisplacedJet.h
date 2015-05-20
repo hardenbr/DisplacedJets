@@ -92,12 +92,23 @@ class DisplacedJet {
     caloGenMass	     = -999;
     isCaloGenMatched = 0;
 
-    genMotherPointer = NULL;
+    // ivf mc id
+    ivfHighestPtMomPt = 0;
+    ivfHighestPtMomID = 0;
   }
+
+  // tag related
+  std::vector<bool> passNoVtxTag(const std::vector<float> thres);
+  std::vector<bool> passShortTag(const std::vector<float> thres);
+  std::vector<bool> passMediumTag(const std::vector<float> thres);
+  std::vector<bool> passLongTag(const std::vector<float> thres);
+
+  // selection related
+  bool doesPassPreSelection() const;
 
   // jet info integration
   void addCaloTrackInfo(const reco::TrackRefVector&);
-  void addIVFCollection(const reco::VertexCollection&);
+  void addIVFCollection(const reco::VertexCollection&, const float& compatibilityScore);
   void addIPTagInfo(const reco::TrackIPTagInfo&);
   void addSVTagInfo(const reco::SecondaryVertexTagInfo&);
 
@@ -202,7 +213,12 @@ class DisplacedJet {
   // matched gen particle kinematics
   float caloGenPt, caloGenEta, caloGenPhi, caloGenMass;
   
-  const reco::Candidate * genMotherPointer; 
+  ////////////// IVF ID VARAIBLES /////////
+
+  float	ivfHighestPtMomPt;
+  int ivfHighestPtMomID;
+  std::vector<std::pair<const int, const float>> genMomVector; 
+  std::vector<std::pair<const int, const float>> genSonVector; 
 
  private: 
   int debug;
@@ -218,7 +234,6 @@ class DisplacedJet {
   reco::Vertex selSV;
   reco::Vertex selPV;
 
-
   // related track collections
   reco::TrackCollection caloMatchedTracks; 
   reco::TrackCollection vertexMatchedTracks; 
@@ -226,9 +241,6 @@ class DisplacedJet {
   std::vector<float> ip3dVector, ip3dsVector, ip2dVector, ip2dsVector;
   std::vector<float> ipLog3dVector, ipLog3dsVector, ipLog2dVector, ipLog2dsVector;
   std::vector<float> jetAxisDistVector, jetAxisDistSigVector; 
-
-  std::vector<int> genVtxSonIDs;
-  std::vector<int> genVtxMotherIDs;
 
 };
 
@@ -242,6 +254,11 @@ float DisplacedJet::genMatchMetric(const reco::GenParticle & particle, const rec
 bool DisplacedJet::doGenVertexJetMatching(const float & metricThreshold, const reco::GenParticleCollection& genParticles) {
   svIsGenMatched = false;
   ivfIsGenMatched = false;
+
+  // is IVF is consistent with the primary vertex return false
+  if (selIVFIsPV) {
+    return false;
+  }
 
   // loop over each gen particle
   reco::GenParticleCollection::const_iterator genIter = genParticles.begin();
@@ -273,16 +290,22 @@ void DisplacedJet::doGenVertexID(const float & metricThreshold, const reco::GenP
   // loop over each gen particle
   reco::GenParticleCollection::const_iterator genIter = genParticles.begin();
   if (debug > 2) std::cout << "\n[GEN VTX MATCHING 2] STARTING NEW JET MATCHING FOR IVF / SV --- IVF LXY: " << ivfLxy << std::endl;
-  if (debug > 2) std::cout << "[GEN VTX MATCHING 2] IVF NOT CONSITENT WITH PV --- SCORE:" << selIVFIsPVScore << std::endl;
+  if (debug > 2) std::cout << "[GEN VTX MATCHING 2] IVF vs PV CONSITENCY SCORE: " << selIVFIsPVScore << std::endl;
   for(; genIter != genParticles.end(); ++genIter) {
-    if (debug > 3) std::cout << "\n[GEN VTX MATCHING 3] checking status and charge " << std::endl;
-    int	    status = genIter->status();
-    int     charge = genIter->charge();
+    const int& status = genIter->status();
+    const int& charge = genIter->charge();
+    const int& id     = genIter->pdgId();
+    const float& pt   = genIter->pt();
     if (charge == 0) continue; //hardest subprocess or neutral particle
 
-    if (debug > 3) std::cout << "\n[GEN VTX MATCHING 3] parsing id and momid " << std::endl;
-    int id     = genIter->pdgId();
-    int momid  = genIter->mother()->pdgId();   
+    const reco::Candidate * mom  = genIter->mother();
+    int momid = 0;
+    float mompt = 0;
+
+    if (mom != NULL) {
+      momid = mom->pdgId(); //check for null pointer
+      mompt = mom->pt();
+    }
 
     // dont do matching if there is no IVF (not consistent with the PV)
     if(selIVFIsPV) {
@@ -291,35 +314,75 @@ void DisplacedJet::doGenVertexID(const float & metricThreshold, const reco::GenP
       break; // if there is no IVF selected (the PV is selected) then dont do matching
     }
 
-
-    if (debug > 3) std::cout << "\n[GEN VTX MATCHING 3] checking matching score to gen particles " << std::endl;
-
     // calculate the score
     float   ivfMatch_temp   = genMatchMetric(*genIter, selIVF);
     float   svMatch_temp    = genMatchMetric(*genIter, selSV);
     // check for a match
     bool    ivfMatch	    = fabs(ivfMatch_temp) < metricThreshold;
-    bool    svMatch	    = fabs(svMatch_temp) < metricThreshold;
-    // only one needs to match
-    ivfIsGenMatched	    = ivfIsGenMatched || ivfMatch;
-    svIsGenMatched	    = svIsGenMatched || svMatch;
 
-    if (ivfMatch) {
-
+    if (ivfMatch ) {
       if (debug > 2) std::cout << "[GEN VTX MATCHING 2] STATUS:" << 
 		       status << " ID " << id  << " MOM ID: " << momid << 
 		       " MATCHING METRIC: " << std::min(fabs(ivfMatch_temp), fabs(svMatch_temp)) << std::endl;
 
-      genVtxSonIDs.push_back(genIter->pdgId());
+      if (mompt > ivfHighestPtMomPt && mom != NULL) { // keep the highest pt mom
+	ivfHighestPtMomPt = mompt;
+	ivfHighestPtMomID = momid;
+      }
 
-      if(genIter->mother() != genMotherPointer) { // should not be multiple mothers at same vtx
-	if (debug > 2) std::cout << "[GEN VTX MATCHING 2] ADDING MOTHER: " << momid << std:: endl;
-	//	assert(genMotherPointer == NULL); // if this fails, there are multiple mothers at vtx
-	genVtxMotherIDs.push_back(genIter->mother()->pdgId());
-	genMotherPointer = genIter->mother();	
-      }                  
-    }    
+      // add the son (always)
+      if (debug > 5) std::cout << "[GEN VTX MATCHING 5] PUSHING BACK SON  PAIR:" << id << " pt: " << pt << std::endl;
+      genSonVector.push_back(std::make_pair(id, pt));
+
+      // check if the mother is already in the vecetor
+      bool found_my_mother = false;
+      std::vector<std::pair<const int, const float>>::const_iterator momIter =  genMomVector.begin();
+      for(; momIter != genMomVector.end(); ++momIter) {
+	int	momid_temp = momIter->first;
+	float	mompt_temp = momIter->second;
+
+	if (momid_temp == momid && mompt_temp == mompt) { // found a match
+	  found_my_mother = true;
+	  break;
+	}	  
+      }
+      if (found_my_mother) { // found a match, skip to next particle
+	if (debug > 2) std::cout << "[GEN VTX MATCHING 2] SON ALREADY HAS A MOTHER " << std::endl;	
+	continue; // 
+      }
+	
+      if (debug > 2) std::cout << "[GEN VTX MATCHING 2] ADDING MOTHER: " << momid <<  " PT :" << pt << std::endl;	      
+      genMomVector.push_back(std::make_pair(momid, mompt)); // add the id momentum pair for the mom
+
+    } // close ivf match    
   } // loop over gen particles
+}
+
+bool DisplacedJet::doesPassPreSelection() const {
+  if (debug > 2) std::cout << "[DEBUG] Checking Jet Preselection  " << std::endl;
+
+  bool	passDisplacedTracks = false;	// has
+  bool	passPromptTracks    = false;
+
+  int nPTracks = 0;
+  int nDTracks = 0;
+
+  std::vector<float>::const_iterator ip2DSigIter = ip2dsVector.begin();
+  std::vector<float>::const_iterator ip2DIter	 = ip2dVector.begin();
+
+  for(; ip2DSigIter != ip2dsVector.end(); ++ip2DSigIter) {
+    if (fabs(*ip2DSigIter) > 10 ) nDTracks++;
+  }
+  if (debug > 3) std::cout << "[DEBUG] 2DIP sig requirements...Complete  " << std::endl;
+  for(; ip2DIter != ip2dVector.end(); ++ip2DIter) {
+    if (fabs(*ip2DIter) < 0.05 ) nPTracks++;
+  }
+  if (debug > 3) std::cout << "[DEBUG] 2DIP requirements...Complete  " << std::endl;
+  passDisplacedTracks = nDTracks > 2;
+  passPromptTracks = nPTracks <= 2;
+
+  if (debug > 3) std::cout << "[DEBUG] Checking Jet Preselection...Complete  " << std::endl;
+  return (passPromptTracks && passDisplacedTracks);
 }
 
 
@@ -357,6 +420,8 @@ bool DisplacedJet::doGenCaloJetMatching(const float& ptMatch, const float& dRMat
   return false;
 }
 
+
+
 void DisplacedJet::addCaloTrackInfo(const reco::TrackRefVector & trackRefs) {
   if (debug > 2) std::cout << "[DEBUG] Adding Track Info  " << std::endl;
     reco::TrackRefVector::const_iterator trackIter = trackRefs.begin();
@@ -365,7 +430,7 @@ void DisplacedJet::addCaloTrackInfo(const reco::TrackRefVector & trackRefs) {
     }    
 }
 
-void DisplacedJet::addIVFCollection(const reco::VertexCollection & vertices) {
+void DisplacedJet::addIVFCollection(const reco::VertexCollection & vertices, const float & pvCompatibilityScore = .05) {
   if (debug > 2) std::cout << "[DEBUG] Building Jet Vertex Association  " << std::endl;
   // build the jet vertex association
   JetVertexAssociation JVAIVF("IVF", selPV, debug);    
@@ -387,28 +452,29 @@ void DisplacedJet::addIVFCollection(const reco::VertexCollection & vertices) {
   //flight distance from the firstPV
   float x  = bestVertex.x(), y = bestVertex.y(), z = bestVertex.z();    
   float dx = x - selPV.x() , dy = y - selPV.y(), dz = z - selPV.z();
-  
+
+  // set the compatibility score
   selIVFIsPVScore = std::sqrt((dx/x)*(dx/x) + (dy/y)*(dy/y) + (dz/z)*(dz/z));  
-  selIVFIsPV = selIVFIsPVScore < .05; // default 5% consitency check 
+  selIVFIsPV = selIVFIsPVScore < pvCompatibilityScore; // default 5% consitency check 
   
   //build the total error
   float svxE = bestVertex.xError(), svyE = bestVertex.yError(), svzE = bestVertex.zError();
   float pvxE = selPV.xError(), pvyE = selPV.yError(), pvzE = selPV.zError();
   float xE   = std::sqrt(svxE * svxE + pvxE * pvxE), yE = std::sqrt(svyE * svyE + pvyE * pvyE), zE = std::sqrt(svzE * svzE + pvzE * pvzE);
 
-  ivfX = x;
-  ivfY = y;
-  ivfZ = z;
-  ivfXError = svxE;
-  ivfYError = svyE;
-  ivfZError = svzE;  
-
+  ivfX	     = selIVFIsPV ? 0 : x;
+  ivfY	     = selIVFIsPV ? 0 : y;
+  ivfZ	     = selIVFIsPV ? 0 : z;
+  ivfXError  = selIVFIsPV ? 0 : svxE;
+  ivfYError  = selIVFIsPV ? 0 : svyE;
+  ivfZError  = selIVFIsPV ? 0 : svzE;  
   ivfNTracks = selIVFIsPV ? 0 : bestVertex.nTracks();  
+
   ivfMass    = selIVFIsPV ? 0 : bestVertex.p4().mass();    
-  ivfLxySig  = std::sqrt( dx * dx + dy * dy ) / std::sqrt(xE * xE + yE * yE);
-  ivfLxyzSig = std::sqrt( dx * dx + dy * dy + dz * dz) / std::sqrt(xE * xE + yE * yE + zE * zE);
-  ivfLxy     = std::sqrt( dx * dx + dy * dy );
-  ivfLxyz    = std::sqrt( dx * dx + dy * dy + dz * dz );
+  ivfLxySig  = selIVFIsPV ? 0 : std::sqrt( dx * dx + dy * dy ) / std::sqrt(xE * xE + yE * yE);
+  ivfLxyzSig = selIVFIsPV ? 0 : std::sqrt( dx * dx + dy * dy + dz * dz) / std::sqrt(xE * xE + yE * yE + zE * zE);
+  ivfLxy     = selIVFIsPV ? 0 : std::sqrt( dx * dx + dy * dy );
+  ivfLxyz    = selIVFIsPV ? 0 : std::sqrt( dx * dx + dy * dy + dz * dz );
 
   // matching score
   ivfMatchingScore = bestVertexScore;
@@ -576,7 +642,54 @@ void DisplacedJet::addIPTagInfo(const reco::TrackIPTagInfo & ipTagInfo) {
   varianceIPLogSig3D = getJetVariance(ipLog3dsVector, true);	//signed value matters
   varianceIPLog2D    = getJetVariance(ipLog2dVector, true);	//signed value matters
   varianceIPLog3D    = getJetVariance(ipLog3dVector, true);	//signed value matters
+}
 
+// no IVF found
+std::vector<bool> DisplacedJet::passNoVtxTag(const std::vector<float> thres){
+  std::vector<bool> passResults;
+  std::vector<float>::const_iterator thresIter = thres.begin();
+  for(; thresIter != thres.end(); ++thresIter) {
+    bool didPass = false;
+    if(selIVFIsPV && medianIPLogSig2D > *thresIter) didPass = true;
+    passResults.push_back(didPass);
+  }
+  return passResults;
+}
+
+// IVF less than 5 cm
+std::vector<bool> DisplacedJet::passShortTag(const std::vector<float> thres){
+  std::vector<bool> passResults;
+  std::vector<float>::const_iterator thresIter = thres.begin();
+  for(; thresIter != thres.end(); ++thresIter) {
+    bool didPass = false;
+    if(!selIVFIsPV && medianIPLogSig2D > *thresIter && ivfLxyz  < 5) didPass = true;
+    passResults.push_back(didPass);
+  }
+  return passResults;  
+}
+
+// IVF less than 20 cm
+std::vector<bool> DisplacedJet::passMediumTag(const std::vector<float> thres){
+  std::vector<bool> passResults;
+  std::vector<float>::const_iterator thresIter = thres.begin();
+  for(; thresIter != thres.end(); ++thresIter) {
+    bool didPass = false;
+    if(!selIVFIsPV && medianIPLogSig2D > *thresIter && ivfLxyz > 5 && ivfLxyz < 20) didPass = true;
+    passResults.push_back(didPass);
+  }
+  return passResults;  
+}
+
+// IVF more than 20 cm
+std::vector<bool> DisplacedJet::passLongTag(const std::vector<float> thres){
+  std::vector<bool> passResults;
+  std::vector<float>::const_iterator thresIter = thres.begin();
+  for(; thresIter != thres.end(); ++thresIter) {
+    bool didPass = false;
+    if(!selIVFIsPV && medianIPLogSig2D > *thresIter && ivfLxyz > 20) didPass = true;
+    passResults.push_back(didPass);
+  }
+  return passResults;  
 }
 
 
@@ -644,9 +757,9 @@ float DisplacedJet::getJetVariance(const std::vector<float>& values, bool is_sig
   std::vector<float>::const_iterator val = values.begin();
   for (; val != values.end(); ++val) {
     float temp =  (*val - mean) * (*val - mean);
-    if (debug > 5) std::cout << "[DEBUG 5] value:" << *val << std::endl;
-    if (debug > 5) std::cout << "[DEBUG 5] mean: " << mean << std::endl;
-    if (debug > 5) std::cout << "[DEBUG 5] variance element: " << temp << std::endl;
+    /* if (debug > 5) std::cout << "[DEBUG 5] value:" << *val << std::endl; */
+    /* if (debug > 5) std::cout << "[DEBUG 5] mean: " << mean << std::endl; */
+    /* if (debug > 5) std::cout << "[DEBUG 5] variance element: " << temp << std::endl; */
     sum += temp;
   }
 

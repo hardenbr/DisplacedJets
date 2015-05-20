@@ -2,7 +2,7 @@ import FWCore.ParameterSet.Config as cms
 
 displacedInclusiveVertexFinder  = cms.EDProducer("InclusiveVertexFinder",
        beamSpot = cms.InputTag("offlineBeamSpot"),
-       primaryVertices = cms.InputTag("offlinePrimaryVertices"),
+       primaryVertices = cms.InputTag("offlinePrimaryVerticesWithBS"),
        tracks = cms.InputTag("displacedAssocToTracksCaloFace","displacedAssocToTracksCaloFace","ANA"),
 #       tracks = cms.InputTag("displacedAssocToTracksCaloFace"), #djets: generalTracks -> displacedAk4JetTracksAssociatorAtCaloFace
        minHits = cms.uint32(0), #djet 8 -> 0 AOD produciton has problems with nhits

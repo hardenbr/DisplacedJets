@@ -3,8 +3,8 @@ import FWCore.ParameterSet.Config as cms
 displacedTrackVertexArbitrator = cms.EDProducer("TrackVertexArbitrator",
        beamSpot = cms.InputTag("offlineBeamSpot"),
        primaryVertices = cms.InputTag("offlinePrimaryVertices"),
-#       tracks = cms.InputTag("displacedAssocToTracksCaloFace","displacedAssocToTracksCaloFace","ANA"),
-       tracks = cms.InputTag("generalTracks"),
+       tracks = cms.InputTag("displacedAssocToTracksCaloFace","displacedAssocToTracksCaloFace","ANA"), #only use the jet matched tracks
+#       tracks = cms.InputTag("generalTracks"),
        secondaryVertices = cms.InputTag("displacedInclusiveVertexFinder"),
        dLenFraction = cms.double(0.333), #djet .333 -> .2
        dRCut = cms.double(1.0), # djet .4 -> 1

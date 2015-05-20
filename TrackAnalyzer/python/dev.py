@@ -1,24 +1,23 @@
 import FWCore.ParameterSet.Config as cms
 
-
-
 # output options (to be appended to the file name outputted)
-appendLifetime = "300_100mm"
+appendLifetime = "300_30mm"
 appendBkg      = "470_600"
-outputfile_string = "minbias"
+outputfile_string = "qcd.root"
 
-##### FLAGS #####
+############ FLAGS #############
 # run related
-nevents             = 100
-debugLevel          = 4
+nevents             = 300
+debugLevel          = 0
 doedm               = False
 # sample related
 isSignalMC          = True
 isMC                = True
 # analysis related
-doEventPreSelection = False
-doJetBaseLineCuts   = False
+doEventPreSelection = True
+doJetPreSelection   = False
 doApplyTrigger      = False
+# matching
 doGenMatch          = True
 doSimVtxMatch       = False
 # analysis cuts
@@ -27,8 +26,8 @@ cut_jetEta          = 2.0
 
 ######### signal input lists ####
 input_file_list = None
-input_file_list = '/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDIES/CMSSW_7_4_0_patch1/src/DisplacedJets/SignalMCLists/740patch1/mx300_100mm_aod.list'
-#input_file_list = '/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDIES/CMSSW_7_4_0_patch1/src/DisplacedJets/SignalMCLists/740patch1/mx300_300mm_aod.list'
+#input_file_list = '/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDIES/CMSSW_7_4_0_patch1/src/DisplacedJets/SignalMCLists/740patch1/mx300_100mm_aod.list'
+input_file_list = '/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDIES/CMSSW_7_4_0_patch1/src/DisplacedJets/SignalMCLists/740patch1/mx300_300mm_aod.list'
 #input_file_list = '/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDIES/CMSSW_7_4_0_patch1/src/DisplacedJets/SignalMCLists/740patch1/mx300_30mm_aod.list'
 
 # parse the input files to the file list
@@ -71,7 +70,8 @@ process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_condD
 #process.GlobalTag.globaltag = 'MCRUN2_72_V1A::All'
 
 process.GlobalTag = cms.ESSource( "PoolDBESSource",
-    globaltag = cms.string( "MCRUN2_74_V7" ), #auto:run2_mc
+    globaltag = cms.string( "PHYS14_25_V1" ), #auto:run2_mc
+#    globaltag = cms.string( "MCRUN2_74_V7" ), #auto:run2_mc
     RefreshEachRun = cms.untracked.bool( True ),
     RefreshOpenIOVs = cms.untracked.bool( False ),
     toGet = cms.VPSet( 
@@ -136,8 +136,8 @@ if isSignalMC:
     process.analyzerCALO.outputFileName = cms.untracked.string('signalCALO%s.root' % appendLifetime)
 else:
 #    process.analyzerVTX.outputFileName = cms.untracked.string('qcdVTX%s.root' % appendBkg)
-    process.analyzerCALO.outputFileName = cms.untracked.string('qcdCALO%s.root' % appendBkg)
-#   process.analyzerCALO.outputFileName = cms.untracked.string(outputfile_string)
+#    process.analyzerCALO.outputFileName = cms.untracked.string('qcdCALO%s.root' % appendBkg)
+   process.analyzerCALO.outputFileName = cms.untracked.string(outputfile_string)
 
 #tree names
 process.analyzerCALO.jetTreeName    = cms.untracked.string('jets')
@@ -149,6 +149,12 @@ process.analyzerVTX.jetTreeName     = cms.untracked.string('jets')
 process.analyzerVTX.trackTreeName   = cms.untracked.string('tracks')
 process.analyzerVTX.vertexTreeName  = cms.untracked.string('vtx')
 process.analyzerVTX.genTreeName     = cms.untracked.string('genp')
+
+# analysis dependent flags
+#  applyEventPreSelection_ = iConfig.getUntrackedParameter<bool>("applyEventPreSelection");
+#  applyJetPreSelection_   = iConfig.getUntrackedParameter<bool>("applyJetPreSelection");
+process.analyzerCALO.applyEventPreSelection = cms.untracked.bool(doEventPreSelection)
+process.analyzerCALO.applyJetPreSelection   = cms.untracked.bool(doJetPreSelection)
 
 # MC dependent flags
 process.analyzerVTX.isMC        = cms.untracked.bool(isMC)

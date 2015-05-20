@@ -13,13 +13,14 @@ class TrackAnalyzer : public edm::EDAnalyzer {
   void dumpPVInfo(const reco::VertexCollection &);
   void dumpGenInfo(const reco::GenParticleCollection &); 
   void dumpSimInfo(const edm::SimVertexContainer &);
-
+  void dumpPreSelection(DisplacedJetEvent&);
 
   // tree dumping displaced jet quantities
   void dumpCaloInfo(DisplacedJetEvent&);
   void dumpSVTagInfo(DisplacedJetEvent&);
   void dumpIPInfo(DisplacedJetEvent&);
   void dumpIVFInfo(DisplacedJetEvent&);
+  void dumpDJTags(DisplacedJetEvent&);
 
   virtual void beginJob() override;
   virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
@@ -35,6 +36,10 @@ class TrackAnalyzer : public edm::EDAnalyzer {
   TFile *outputFile_;
   bool	 doGenMatch_;
   bool	 doSimMatch_;
+  bool	 applyEventPreSelection_;
+  bool	 applyJetPreSelection_;
+
+
   bool	 isMC_;
   bool	 isSignalMC_;
 
@@ -70,6 +75,7 @@ class TrackAnalyzer : public edm::EDAnalyzer {
   TTree*    jetTree_;   
   TTree*    vertexTree_;
   TTree*    genTree_;
+  TTree*    eventTree_;
 
   static const Int_t    SIM_STATUS_CODE_MATCH = 0; 
   static const Int_t    GEN_STATUS_CODE_MATCH = 23; 
@@ -77,6 +83,7 @@ class TrackAnalyzer : public edm::EDAnalyzer {
   static const Int_t	MAX_TRACKS	      = 2000;
   static const Int_t	MAX_JETS	      = 40;
   static const Int_t	MAX_VTX		      = 100;
+  static const Int_t	MAX_CAT		      = 100; // max number of tagging categories
   static const Int_t	MAX_GEN		      = 500;
   static const Int_t	FAKE_HIGH_VAL	      = 9999;
 
@@ -93,6 +100,27 @@ class TrackAnalyzer : public edm::EDAnalyzer {
   //tree variables
   Int_t nLiTracks = 0;
   Int_t nCaloJets = 0;
+
+  ////////////////// EVENT TREE SPECIFIC MEMBERS//////////
+
+  Float_t eventCaloHT;
+  Float_t eventCaloMET;
+
+  Int_t eventPassEventPreSelection;
+  Int_t eventNJetsPassPreSelection;
+
+  Int_t eventNIVFReco;
+  Int_t eventNIVFRecoGenMatch;
+
+  // number of working points for each category
+  // loose, medium, tight --> nWP = 3
+  Int_t nWP;
+
+  // the decay regimes (split by lxyz of vtx)
+  Int_t eventNNoVertexTags[MAX_CAT];
+  Int_t eventNShortTags[MAX_CAT];
+  Int_t eventNMediumTags[MAX_CAT];
+  Int_t eventNLongTags[MAX_CAT];
 
   ////////////////// CALO JETS ////////////
 
@@ -126,8 +154,7 @@ class TrackAnalyzer : public edm::EDAnalyzer {
   Int_t   jetNTracks[MAX_JETS];
   
 
-  //////////////////// LIFETIME TAG /////////////////
-  
+  //////////////////// LIFETIME TAG /////////////////  
 
   // track kinematics
   Float_t   liTrackPt[MAX_TRACKS];
@@ -207,6 +234,9 @@ class TrackAnalyzer : public edm::EDAnalyzer {
   Float_t   svDRTrackFlight[MAX_VTX];
 
   ///////////////// JET TREE SPECIFIC MEMBERS /////////////////
+
+  // analysis tracking
+  Int_t jetPassPreSelection[MAX_JETS];
 
   //book keeping
   Int_t nJetWithSv; 
@@ -336,7 +366,18 @@ class TrackAnalyzer : public edm::EDAnalyzer {
 
   // IVF matching score
   Float_t   jetIVFMatchingScore[MAX_JETS];
-
+  // mother id
+  Int_t	    jetIVFVertexIDNMom;
+  Float_t   jetIVFVertexIDMomPt[MAX_VTX];
+  Int_t	    jetIVFVertexIDMomJetID[MAX_VTX];
+  Int_t	    jetIVFVertexIDMomHighestPtID[MAX_JETS]; // jet index 
+  Float_t   jetIVFVertexIDMomHighestPt[MAX_JETS]; // jet indexed
+  Int_t	    jetIVFVertexIDMom[MAX_VTX];
+  // son id
+  Int_t	    jetIVFVertexIDNSon;
+  Int_t	    jetIVFVertexIDSon[MAX_VTX];
+  Float_t   jetIVFVertexIDSonPt[MAX_VTX];
+  Int_t	    jetIVFVertexIDSonJetID[MAX_VTX];
   // IVF gen matching
   Int_t	    jetIVFGenVertexMatched[MAX_JETS];
   Float_t   jetIVFGenVertexMatchMetric[MAX_JETS];

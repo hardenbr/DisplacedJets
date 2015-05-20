@@ -6,9 +6,22 @@ class DisplacedJetEvent {
 
   DisplacedJetEvent(const bool&, const reco::CaloJetCollection&, const reco::VertexCollection&, const float&, const float&, const int&);
 
-  // accessor
-  int getNJets() { return djets.size(); } 
-  
+  // event analysis
+  bool doesPassPreSelection();
+
+  // accessors
+  int	getNJets() { return djets.size(); } 
+  std::vector<int>  getNNoVertexTags() { return nNoVertexTagsVector; }
+  std::vector<int>  getNShortTags()    { return nShortTagsVector; }
+  std::vector<int>  getNMediumTags()   { return nMediumTagsVector; }
+  std::vector<int>  getNLongTags()     { return nLongTagsVector; }
+
+  // tag related
+  void doJetTagging(std::vector<float> noVtxThres,
+		    std::vector<float> shortThres,
+		    std::vector<float> medThres,
+		    std::vector<float> longThres);
+    
   // jet associated info mergers
   void mergeCaloIPTagInfo(const reco::TrackIPTagInfoCollection&) ;
   void mergeSVTagInfo(const reco::SecondaryVertexTagInfoCollection&);
@@ -20,21 +33,35 @@ class DisplacedJetEvent {
   void doGenMatching(const reco::GenParticleCollection & genParticleCollection, 
 		     const bool & doCaloJetMatch, const bool & doGenVtxMatch, const bool & doGenVtxID,
 		     const float& ptMatch, const float& drMatch, const float& vtxMatchThreshold); 
-  void doSimMatching(const edm::SimVertexContainer & simVertexCollection);
-  
+
+  void doSimMatching(const edm::SimVertexContainer & simVertexCollection);  
+
   // helper method
   DisplacedJet & findDisplacedJetByPtEtaPhi(const float& pt, const float& eta, const float& phi);
   DisplacedJetCollection & getDisplacedJets() { return djets; }
   
+  // kinematic cuts for analysis
   float minPT;
   float minEta; 
+
+  // kinematic variables
+  float caloHT;
+  float caloMET;
+
+  // n tag vectors indexed by working point threshold
+  std::vector<int> nNoVertexTagsVector;
+  std::vector<int> nShortTagsVector;
+  std::vector<int> nMediumTagsVector;
+  std::vector<int> nLongTagsVector;
   
  private:
+
   std::vector<DisplacedJet> djets;
   int jetIDCounter = 0;     
   int debug;  
 };
 
+// constructor designating the calojets, primary vertices, and kinematics cuts
 DisplacedJetEvent::DisplacedJetEvent(const bool& isMC, const reco::CaloJetCollection & caloJets, const reco::VertexCollection & primaryVertices, const float& minPT_, const float& minEta_, const int & debug_) {
 
   minPT	 = minPT_;
@@ -43,10 +70,14 @@ DisplacedJetEvent::DisplacedJetEvent(const bool& isMC, const reco::CaloJetCollec
 
   const reco::Vertex & firstPV = *primaryVertices.begin();
 
+  caloHT = 0;
+  caloMET = 0;    
+
   if (debug > 1) std::cout << "[DEBUG] Constrcuted Event From Calo jets " << std::endl;
   reco::CaloJetCollection::const_iterator jetIter = caloJets.begin();
   for(; jetIter != caloJets.end(); ++jetIter) {    
     float pt = jetIter->pt(),  eta = jetIter->eta();
+    if (pt > 40 && fabs(eta) < 2.4) caloHT += pt;
     if (pt < minPT || fabs(eta) > minEta) continue;
     
     DisplacedJet djet(*jetIter, firstPV, isMC, jetIDCounter, debug);
@@ -54,6 +85,67 @@ DisplacedJetEvent::DisplacedJetEvent(const bool& isMC, const reco::CaloJetCollec
     djets.push_back(djet);
     jetIDCounter++;
   }  
+}
+
+// checks if the event passes the preselection after checking the preselection 
+// on each jet
+bool DisplacedJetEvent::doesPassPreSelection() {
+  if (debug > 1) std::cout << "[DEBUG] Checking Event Preselection " << std::endl;
+
+  int nJetsPass = 0;
+  std::vector<DisplacedJet>::iterator djetIter = djets.begin();
+  for(; djetIter != djets.end(); ++djetIter) {
+    if(djetIter->doesPassPreSelection()) nJetsPass++;
+  }  
+
+  bool didPass = nJetsPass >= 2;
+
+  if (debug > 1) std::cout << "[DEBUG] Event Preselection pass? " << didPass << std::endl;
+  return didPass;
+}
+
+// performs the tagging calculation and fills the NJet tag vectors
+void DisplacedJetEvent::doJetTagging(std::vector<float> noVtxThres,
+				     std::vector<float> shortThres,
+				     std::vector<float> medThres,
+				     std::vector<float> longThres) {
+
+  // check that the same number of thresholds exists for each case
+  assert(((noVtxThres.size() + shortThres.size() 
+	   + medThres.size() + longThres.size()) / 4 ) == noVtxThres.size());
+
+  // fill the arrays with default values
+  float nWP = noVtxThres.size();
+  for(int wp = 0; wp < nWP; ++wp) {
+    nNoVertexTagsVector.push_back(0);
+    nShortTagsVector.push_back(0);
+    nMediumTagsVector.push_back(0);
+    nLongTagsVector.push_back(0);    
+  }
+
+  if (debug > 1) std::cout << "[DEBUG] Building nTags Arrays " << std::endl;
+
+  // loop over each jet and check for passing each threshold 
+  std::vector<DisplacedJet>::iterator djetIter = djets.begin();
+  for(; djetIter != djets.end(); ++djetIter) {
+    // vector of bools for passing each thresholds
+    std::vector<bool>	noVtxPass  = djetIter->passNoVtxTag(noVtxThres); 
+    std::vector<bool>	shortPass  = djetIter->passShortTag(shortThres);
+    std::vector<bool>	mediumPass = djetIter->passMediumTag(medThres);
+    std::vector<bool>	longPass   = djetIter->passLongTag(longThres);
+    
+    // increment the threshold counter for each
+    for(int wp = 0; wp < nWP; ++wp ) {
+      if (debug > 3) std::cout << "[DEBUG] TAGS PASS WP? " <<  wp << " " << 
+		       noVtxPass[wp] << " " << shortPass[wp] << " " << mediumPass[wp] << " " << longPass[wp] <<  std::endl;
+
+      // arrays of integers count the number of passes
+      nNoVertexTagsVector[wp]     += noVtxPass[wp] ? 1 : 0;
+      nShortTagsVector[wp]	  += shortPass[wp] ? 1 : 0;
+      nMediumTagsVector[wp]	  += mediumPass[wp] ? 1 : 0;
+      nLongTagsVector[wp]	  += longPass[wp] ? 1 : 0;      
+    }  // loop: wp working point thresholds
+  } // loop: displaced jets     
 }
 
 void DisplacedJetEvent::addIVFVertices(const reco::VertexCollection & vertices) {
@@ -148,7 +240,7 @@ void DisplacedJetEvent::doGenMatching( const reco::GenParticleCollection& genPar
       isSVGenVertexMatched  = djetIter->svIsGenMatched;      
     }    
     if(doGenVtxID) {
-      djetIter->doGenVertexID(vtxMatchThreshold, genParticles);
+      djetIter->doGenVertexID(vtxMatchThreshold, genParticles); // allow for twice the space for vertex ID matching (BKG MOTIVATED)
     }
     if(debug > 1) std::cout <<  "[GEN MATCH] isCalomatch: " << isCaloGenMatched << " isIVFGenVertexMatched "
 			  << isIVFGenVertexMatched << " isSVGEnVertexMatched " << isSVGenVertexMatched << std::endl;

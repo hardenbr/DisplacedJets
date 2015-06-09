@@ -99,9 +99,9 @@ class DisplacedJet {
 
   // tag related
   std::vector<bool> passNoVtxTag(const std::vector<float> thres);
-  std::vector<bool> passShortTag(const std::vector<float> thres);
-  std::vector<bool> passMediumTag(const std::vector<float> thres);
-  std::vector<bool> passLongTag(const std::vector<float> thres);
+  std::vector<bool> passShortTag(const std::vector<float> thres, float min, float max);
+  std::vector<bool> passMediumTag(const std::vector<float> thres, float min, float max);
+  std::vector<bool> passLongTag(const std::vector<float> thres, float min, float max);
 
   // selection related
   bool doesPassPreSelection() const;
@@ -656,37 +656,34 @@ std::vector<bool> DisplacedJet::passNoVtxTag(const std::vector<float> thres){
   return passResults;
 }
 
-// IVF less than 5 cm
-std::vector<bool> DisplacedJet::passShortTag(const std::vector<float> thres){
+std::vector<bool> DisplacedJet::passShortTag(const std::vector<float> thres, float min, float max){
   std::vector<bool> passResults;
   std::vector<float>::const_iterator thresIter = thres.begin();
   for(; thresIter != thres.end(); ++thresIter) {
     bool didPass = false;
-    if(!selIVFIsPV && medianIPLogSig2D > *thresIter && ivfLxyz  < 5) didPass = true;
+    if(!selIVFIsPV && medianIPLogSig2D > *thresIter && ivfLxyz  > min && ivfLxyz < max) didPass = true;
     passResults.push_back(didPass);
   }
   return passResults;  
 }
 
-// IVF less than 20 cm
-std::vector<bool> DisplacedJet::passMediumTag(const std::vector<float> thres){
+std::vector<bool> DisplacedJet::passMediumTag(const std::vector<float> thres, float min, float max){
   std::vector<bool> passResults;
   std::vector<float>::const_iterator thresIter = thres.begin();
   for(; thresIter != thres.end(); ++thresIter) {
     bool didPass = false;
-    if(!selIVFIsPV && medianIPLogSig2D > *thresIter && ivfLxyz > 5 && ivfLxyz < 20) didPass = true;
+    if(!selIVFIsPV && medianIPLogSig2D > *thresIter && ivfLxyz > min && ivfLxyz < max) didPass = true;
     passResults.push_back(didPass);
   }
   return passResults;  
 }
 
-// IVF more than 20 cm
-std::vector<bool> DisplacedJet::passLongTag(const std::vector<float> thres){
+std::vector<bool> DisplacedJet::passLongTag(const std::vector<float> thres, float min, float max){
   std::vector<bool> passResults;
   std::vector<float>::const_iterator thresIter = thres.begin();
   for(; thresIter != thres.end(); ++thresIter) {
     bool didPass = false;
-    if(!selIVFIsPV && medianIPLogSig2D > *thresIter && ivfLxyz > 20) didPass = true;
+    if(!selIVFIsPV && medianIPLogSig2D > *thresIter && ivfLxyz > min && ivfLxyz < max) didPass = true;
     passResults.push_back(didPass);
   }
   return passResults;  

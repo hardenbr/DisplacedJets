@@ -1,2 +1,5 @@
 python plotTags.py -f testlist.py --xlabel "Tag Categories" --ylabel "N Events" -o test.root -c "1" --threshold 2
 python plotTags.py -f qcd.list --xlabel "Tag Categories" --ylabel "N Events" -o test.root -c "1" --threshold 2
+python plotTags.py -f mass_compare.list --xlabel "Tag Categories" --ylabel "N Events" -o test.root -c "1" --threshold 2
+python plotTags.py -f sample_compare.list --xlabel "Tag Categories" --ylabel "N Events" -o test.root -c "1" --threshold 2
+python plotTags.py -f signalQCD.list --xlabel "Tag Categories" --ylabel "N Events" -o test.root -c "1" --threshold 2

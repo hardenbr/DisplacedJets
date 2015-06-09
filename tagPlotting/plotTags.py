@@ -192,6 +192,7 @@ for key in stacks.keys():
     for samp in stacks[key]:
         thisFile = rt.TFile(samp.file_name)
         thisTree = thisFile.Get(samp.tree_name)        
+        eventTree = thisFile.Get("runStats")
         output.cd()
         
         thisCut = options.cut
@@ -263,8 +264,8 @@ for key in stacks.keys():
             if n_total == "4+" or int(n_total) > 0: samp.hist_total.Fill("%s Total" % str(n_total), 1)        
 
         #nevents = thisTree.GetEntries(thisCut)
-
-        hist_scale =  float(options.lumi) * float(samp.xsec) #* float(n_pass)
+        n_analyzed = eventTree.GetEntries()
+        hist_scale =  float(options.lumi) * 1000 * float(samp.xsec) /  n_analyzed #* float(n_pass)
 #        samp.hist.Sumw2()
 #        samp.hist_total.Sumw2()
 
@@ -311,9 +312,9 @@ for key in stacks.keys():
 
 
 print "length of draw_rest", len(draw_rest)
-draw_first.Draw("")
+draw_first.Draw("HIST")
 
-for ii in draw_rest: ii.Draw("same")
+for ii in draw_rest: ii.Draw("HISTsame")
 
 
 leg = canvas.BuildLegend()
@@ -346,8 +347,8 @@ for key in stacks.keys():
                 print "appending", samp.hist_name
                 draw_rest.append(samp.hist_total)
 
-draw_first.Draw("")
-for ii in draw_rest: ii.Draw("same")
+draw_first.Draw("HIST")
+for ii in draw_rest: ii.Draw("HISTsame")
 
 
 

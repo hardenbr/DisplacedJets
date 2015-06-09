@@ -66,16 +66,19 @@ class TrackAnalyzer : public edm::EDAnalyzer {
   //sim Tags
   edm::InputTag tag_simVertex_;    
 
+  // tag threshold classifications
+  float shortTagThresDist, mediumTagThresDist, longTagThresDist;
+
   //cuts
-  float cut_jetPt;
-  float cut_jetEta;
+  float cut_jetPt, cut_jetEta;
   
   //output related
   TTree*    trackTree_;   
   TTree*    jetTree_;   
   TTree*    vertexTree_;
   TTree*    genTree_;
-  TTree*    eventTree_;
+  TTree*    eventTree_; 
+  TTree*    runStatTree_;
 
   static const Int_t    SIM_STATUS_CODE_MATCH = 0; 
   static const Int_t    GEN_STATUS_CODE_MATCH = 23; 

@@ -111,6 +111,11 @@ TrackAnalyzer::TrackAnalyzer(const edm::ParameterSet& iConfig)
   // sample information
   isMC_	      = iConfig.getUntrackedParameter<bool>("isMC");
   isSignalMC_ = iConfig.getUntrackedParameter<bool>("isSignalMC");
+  
+  // tag classification
+  shortTagThresDist  = iConfig.getUntrackedParameter<double>("shortTagThreshold");
+  mediumTagThresDist = iConfig.getUntrackedParameter<double>("mediumTagThreshold");
+  longTagThresDist   = iConfig.getUntrackedParameter<double>("longTagThreshold");
 
   // analysis todos
   doGenMatch_		  = iConfig.getUntrackedParameter<bool>("doGenMatch");
@@ -145,8 +150,7 @@ TrackAnalyzer::TrackAnalyzer(const edm::ParameterSet& iConfig)
 
 TrackAnalyzer::~TrackAnalyzer(){ }
 
-void
-TrackAnalyzer::fillHandles(const edm::Event & iEvent ) {
+void TrackAnalyzer::fillHandles(const edm::Event & iEvent ) {
 
   // AOD Compatible
   iEvent.getByLabel(tag_generalTracks_, tracks); 
@@ -216,6 +220,7 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   dumpPreSelection(djEvent);
   if (applyEventPreSelection_ && eventPassEventPreSelection == 0) {
     evNum++;   
+    runStatTree_->Fill(); // always fill the run stats
     return;
   }
 
@@ -231,7 +236,8 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   // only do tagging after all information has been added / merged
   const std::vector<float> thresholds{0.0, 1.0, 2.0};
   // tagging thresholds (nvtx, short, medium, long)
-  djEvent.doJetTagging(thresholds, thresholds, thresholds, thresholds);
+  djEvent.doJetTagging(thresholds, thresholds, thresholds, thresholds,
+		       shortTagThresDist, mediumTagThresDist, longTagThresDist);
     
   // dump the displaced jet info into the corresponding branches by event
   dumpCaloInfo(djEvent);
@@ -243,7 +249,11 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   // dump the tracks associated to jets
   // dump the vertex info in the event
   // dumpPVInfo(pvCollection);  
+
   // dump the gen Particle info
+
+  if(debug > 1) std::cout << "[DEBUG] Fill Run Stat Tree" << std::endl;
+  runStatTree_->Fill();
   if(debug > 1) std::cout << "[DEBUG] Fill Event Tree" << std::endl;
   eventTree_->Fill();
   if(debug > 1) std::cout << "[DEBUG] Fill Track Tree" << std::endl;
@@ -254,6 +264,8 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   //  vertexTree_->Fill();
   //   if(debug > 1) std::cout << "[DEBUG] Fill GEN Tree" << std::endl;
   //  genTree_->Fill();
+
+  evNum++; // increment the local event number of the job
 }
 
 void 
@@ -269,6 +281,21 @@ TrackAnalyzer::beginJob()
   vertexTree_ = new TTree(vertexTreeName_.c_str(), "vertex indexed tree");
   genTree_    = new TTree(genTreeName_.c_str(), "Gen Particle Info tree");
   eventTree_  = new TTree("eventInfo", "Event Information Tree");
+  runStatTree_  = new TTree("runStats", "Run Statistics");
+
+  ///////////  ///////////  ///////////  ///////////  ///////////  ///////////  ////
+  //////////////////////////////// EVENT TREE QUANITIES ////////////////////////////
+  ///////////  ///////////  ///////////  ///////////  ///////////  /////////// /////
+
+  // global book keeping
+  runStatTree_->Branch("run", &run, "run/I");
+  runStatTree_->Branch("lumi", &lumi, "lumi/I");
+  runStatTree_->Branch("event", &event, "event/I");
+
+  // local event book keeping 
+  runStatTree_->Branch("evNum", &evNum, "evNum/I");
+  // analysis information
+  runStatTree_->Branch("eventPassEventPreSelection", &eventPassEventPreSelection, "eventPassEventPreSelection/I");
 
   ///////////  ///////////  ///////////  ///////////  ///////////  ///////////  ////
   //////////////////////////////// EVENT TREE QUANITIES ////////////////////////////
@@ -715,13 +742,13 @@ TrackAnalyzer::beginJob()
   genTree_->Branch("simVtxY", &simVtxY, "simVtxY[simVtxN]/F");
   genTree_->Branch("simVtxZ", &simVtxZ, "simVtxZ[simVtxN]/F");
   genTree_->Branch("simVtxLxy", &simVtxLxy, "simVtxLxy[simVtxN]/F");
-  genTree_->Branch("simVtxLxyz", &simVtxLxyz, "simVtxLxyz[simVtxN]/F");  
-  
+  genTree_->Branch("simVtxLxyz", &simVtxLxyz, "simVtxLxyz[simVtxN]/F");    
 }
 
 void TrackAnalyzer::endJob() 
 {
   outputFile_->cd();
+  runStatTree_->Write();
   jetTree_->Write();
   trackTree_->Write();
   eventTree_->Write();

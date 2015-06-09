@@ -1,20 +1,21 @@
 import FWCore.ParameterSet.Config as cms
 
 # output options (to be appended to the file name outputted)
-appendLifetime = "300_30mm"
+#appendLifetime = "600_30mm"
+appendLifetime = "dsusy500_10mm"
 appendBkg      = "470_600"
 outputfile_string = "qcd.root"
 
 ############ FLAGS #############
 # run related
-nevents             = 300
+nevents             = 1000
 debugLevel          = 0
 doedm               = False
 # sample related
 isSignalMC          = True
 isMC                = True
 # analysis related
-doEventPreSelection = True
+doEventPreSelection = False
 doJetPreSelection   = False
 doApplyTrigger      = False
 # matching
@@ -23,12 +24,24 @@ doSimVtxMatch       = False
 # analysis cuts
 cut_jetPt           = 80
 cut_jetEta          = 2.0
+# tag cateogires
+shortTagThreshold    = 0.0
+mediumTagThreshold  = 10
+longTagThreshold    = 30
 
 ######### signal input lists ####
 input_file_list = None
 #input_file_list = '/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDIES/CMSSW_7_4_0_patch1/src/DisplacedJets/SignalMCLists/740patch1/mx300_100mm_aod.list'
-input_file_list = '/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDIES/CMSSW_7_4_0_patch1/src/DisplacedJets/SignalMCLists/740patch1/mx300_300mm_aod.list'
+#input_file_list = '/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDIES/CMSSW_7_4_0_patch1/src/DisplacedJets/SignalMCLists/740patch1/mx300_300mm_aod.list'
 #input_file_list = '/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDIES/CMSSW_7_4_0_patch1/src/DisplacedJets/SignalMCLists/740patch1/mx300_30mm_aod.list'
+#input_file_list = '/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDIES/CMSSW_7_4_0_patch1/src/DisplacedJets/SignalMCLists/740patch1/mx600_30mm_aod.list'
+#input_file_list = '/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDIES/CMSSW_7_4_0_patch1/src/DisplacedJets/SignalMCLists/740patch1/mx100_30mm_aod.list'
+
+# other samples
+#input_file_list = '/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDIES/CMSSW_7_4_0_patch1/src/DisplacedJets/SignalMCLists/DISPLACED_SUSY/displaced_susy.list'
+input_file_list = '/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDIES/CMSSW_7_4_0_patch1/src/DisplacedJets/SignalMCLists/DISPLACED_SUSY/displaced_susy500_10.list'
+#input_file_list = '/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDIES/CMSSW_7_4_0_patch1/src/DisplacedJets/SignalMCLists/EMERGING_JETS/emerging_jets.txt'
+
 
 # parse the input files to the file list
 myfilelist = cms.untracked.vstring()
@@ -106,9 +119,7 @@ process.GlobalTag = cms.ESSource( "PoolDBESSource",
 # Deliver the missing payloads fro the globaltag (TO BE REMOVED)
 if 'GlobalTag' in process.__dict__:
     from Configuration.AlCa.GlobalTag_condDBv2 import GlobalTag as customiseGlobalTag
-#    process.GlobalTag = customiseGlobalTag(process.GlobalTag, globaltag = 'MCRUN2_72_V4A') #MCRUN2_74_V7
-    process.GlobalTag = customiseGlobalTag(process.GlobalTag, globaltag = 'MCRUN2_74_V7',conditions='TrackerAlignmentExtendedError_2011Realistic_v1_mc,TrackerAlignmentErrorExtendedRcd,frontier://FrontierProd/CMS_CONDITIONS+MuonDTAPEObjectsExtended_v0_mc,DTAlignmentErrorExtendedRcd,frontier://FrontierProd/CMS_CONDITIONS+MuonCSCAPEObjectsExtended_v0_mc,CSCAlignmentErrorExtendedRcd,frontier://FrontierProd/CMS_CONDITIONS+EcalSamplesCorrelation_mc,EcalSamplesCorrelationRcd,frontier://FrontierProd/CMS_CONDITIONS+EcalPulseShapes_mc,EcalPulseShapesRcd,frontier://FrontierProd/CMS_CONDITIONS+EcalPulseCovariances_mc,EcalPulseCovariancesRcd,frontier://FrontierProd/CMS_CONDITIONS')
-#    process.GlobalTag = customiseGlobalTag(process.GlobalTag, globaltag = 'MCRUN2_72_V1A')
+    process.GlobalTag           = customiseGlobalTag(process.GlobalTag, globaltag = 'PHY1474_25V4')
     process.GlobalTag.connect   = 'frontier://FrontierProd/CMS_CONDITIONS'
     process.GlobalTag.pfnPrefix = cms.untracked.string('frontier://FrontierProd/')
     for pset in process.GlobalTag.toGet.value():
@@ -173,6 +184,11 @@ process.analyzerVTX.genParticles   = cms.untracked.InputTag('genParticles', '', 
 process.analyzerCALO.generalTracks = cms.untracked.InputTag('generalTracks', '', '')
 process.analyzerCALO.ak4CaloJets   = cms.untracked.InputTag('ak4CaloJets', '', '')
 process.analyzerCALO.genParticles  = cms.untracked.InputTag('genParticles', '', '')
+
+# jet tagging categories
+process.analyzerCALO.shortTagThreshold  = cms.untracked.double(shortTagThreshold)
+process.analyzerCALO.mediumTagThreshold = cms.untracked.double(mediumTagThreshold)
+process.analyzerCALO.longTagThreshold   = cms.untracked.double(longTagThreshold)
 
 # vertex matched ip info
 process.analyzerVTX.secondaryVertexTagInfo   = cms.untracked.InputTag('displacedSecondaryVertexTagInfosNoPV', '', 'ANA')

@@ -7,7 +7,8 @@ class DisplacedJetEvent {
   DisplacedJetEvent(const bool&, const reco::CaloJetCollection&, const reco::VertexCollection&, const float&, const float&, const int&);
 
   // event analysis
-  bool doesPassPreSelection();
+  bool doesPassPreSelection();  
+  float getDisplacedHT();
 
   // accessors
   int	getNJets() { return djets.size(); } 
@@ -20,7 +21,8 @@ class DisplacedJetEvent {
   void doJetTagging(std::vector<float> noVtxThres,
 		    std::vector<float> shortThres,
 		    std::vector<float> medThres,
-		    std::vector<float> longThres);
+		    std::vector<float> longThres, 
+		    float shortDistance, float mediumDistance, float longDistance);
     
   // jet associated info mergers
   void mergeCaloIPTagInfo(const reco::TrackIPTagInfoCollection&) ;
@@ -53,7 +55,9 @@ class DisplacedJetEvent {
   std::vector<int> nShortTagsVector;
   std::vector<int> nMediumTagsVector;
   std::vector<int> nLongTagsVector;
-  
+
+  // all jets that pass any tag
+  std::vector<DisplacedJet> isTaggedVector:
  private:
 
   std::vector<DisplacedJet> djets;
@@ -73,7 +77,7 @@ DisplacedJetEvent::DisplacedJetEvent(const bool& isMC, const reco::CaloJetCollec
   caloHT = 0;
   caloMET = 0;    
 
-  if (debug > 1) std::cout << "[DEBUG] Constrcuted Event From Calo jets " << std::endl;
+  if (debug > 1) std::cout << "[DEBUG] Constructing Event From Calo jets " << std::endl;
   reco::CaloJetCollection::const_iterator jetIter = caloJets.begin();
   for(; jetIter != caloJets.end(); ++jetIter) {    
     float pt = jetIter->pt(),  eta = jetIter->eta();
@@ -104,11 +108,17 @@ bool DisplacedJetEvent::doesPassPreSelection() {
   return didPass;
 }
 
+float DisplacedJetEvent::getDisplacedHT() {
+  
+  
+}
+
 // performs the tagging calculation and fills the NJet tag vectors
 void DisplacedJetEvent::doJetTagging(std::vector<float> noVtxThres,
 				     std::vector<float> shortThres,
 				     std::vector<float> medThres,
-				     std::vector<float> longThres) {
+				     std::vector<float> longThres,
+				     float shortTagDist, float mediumTagDist, float longTagDist) {
 
   // check that the same number of thresholds exists for each case
   assert(((noVtxThres.size() + shortThres.size() 
@@ -128,11 +138,11 @@ void DisplacedJetEvent::doJetTagging(std::vector<float> noVtxThres,
   // loop over each jet and check for passing each threshold 
   std::vector<DisplacedJet>::iterator djetIter = djets.begin();
   for(; djetIter != djets.end(); ++djetIter) {
-    // vector of bools for passing each thresholds
+    // vector of bools for passing each threshold in each distance category
     std::vector<bool>	noVtxPass  = djetIter->passNoVtxTag(noVtxThres); 
-    std::vector<bool>	shortPass  = djetIter->passShortTag(shortThres);
-    std::vector<bool>	mediumPass = djetIter->passMediumTag(medThres);
-    std::vector<bool>	longPass   = djetIter->passLongTag(longThres);
+    std::vector<bool>	shortPass  = djetIter->passShortTag(shortThres, shortTagDist, mediumTagDist);
+    std::vector<bool>	mediumPass = djetIter->passMediumTag(medThres, mediumTagDist, longTagDist);
+    std::vector<bool>	longPass   = djetIter->passLongTag(longThres, longTagDist, 9999999999);
     
     // increment the threshold counter for each
     for(int wp = 0; wp < nWP; ++wp ) {

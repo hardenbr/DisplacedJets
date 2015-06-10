@@ -1,7 +1,6 @@
 #sample | isSignal | xSec | fillcolor | fillstyle | lineStyle | lineWidth | stack | label 
-qcd.root        |jets| 0 | 1 | kBlack   | 0    | 1 | 2 | 1 | QCD 470 < p_{t} < 600
-signal3.root    |jets| 1 | 1 | kBlue    | 0    | 2 | 3 | 3 | m_{X} = 300 c#tau = .3cm
-signal30.root   |jets| 1 | 1 | kAzure+8 | 0    | 2 | 3 | 2 | m_{X} = 300 c#tau = 3cm
-signal100.root  |jets| 1 | 1 | kBlue-10 | 0    | 2 | 3 | 2 | m_{X} = 300 c#tau = 10cm
-signal300.root  |jets| 1 | 1 | kRed-9   | 0    | 2 | 3 | 2 | m_{X} = 300 c#tau = 30cm
-signal1000.root |jets| 1 | 1 | kRed     | 0    | 2 | 3 | 2 | m_{X} = 300 c#tau = 100cm
+qcd.root       |eventInfo| 0 | 1 | kBlack    | 0    | 1 | 3 | 4 | QCD_470_600
+signalCALOemerge.root         |eventInfo| 1 | 1 | kAzure+8    | 0    | 1 | 3 | 3 | Emerging Jets
+signalCALOdsusy500_10mm.root  |eventInfo| 1 | 1 | kBlue    | 0    | 1 | 3 | 3 | Displaced SUSY m_{#tilde t}=500 GeV c#tau=1cm
+signalCALO600_30mm.root       |eventInfo| 1 | 1 | kRed    | 0    | 1 | 3 | 3 | m_{X}=600 GeV c#tau=3cm
+signalCALO100_30mm.root       |eventInfo| 1 | 1 | kGreen    | 0    | 1 | 3 | 3 | m_{X}=100 GeV c#tau=3cm

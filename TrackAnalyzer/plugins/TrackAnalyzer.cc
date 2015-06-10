@@ -116,6 +116,9 @@ TrackAnalyzer::TrackAnalyzer(const edm::ParameterSet& iConfig)
   shortTagThresDist  = iConfig.getUntrackedParameter<double>("shortTagThreshold");
   mediumTagThresDist = iConfig.getUntrackedParameter<double>("mediumTagThreshold");
   longTagThresDist   = iConfig.getUntrackedParameter<double>("longTagThreshold");
+  
+  //DHT working point
+  dHTWorkingPoint  = iConfig.getUntrackedParameter<int>("dHTWorkingPoint");
 
   // analysis todos
   doGenMatch_		  = iConfig.getUntrackedParameter<bool>("doGenMatch");
@@ -234,10 +237,10 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   if(isMC_ && doSimMatch_) dumpSimInfo(simVtxCollection);  
 
   // only do tagging after all information has been added / merged
-  const std::vector<float> thresholds{0.0, 1.0, 2.0};
+  const std::vector<float> thresholds{0.0, 1.0, 2.0, 3.0, 4.0};
   // tagging thresholds (nvtx, short, medium, long)
   djEvent.doJetTagging(thresholds, thresholds, thresholds, thresholds,
-		       shortTagThresDist, mediumTagThresDist, longTagThresDist);
+		       shortTagThresDist, mediumTagThresDist, longTagThresDist, dHTWorkingPoint);
     
   // dump the displaced jet info into the corresponding branches by event
   dumpCaloInfo(djEvent);
@@ -309,10 +312,12 @@ TrackAnalyzer::beginJob()
   // local event book keeping 
   eventTree_->Branch("evNum", &evNum, "evNum/I");
   eventTree_->Branch("nCaloJets", &nCaloJets, "nCaloJets/I");
+  eventTree_->Branch("eventNWP", &nWP, "eventNWP/I");
 
   // analysis information
-  eventTree_->Branch("eventPassEventPreSelection", &eventPassEventPreSelection, "eventPassEventPreSelection/I");
+  eventTree_->Branch("eventPassEventPreSel", &eventPassEventPreSelection, "eventPassEventPreSel/I");
   eventTree_->Branch("eventCaloHT", &eventCaloHT, "eventCaloHT/F");
+  eventTree_->Branch("eventCaloDHT", &eventCaloDHT, "eventCaloDHT[eventNWP]/F");
   eventTree_->Branch("eventCaloMET", &eventCaloMET, "eventCaloMET/F");
 
   // ivf related
@@ -320,11 +325,11 @@ TrackAnalyzer::beginJob()
   eventTree_->Branch("eventNIVFRecoGenMatch", &eventNIVFRecoGenMatch, "eventNIVFRecoGenMatch/I");
 
   // event tags
-  eventTree_->Branch("eventNWP", &nWP, "eventNWP/I");
   eventTree_->Branch("eventNNoVertexTags", &eventNNoVertexTags, "eventNNoVertexTags[eventNWP]/I");
   eventTree_->Branch("eventNShortTags", &eventNShortTags, "eventNShortTags[eventNWP]/I");
   eventTree_->Branch("eventNMediumTags", &eventNMediumTags, "eventNMediumTags[eventNWP]/I");
   eventTree_->Branch("eventNLongTags", &eventNLongTags, "eventNLongTags[eventNWP]/I");
+  eventTree_->Branch("eventNTotalTags", &eventNTotalTags, "eventNTotalTags[eventNWP]/I");
 
   ///////////  ///////////  ///////////  ///////////  ///////////  ///////////  ////
   //////////////////////////////// JET TREE QUANITIES //////////////////////////////
@@ -769,11 +774,6 @@ void TrackAnalyzer::dumpPreSelection(DisplacedJetEvent & djEvent) {
   if(debug > 1 ) std:: cout << "[DEBUG] PV Vertex Dumping" << std::endl;
   eventPassEventPreSelection = djEvent.doesPassPreSelection() ? 1 : 0; 
 
-  // calo HT
-  eventCaloHT = djEvent.caloHT;
-  // calo MET
-  eventCaloMET = djEvent.caloMET;
-
   const DisplacedJetCollection djetCollection = djEvent.getDisplacedJets();
   DisplacedJetCollection::const_iterator djet = djetCollection.begin();
   int jj = 0;
@@ -806,6 +806,11 @@ void TrackAnalyzer::dumpPVInfo(const reco::VertexCollection & pv) {
 void TrackAnalyzer::dumpCaloInfo(DisplacedJetEvent & djEvent) {
   if(debug > 1 ) std:: cout << "[DEBUG] Dumping Calo Info" << std::endl;
 
+  // calo HT
+  eventCaloHT  = djEvent.caloHT; 
+  // calo MET
+  eventCaloMET = djEvent.caloMET;
+  
 
   const DisplacedJetCollection djetCollection = djEvent.getDisplacedJets();
   DisplacedJetCollection::const_iterator djet = djetCollection.begin();
@@ -864,8 +869,12 @@ void TrackAnalyzer::dumpSVTagInfo(DisplacedJetEvent & djEvent) {
 void TrackAnalyzer::dumpIVFInfo(DisplacedJetEvent & djEvent) {
   if(debug > 1 ) std:: cout << "[DEBUG] Dumping IVF Info" << std::endl;
 
-  jetIVFVertexIDNMom		     = 0;
-  jetIVFVertexIDNSon		     = 0;
+  jetIVFVertexIDNMom  = 0;
+  jetIVFVertexIDNSon  = 0;
+
+  eventNIVFReco		= djEvent.nIVFReconstructed;
+  eventNIVFRecoGenMatch = djEvent.nIVFGenMatched;
+
   const DisplacedJetCollection djetCollection = djEvent.getDisplacedJets();
   DisplacedJetCollection::const_iterator djet = djetCollection.begin();
   int jj = 0, jjmm = 0, jjss = 0;
@@ -1053,6 +1062,10 @@ void TrackAnalyzer::dumpDJTags(DisplacedJetEvent & djEvent) {
     eventNShortTags[wp]	   = djEvent.nShortTagsVector[wp];
     eventNMediumTags[wp]   = djEvent.nMediumTagsVector[wp];
     eventNLongTags[wp]     = djEvent.nLongTagsVector[wp];
+    eventNTotalTags[wp]    = djEvent.nNoVertexTagsVector[wp] + djEvent.nShortTagsVector[wp] + 
+      djEvent.nMediumTagsVector[wp] + djEvent.nLongTagsVector[wp];
+
+    eventCaloDHT[wp]       = djEvent.caloDHT[wp];
   } // loop: working points  
 }
 

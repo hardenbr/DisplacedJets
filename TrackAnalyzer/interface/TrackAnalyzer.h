@@ -68,7 +68,7 @@ class TrackAnalyzer : public edm::EDAnalyzer {
 
   // tag threshold classifications
   float shortTagThresDist, mediumTagThresDist, longTagThresDist;
-
+  int dHTWorkingPoint;
   //cuts
   float cut_jetPt, cut_jetEta;
   
@@ -107,6 +107,7 @@ class TrackAnalyzer : public edm::EDAnalyzer {
   ////////////////// EVENT TREE SPECIFIC MEMBERS//////////
 
   Float_t eventCaloHT;
+  Float_t eventCaloDHT[MAX_CAT];
   Float_t eventCaloMET;
 
   Int_t eventPassEventPreSelection;
@@ -124,6 +125,7 @@ class TrackAnalyzer : public edm::EDAnalyzer {
   Int_t eventNShortTags[MAX_CAT];
   Int_t eventNMediumTags[MAX_CAT];
   Int_t eventNLongTags[MAX_CAT];
+  Int_t eventNTotalTags[MAX_CAT];
 
   ////////////////// CALO JETS ////////////
 

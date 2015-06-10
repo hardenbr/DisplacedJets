@@ -378,7 +378,7 @@ bool DisplacedJet::doesPassPreSelection() const {
     if (fabs(*ip2DIter) < 0.05 ) nPTracks++;
   }
   if (debug > 3) std::cout << "[DEBUG] 2DIP requirements...Complete  " << std::endl;
-  passDisplacedTracks = nDTracks > 2;
+  passDisplacedTracks = nDTracks >= 2;
   passPromptTracks = nPTracks <= 2;
 
   if (debug > 3) std::cout << "[DEBUG] Checking Jet Preselection...Complete  " << std::endl;
@@ -419,8 +419,6 @@ bool DisplacedJet::doGenCaloJetMatching(const float& ptMatch, const float& dRMat
   
   return false;
 }
-
-
 
 void DisplacedJet::addCaloTrackInfo(const reco::TrackRefVector & trackRefs) {
   if (debug > 2) std::cout << "[DEBUG] Adding Track Info  " << std::endl;
@@ -661,7 +659,7 @@ std::vector<bool> DisplacedJet::passShortTag(const std::vector<float> thres, flo
   std::vector<float>::const_iterator thresIter = thres.begin();
   for(; thresIter != thres.end(); ++thresIter) {
     bool didPass = false;
-    if(!selIVFIsPV && medianIPLogSig2D > *thresIter && ivfLxyz  > min && ivfLxyz < max) didPass = true;
+    if(!selIVFIsPV && medianIPLogSig2D > *thresIter && ivfLxy  > min && ivfLxy < max) didPass = true;
     passResults.push_back(didPass);
   }
   return passResults;  
@@ -672,7 +670,7 @@ std::vector<bool> DisplacedJet::passMediumTag(const std::vector<float> thres, fl
   std::vector<float>::const_iterator thresIter = thres.begin();
   for(; thresIter != thres.end(); ++thresIter) {
     bool didPass = false;
-    if(!selIVFIsPV && medianIPLogSig2D > *thresIter && ivfLxyz > min && ivfLxyz < max) didPass = true;
+    if(!selIVFIsPV && medianIPLogSig2D > *thresIter && ivfLxy > min && ivfLxy < max) didPass = true;
     passResults.push_back(didPass);
   }
   return passResults;  
@@ -683,7 +681,7 @@ std::vector<bool> DisplacedJet::passLongTag(const std::vector<float> thres, floa
   std::vector<float>::const_iterator thresIter = thres.begin();
   for(; thresIter != thres.end(); ++thresIter) {
     bool didPass = false;
-    if(!selIVFIsPV && medianIPLogSig2D > *thresIter && ivfLxyz > min && ivfLxyz < max) didPass = true;
+    if(!selIVFIsPV && medianIPLogSig2D > *thresIter && ivfLxy > min && ivfLxy < max) didPass = true;
     passResults.push_back(didPass);
   }
   return passResults;  

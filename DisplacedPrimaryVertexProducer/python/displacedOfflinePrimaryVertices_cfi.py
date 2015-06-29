@@ -38,7 +38,7 @@ displacedOfflinePrimaryVertices = cms.EDProducer("PrimaryVertexProducer", #name 
                algorithm = cms.string('AdaptiveVertexFitter'), 
                minNdof=cms.double(2.0),
                useBeamConstraint = cms.bool(True),
-               maxDistanceToBeam = cms.double(999999.9)  #displaced 1.0 -> infty
+               maxDistanceToBeam = cms.double(1.0)  #displaced 1.0 -> infty
                )
       ]
     )

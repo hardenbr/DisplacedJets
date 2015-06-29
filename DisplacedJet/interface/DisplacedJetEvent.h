@@ -68,7 +68,7 @@ class DisplacedJetEvent {
   std::vector<DisplacedJet> isTaggedVector;
   reco::VertexCollection ivfVertices;
   
-  std::vector<reco::Vertex> primaryVertices;
+  std::vector<reco::Vertex> pVertices;
   std::vector<reco::Track> caloMatchedTracks;
   std::vector<reco::Track> vtxMatchedTracks;
 
@@ -110,10 +110,10 @@ DisplacedJetEvent::DisplacedJetEvent(const bool& isMC, const reco::CaloJetCollec
 
   // merge primary vertices into event
   if (debug > 1) std::cout << "[DEBUG 1] Storing Primary Vertices " << std::endl;
-  reco::VertexCollection::const_terator pvIter = primaryVertices.begin();
-  for(; pvIter != primaryVertices.end(); ++pvIter;) {
+  /* reco::VertexCollection::const_terator pvIter = primaryVertices.begin(); */
+  /* for(; pvIter != primaryVertices.end(); ++pvIter;) { */
     
-  }
+  /* } */
 
 }
 

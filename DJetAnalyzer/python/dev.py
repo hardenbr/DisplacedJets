@@ -1,6 +1,6 @@
 import FWCore.ParameterSet.Config as cms
 
-base = '/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDIES/CMSSW_7_4_4/src/DisplacedJets/'
+base = '/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDIES/CMSSW_7_4_6/src/DisplacedJets/'
 
 # output options (to be appended to the file name outputted)
 appendLifetime    = "test"
@@ -18,7 +18,7 @@ gtag = "MCRUN2_74_V9"
 # run related
 nevents             = 100
 debugLevel          = 2
-doedm               = False
+doedm               = True
 # sample related
 isSignalMC          = True
 isMC                = True
@@ -244,10 +244,25 @@ process.test_output = cms.OutputModule( "PoolOutputModule",
 
 # run the displaced jet tags
 process.load('DisplacedJets.Configuration.RecoDJTag_cff')
+process.load('DisplacedJets.Configuration.AdditionalPATSequences_cff')
 #process.load('DisplacedJets/DisplacedTriggerFilters/displacedTriggers_cff')
 
 #create the main path to run
 process.p = cms.Path()
+
+from PhysicsTools.PatAlgos.tools.jetTools import addJetCollection
+
+# add the pat jets                                                                                                                                                          
+addJetCollection(
+   process,
+   labelName = 'AK4Calo',
+   jetSource = cms.InputTag('ak4CaloJets'),
+   jetCorrections = ('AK4Calo', cms.vstring(['L1FastJet', 'L2Relative', 'L3Absolute']), 'Type-1'), 
+   btagDiscriminators = ['None'] 
+   )
+
+#add the pat related sequences
+process.p *= process.makePatMETs
 
 if doApplyTrigger: #apply the triggers and run dj tagging
    process.p *= process.InclusiveTrigger * process.DisplacedTracktrigger * process.djtagging

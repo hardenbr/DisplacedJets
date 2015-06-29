@@ -11,6 +11,7 @@ class DisplacedJetEvent {
   void calcNIVFGenMatched(const float & metricThreshold, const reco::GenParticleCollection& genParticles);
   float genMatchMetric(const reco::GenParticle & particle, const reco::Vertex& vertex);
 
+
   // accessors
   int	getNJets() { return djets.size(); } 
   std::vector<int>  getNNoVertexTags() { return nNoVertexTagsVector; }
@@ -68,12 +69,16 @@ class DisplacedJetEvent {
   std::vector<DisplacedJet> isTaggedVector;
   reco::VertexCollection ivfVertices;
   
-  std::vector<reco::Vertex> pVertices;
+  reco::VertexCollection pVertices;
   std::vector<reco::Track> caloMatchedTracks;
   std::vector<reco::Track> vtxMatchedTracks;
 
+  reco::Vertex selPV;
+
 private:
-  static const int GEN_STATUS_CODE_MATCH = 23;
+  static const int GEN_STATUS_CODE_MATCH     = 23;
+  static const int GEN_STATUS_CODE_MATCH_MOM = 23;
+
   std::vector<DisplacedJet> djets;
   int jetIDCounter = 0;     
   int debug = 0;
@@ -86,8 +91,8 @@ DisplacedJetEvent::DisplacedJetEvent(const bool& isMC, const reco::CaloJetCollec
   minEta = minEta_;
   debug	 = debug_;
 
-  const reco::Vertex & firstPV = *primaryVertices.begin();
-
+  selPV = *primaryVertices.begin();
+  //const reco::Vertex & firstPV = *primaryVertices.begin();
   caloHT = 0;
   caloMET = 0;    
 
@@ -102,7 +107,7 @@ DisplacedJetEvent::DisplacedJetEvent(const bool& isMC, const reco::CaloJetCollec
     if (pt > 40 && fabs(eta) < 2.4) caloHT += pt;
     if (pt < minPT || fabs(eta) > minEta) continue;
     
-    DisplacedJet djet(*jetIter, firstPV, isMC, jetIDCounter, debug);
+    DisplacedJet djet(*jetIter, selPV, isMC, jetIDCounter, debug);
     
     djets.push_back(djet);
     jetIDCounter++;
@@ -110,11 +115,10 @@ DisplacedJetEvent::DisplacedJetEvent(const bool& isMC, const reco::CaloJetCollec
 
   // merge primary vertices into event
   if (debug > 1) std::cout << "[DEBUG 1] Storing Primary Vertices " << std::endl;
-  /* reco::VertexCollection::const_terator pvIter = primaryVertices.begin(); */
-  /* for(; pvIter != primaryVertices.end(); ++pvIter;) { */
-    
-  /* } */
-
+  reco::VertexCollection::const_iterator pvIter = primaryVertices.begin();
+  for(; pvIter != primaryVertices.end(); ++pvIter;) { 
+    pVertices.push_back(*pvIter);
+  }
 }
 
 // checks if the event passes the preselection after checking the preselection 
@@ -302,6 +306,21 @@ void DisplacedJetEvent::doGenMatching( const reco::GenParticleCollection& genPar
 				       const bool& doCaloJetMatch = true, const bool& doGenVtxMatch = true, const bool& doGenVtxID = true,
 				       const float& ptMatch = 0.2, const float& dRMatch = 0.7,
 				       const float& vtxMatchThreshold = 0.05) {
+
+  reco::VertexCollection::const_iterator pvIter = pVertices.begin();
+  reco::GenParticleCollection::const_iterator genIter = genParticles.begin();
+  for(; pvIter != pVertices.end(); ++pvIter) {
+    for(; genIter != genParticles.end(); ++genIter) {
+      if (genIter->status() != GEN_STATUS_CODE_MATCH_MOM) continue;
+
+    }
+
+    float x  = pvIter->x(), y = pvIter->y(), z = pvIter->z();
+    float dx = x - selPV.x() , dy = y - selPV.y(), dz = z - selPV.z();
+    float metric = std::sqrt(((gx-vx)*(gx-vx))/(gx*gx) + ((gy-vy)*(gy-vy))/(gy*gy) + ((gz-vz)*(gz-vz))/(gz*gz));
+    
+    
+  }
 
   // fill how many vertices are generator matched
   calcNIVFGenMatched(vtxMatchThreshold, genParticles);

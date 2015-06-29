@@ -508,6 +508,24 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   Float_t   simVtxLxy[MAX_GEN];
   Float_t   simVtxLxyz[MAX_GEN];
 
+  /////////////// PRIMARY VERTEX SPECIFIC MEMBERS ////////////////
+
+  Float_t   pvMass[MAX_VTX];
+  Float_t   pvLxy[MAX_VTX];
+  Float_t   pvLxySig[MAX_VTX];
+  Float_t   pvLxyz[MAX_VTX];
+  Float_t   pvLxyzSig[MAX_VTX];
+  Int_t	    pvNTrack[MAX_VTX];  
+
+  // PV  position
+  Float_t   pvX[MAX_VTX];
+  Float_t   pvY[MAX_VTX];
+  Float_t   pvZ[MAX_VTX];
+
+  Float_t   pvZErr[MAX_VTX];
+  Float_t   pvYErr[MAX_VTX];
+  Float_t   pvXErr[MAX_VTX];
+  
 
   ///////////////////HANDLES////////////////////
 

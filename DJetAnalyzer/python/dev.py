@@ -18,7 +18,7 @@ gtag = "MCRUN2_74_V9"
 # run related
 nevents             = 100
 debugLevel          = 2
-doedm               = True
+doedm               = False
 # sample related
 isSignalMC          = True
 isMC                = True

@@ -9,10 +9,10 @@ displacedOfflinePrimaryVertices = cms.EDProducer("PrimaryVertexProducer", #name 
     TkFilterParameters = cms.PSet(
         algorithm=cms.string('filter'),
         maxNormalizedChi2 = cms.double(20.0),
-        minPixelLayersWithHits=cms.int32(0), #displaced 2->0
-        minSiliconLayersWithHits = cms.int32(0), #displaced 5->0
-        maxD0Significance = cms.double(999999.0),  #displaced 5->infinity
-        minPt = cms.double(1.0), #displaced 0 -> 1
+        minPixelLayersWithHits=cms.int32(2), #displaced 2->0
+        minSiliconLayersWithHits = cms.int32(5), #displaced 5->0
+        maxD0Significance = cms.double(5.0),  #displaced 5->infinity
+        minPt = cms.double(0.0), #displaced 0 -> 1
         trackQuality = cms.string("any")
     ),
 
@@ -22,8 +22,8 @@ displacedOfflinePrimaryVertices = cms.EDProducer("PrimaryVertexProducer", #name 
             coolingFactor = cms.double(0.6),  #  moderate annealing speed
             Tmin = cms.double(4.),            #  end of annealing
             vertexSize = cms.double(0.01),    #  ~ resolution / sqrt(Tmin)
-            d0CutOff = cms.double(999999.), # displaced 3 -> infinity      # downweight high IP tracks
-            dzCutOff = cms.double(999999.)  # displaced 4 -> infinity      # outlier rejection after freeze-out (T<Tmin)
+            d0CutOff = cms.double(3.), # displaced 3 -> infinity      # downweight high IP tracks
+            dzCutOff = cms.double(4.)  # displaced 4 -> infinity      # outlier rejection after freeze-out (T<Tmin)
         )
     ),
 
@@ -32,7 +32,7 @@ displacedOfflinePrimaryVertices = cms.EDProducer("PrimaryVertexProducer", #name 
                algorithm=cms.string("AdaptiveVertexFitter"),
                minNdof=cms.double(0.0),
                useBeamConstraint = cms.bool(False),
-               maxDistanceToBeam = cms.double(999999.9)   #displaced 1.0 -> infity
+               maxDistanceToBeam = cms.double(1.0)   #displaced 1.0 -> infity
                ),
       cms.PSet(label=cms.string("WithBS"),
                algorithm = cms.string('AdaptiveVertexFitter'), 

@@ -67,12 +67,16 @@ class DisplacedJetEvent {
   // all jets that pass any tag
   std::vector<DisplacedJet> isTaggedVector;
   reco::VertexCollection ivfVertices;
+  
+  std::vector<reco::Vertex> primaryVertices;
+  std::vector<reco::Track> caloMatchedTracks;
+  std::vector<reco::Track> vtxMatchedTracks;
 
 private:
   static const int GEN_STATUS_CODE_MATCH = 23;
   std::vector<DisplacedJet> djets;
   int jetIDCounter = 0;     
-  int debug;  
+  int debug = 0;
 };
 
 // constructor designating the calojets, primary vertices, and kinematics cuts
@@ -90,7 +94,8 @@ DisplacedJetEvent::DisplacedJetEvent(const bool& isMC, const reco::CaloJetCollec
   nIVFReconstructed = 0;
   nIVFGenMatched    = 0;
 
-  if (debug > 1) std::cout << "[DEBUG] Constructing Event From Calo jets " << std::endl;
+  // construct the empty displaced jet objects to merge info later
+  if (debug > 1) std::cout << "[DEBUG 1] Constructing Event From Calo jets " << std::endl;
   reco::CaloJetCollection::const_iterator jetIter = caloJets.begin();
   for(; jetIter != caloJets.end(); ++jetIter) {    
     float pt = jetIter->pt(),  eta = jetIter->eta();
@@ -102,6 +107,14 @@ DisplacedJetEvent::DisplacedJetEvent(const bool& isMC, const reco::CaloJetCollec
     djets.push_back(djet);
     jetIDCounter++;
   }  
+
+  // merge primary vertices into event
+  if (debug > 1) std::cout << "[DEBUG 1] Storing Primary Vertices " << std::endl;
+  reco::VertexCollection::const_terator pvIter = primaryVertices.begin();
+  for(; pvIter != primaryVertices.end(); ++pvIter;) {
+    
+  }
+
 }
 
 // checks if the event passes the preselection after checking the preselection 

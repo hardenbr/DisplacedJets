@@ -64,11 +64,11 @@ class cut_flow:
     def fill_stackflow(self):        
        for sample in self.samples:
            for cut_obj in self.cuts:
+               stack = sample.stack
                (n_pass, n_err) = self.get_pass(sample, cut_obj)
 
                # the file has problems/ doesnt exist
                if n_pass == -999 and n_err == -999: continue
-               stack = sample.stack
 
                # build the result to append
                cut_result = (cut_obj, n_pass, n_err)               
@@ -77,46 +77,43 @@ class cut_flow:
                if stack in self.stackflow.keys():
                    found_cut = False
 
-                   #if so find the cut this sample should be included in
+                   # find the cut this sample should be included in
                    for o_cut_result in self.stackflow[stack]:
 
+                       # index for the old cut within the stack array
                        index = self.stackflow[stack].index(o_cut_result)
                        (o_cut, o_n_pass, o_n_err) = o_cut_result
 
                        # you found the cut in the stack
                        if o_cut.label == cut_obj.label:
+                           # combine the entry with this sample 
                            new_cut_result = (cut_obj, n_pass + o_n_pass, math.sqrt(n_err*n_err + o_n_err*o_n_err))
                            self.stackflow[stack][index] = new_cut_result                   
+                           
                            found_cut = True
                            break
-                   # you never found the cut in the stack
+
+                   # the cut is new, but the stack is not
                    if not found_cut:
                        self.stackflow[stack].append(cut_result)                       
-               else:
+               else: # the stack is new to the stackflow
                    self.stackflow[stack] = [cut_result]
 
-# class table_builder:
-#     def __init__(self, cut_flow):
-#         self.cut_flow = cut_flow
 parser = OptionParser()
             
 parser.add_option("-f","--files",dest="files",
 		                    help="text file containing sample names",
 		                    action="store",type="string",default="spring15.cfg")
 
-
 parser.add_option("-c","--cutflow",dest="cutflow",
 		                    help="text file containing cuts to apply to samples",
 		                    action="store",type="string",default="cuts.cfg")
-
 
 parser.add_option("-o", "--output", dest="output",
 		                    help="output destination",
 		                    action="store",type="string",default="test.root")
 
-
 (options, args) = parser.parse_args()
-
 
 cutflow = cut_flow("Cut Flow", 20.0*1000.0)
 
@@ -126,7 +123,6 @@ output = rt.TFile(options.output, "RECREATE")
 #read in the config file containing the samples to produce cut flow    
 config_file = open(options.files, "r")
 lines = map(lambda x: x.rstrip("\n"), config_file.readlines())
-#ignore the first line for labels
 for line in lines:
     print line.split("|")
     (file_name, xSec, label, stack) = line.split("|")
@@ -136,30 +132,31 @@ for line in lines:
 #read in the config file containing the samples to produce cut flow    
 cutflow_file = open(options.cutflow, "r")
 lines = map(lambda x: x.rstrip("\n"), cutflow_file.readlines())
-#ignore the first line for labels
+
 for line in lines:
     print line.split("|")
     (tree, cutstring, label) = line.split("|")
     thisCut = cut(tree, cutstring, label)
     cutflow.add_cut(thisCut)
 
+# fill everything in 
 cutflow.fill_cutflow()
 cutflow.fill_stackflow()
 
 # print out the cut flow per sample
 for sample in cutflow.cutflow.keys():
-    print "---------", sample.label, "--------"
+    print "---------%s--------".center(50) % sample.label
     for cutResult in cutflow.cutflow[sample]:
         (cut, n_pass, n_err) = cutResult
-        print cut.label,": " "%2.1f +/- %2.1f" % (n_pass, n_err)
+        print cut.label.ljust(25),": " "%2.1f +/- %2.1f".rjust(25) % (n_pass, n_err)
 
 print "\n\n\n"
 
 # print out the cut flow per stack
 for stack in cutflow.stackflow.keys():
-    print "---------", stack, "--------"
+    print "---------%s--------".center(50) % stack
     for cutResult in cutflow.stackflow[stack]:
         (cut, n_pass, n_err) = cutResult
-        print cut.label,": " "%2.1f +/- %2.1f" % (n_pass, n_err)
+        print  cut.label.ljust(25),": %2.1f +/- %2.1f".rjust(25) % (n_pass, n_err)
 
 

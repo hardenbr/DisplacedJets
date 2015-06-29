@@ -1,0 +1,235 @@
+DEBUG 2015-06-10 22:32:47,694: 	 Executing command: 'status'
+DEBUG 2015-06-10 22:32:47,694: 	 Found CRAB cache file /afs/cern.ch/user/h/hardenbr/.crab3
+DEBUG 2015-06-10 22:32:47,700: 	 Checking credentials
+DEBUG 2015-06-10 22:32:47,701: 	 Found proxy file /tmp/x509up_u56682
+DEBUG 2015-06-10 22:32:47,701: 	 Getting proxy life time left
+DEBUG 2015-06-10 22:32:48,104: 	 Executing : 
+ command : voms-proxy-info -file /tmp/x509up_u56682 -timeleft
+ output : 42454
+
+ error: 
+ retcode : 0
+DEBUG 2015-06-10 22:32:48,509: 	 Executing : 
+ command : voms-proxy-info -file /tmp/x509up_u56682 -actimeleft
+ output : 42454
+
+ error: 
+ retcode : 0
+DEBUG 2015-06-10 22:32:48,509: 	 Proxy valid for 11:47:34 hours
+DEBUG 2015-06-10 22:32:48,655: 	 Executing : 
+ command : openssl x509 -in ~/.globus/usercert.pem -subject -noout
+ output : subject= /DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=hardenbr/CN=705168/CN=Joshua Robert Hardenbrook
+
+ error: WARNING: can't open config file: /build/dmwmbld/srv/state/dmwmbld/builds/comp_gcc481/w/tmp/BUILDROOT/779a792f862039a4ebba572299ebbb36/build/dmwmbld/srv/state/dmwmbld/builds/comp_gcc481/w/slc6_amd64_gcc481/external/openssl/1.0.1m-comp/ssl/openssl.cnf
+
+ retcode : 0
+DEBUG 2015-06-10 22:32:48,655: 	 Checking credentials
+DEBUG 2015-06-10 22:32:48,655: 	 Found proxy file /tmp/x509up_u56682
+DEBUG 2015-06-10 22:32:48,655: 	 Getting proxy life time left
+DEBUG 2015-06-10 22:32:49,067: 	 Executing : 
+ command : voms-proxy-info -file /tmp/x509up_u56682 -timeleft
+ output : 42453
+
+ error: 
+ retcode : 0
+DEBUG 2015-06-10 22:32:49,572: 	 Executing : 
+ command : voms-proxy-info -file /tmp/x509up_u56682 -actimeleft
+ output : 42453
+
+ error: 
+ retcode : 0
+DEBUG 2015-06-10 22:32:49,572: 	 Proxy valid for 11:47:33 hours
+DEBUG 2015-06-10 22:32:49,980: 	 Registering user credentials for server /DC=ch/DC=cern/OU=computers/CN=vocms(045|052|021|031).cern.ch
+DEBUG 2015-06-10 22:32:50,088: 	 Executing : 
+ command : openssl x509 -in ~/.globus/usercert.pem -subject -noout
+ output : subject= /DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=hardenbr/CN=705168/CN=Joshua Robert Hardenbrook
+
+ error: WARNING: can't open config file: /build/dmwmbld/srv/state/dmwmbld/builds/comp_gcc481/w/tmp/BUILDROOT/779a792f862039a4ebba572299ebbb36/build/dmwmbld/srv/state/dmwmbld/builds/comp_gcc481/w/slc6_amd64_gcc481/external/openssl/1.0.1m-comp/ssl/openssl.cnf
+
+ retcode : 0
+DEBUG 2015-06-10 22:32:50,088: 	 Getting myproxy life time left for myproxy.cern.ch
+DEBUG 2015-06-10 22:32:50,088: 	 Calculating hash of /DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=hardenbr/CN=705168/CN=Joshua Robert Hardenbrook_cmsweb.cern.ch for credential name
+DEBUG 2015-06-10 22:32:50,291: 	 Executing : 
+ command : myproxy-info -l fdbcd253c5e13180d036bb7f350ef35a4f8814ed -s myproxy.cern.ch
+ output : username: fdbcd253c5e13180d036bb7f350ef35a4f8814ed
+owner: /DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=hardenbr/CN=705168/CN=Joshua Robert Hardenbrook
+  renewal policy: /DC=ch/DC=cern/OU=computers/CN=vocms(045|052|021|031).cern.ch
+  trusted retrieval policy: /DC=ch/DC=cern/OU=computers/CN=vocms(045|052|021|031).cern.ch
+  timeleft: 374:37:06  (15.6 days)
+
+ error: 
+ retcode : 0
+DEBUG 2015-06-10 22:32:50,293: 	 Myproxy is valid: 1348626
+DEBUG 2015-06-10 22:32:50,293: 	 Command use: status
+DEBUG 2015-06-10 22:32:50,293: 	 Options use: ['crab_qcd3200']
+DEBUG 2015-06-10 22:32:50,707: 	 CRABClient version: 3.3.1506
+DEBUG 2015-06-10 22:32:50,708: 	 Instance is prod
+DEBUG 2015-06-10 22:32:50,708: 	 Server base url is cmsweb.cern.ch
+DEBUG 2015-06-10 22:32:50,708: 	 Command url /crabserver/prod/workflow
+DEBUG 2015-06-10 22:32:50,708: 	 Looking up detailed status of task 150610_202726:hardenbr_crab_qcd3200
+DEBUG 2015-06-10 22:32:53,428: 	 {'status': 'SUBMITTED', 'schedd': 'crab3test-2@vocms095.cern.ch', 'saveLogs': 'F', 'jobsPerStatus': {'idle': 5, 'unsubmitted': 90}, 'jobs': {'24': {'State': 'unsubmitted'}, '25': {'State': 'unsubmitted'}, '26': {'State': 'unsubmitted'}, '27': {'State': 'unsubmitted'}, '20': {'State': 'unsubmitted'}, '21': {'State': 'unsubmitted'}, '22': {'State': 'unsubmitted'}, '23': {'State': 'unsubmitted'}, '28': {'State': 'unsubmitted'}, '29': {'State': 'unsubmitted'}, '4': {'State': 'idle'}, '8': {'State': 'idle'}, '59': {'State': 'unsubmitted'}, '58': {'State': 'unsubmitted'}, '55': {'State': 'unsubmitted'}, '54': {'State': 'unsubmitted'}, '57': {'State': 'unsubmitted'}, '56': {'State': 'unsubmitted'}, '51': {'State': 'unsubmitted'}, '50': {'State': 'unsubmitted'}, '53': {'State': 'unsubmitted'}, '52': {'State': 'unsubmitted'}, '88': {'State': 'unsubmitted'}, '89': {'State': 'unsubmitted'}, '82': {'State': 'unsubmitted'}, '83': {'State': 'unsubmitted'}, '80': {'State': 'unsubmitted'}, '81': {'State': 'unsubmitted'}, '86': {'State': 'unsubmitted'}, '87': {'State': 'unsubmitted'}, '84': {'State': 'unsubmitted'}, '85': {'State': 'unsubmitted'}, '3': {'State': 'unsubmitted'}, '7': {'State': 'idle'}, '39': {'State': 'unsubmitted'}, '38': {'State': 'unsubmitted'}, '33': {'State': 'unsubmitted'}, '32': {'State': 'unsubmitted'}, '31': {'State': 'unsubmitted'}, '30': {'State': 'unsubmitted'}, '37': {'State': 'unsubmitted'}, '36': {'State': 'unsubmitted'}, '35': {'State': 'unsubmitted'}, '34': {'State': 'unsubmitted'}, '60': {'State': 'unsubmitted'}, '61': {'State': 'unsubmitted'}, '62': {'State': 'unsubmitted'}, '63': {'State': 'unsubmitted'}, '64': {'State': 'unsubmitted'}, '65': {'State': 'unsubmitted'}, '66': {'State': 'unsubmitted'}, '67': {'State': 'unsubmitted'}, '68': {'State': 'unsubmitted'}, '69': {'State': 'unsubmitted'}, '2': {'State': 'unsubmitted'}, '6': {'State': 'idle'}, '91': {'State': 'unsubmitted'}, '90': {'State': 'unsubmitted'}, '93': {'State': 'unsubmitted'}, '92': {'State': 'unsubmitted'}, '95': {'State': 'unsubmitted'}, '94': {'State': 'unsubmitted'}, '11': {'State': 'unsubmitted'}, '10': {'State': 'unsubmitted'}, '13': {'State': 'unsubmitted'}, '12': {'State': 'unsubmitted'}, '15': {'State': 'unsubmitted'}, '14': {'State': 'unsubmitted'}, '17': {'State': 'unsubmitted'}, '16': {'State': 'unsubmitted'}, '19': {'State': 'unsubmitted'}, '18': {'State': 'unsubmitted'}, '48': {'State': 'unsubmitted'}, '49': {'State': 'unsubmitted'}, '46': {'State': 'unsubmitted'}, '47': {'State': 'unsubmitted'}, '44': {'State': 'unsubmitted'}, '45': {'State': 'unsubmitted'}, '42': {'State': 'unsubmitted'}, '43': {'State': 'unsubmitted'}, '40': {'State': 'unsubmitted'}, '41': {'State': 'unsubmitted'}, '1': {'State': 'unsubmitted'}, '5': {'State': 'idle'}, '9': {'State': 'unsubmitted'}, '77': {'State': 'unsubmitted'}, '76': {'State': 'unsubmitted'}, '75': {'State': 'unsubmitted'}, '74': {'State': 'unsubmitted'}, '73': {'State': 'unsubmitted'}, '72': {'State': 'unsubmitted'}, '71': {'State': 'unsubmitted'}, '70': {'State': 'unsubmitted'}, '79': {'State': 'unsubmitted'}, '78': {'State': 'unsubmitted'}}, 'publication': {'disabled': []}, 'taskWarningMsg': [], 'outdatasets': None, 'taskFailureMsg': '', 'failedJobdefs': 0, 'ASOURL': 'https://cmsweb.cern.ch/couchdb', 'pool': {}, 'totalJobdefs': 0, 'jobSetID': '150610_202726:hardenbr_crab_qcd3200', 'jobdefErrors': [], 'collector': 'vocms0115.cern.ch', 'jobList': [['unsubmitted', 24], ['unsubmitted', 25], ['unsubmitted', 26], ['unsubmitted', 27], ['unsubmitted', 20], ['unsubmitted', 21], ['unsubmitted', 22], ['unsubmitted', 23], ['unsubmitted', 28], ['unsubmitted', 29], ['idle', 4], ['idle', 8], ['unsubmitted', 59], ['unsubmitted', 58], ['unsubmitted', 55], ['unsubmitted', 54], ['unsubmitted', 57], ['unsubmitted', 56], ['unsubmitted', 51], ['unsubmitted', 50], ['unsubmitted', 53], ['unsubmitted', 52], ['unsubmitted', 88], ['unsubmitted', 89], ['unsubmitted', 82], ['unsubmitted', 83], ['unsubmitted', 80], ['unsubmitted', 81], ['unsubmitted', 86], ['unsubmitted', 87], ['unsubmitted', 84], ['unsubmitted', 85], ['unsubmitted', 3], ['idle', 7], ['unsubmitted', 39], ['unsubmitted', 38], ['unsubmitted', 33], ['unsubmitted', 32], ['unsubmitted', 31], ['unsubmitted', 30], ['unsubmitted', 37], ['unsubmitted', 36], ['unsubmitted', 35], ['unsubmitted', 34], ['unsubmitted', 60], ['unsubmitted', 61], ['unsubmitted', 62], ['unsubmitted', 63], ['unsubmitted', 64], ['unsubmitted', 65], ['unsubmitted', 66], ['unsubmitted', 67], ['unsubmitted', 68], ['unsubmitted', 69], ['unsubmitted', 2], ['idle', 6], ['unsubmitted', 91], ['unsubmitted', 90], ['unsubmitted', 93], ['unsubmitted', 92], ['unsubmitted', 95], ['unsubmitted', 94], ['unsubmitted', 11], ['unsubmitted', 10], ['unsubmitted', 13], ['unsubmitted', 12], ['unsubmitted', 15], ['unsubmitted', 14], ['unsubmitted', 17], ['unsubmitted', 16], ['unsubmitted', 19], ['unsubmitted', 18], ['unsubmitted', 48], ['unsubmitted', 49], ['unsubmitted', 46], ['unsubmitted', 47], ['unsubmitted', 44], ['unsubmitted', 45], ['unsubmitted', 42], ['unsubmitted', 43], ['unsubmitted', 40], ['unsubmitted', 41], ['unsubmitted', 1], ['idle', 5], ['unsubmitted', 9], ['unsubmitted', 77], ['unsubmitted', 76], ['unsubmitted', 75], ['unsubmitted', 74], ['unsubmitted', 73], ['unsubmitted', 72], ['unsubmitted', 71], ['unsubmitted', 70], ['unsubmitted', 79], ['unsubmitted', 78]]}
+INFO 2015-06-10 22:32:53,428: 	 CRAB project directory:		/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDIES/CMSSW_7_4_4/src/DisplacedJets/TrackAnalyzer/python/CRAB3_QCD_SPRING15_5UNITS/crab_qcd3200
+INFO 2015-06-10 22:32:53,428: 	 Task name:			150610_202726:hardenbr_crab_qcd3200
+INFO 2015-06-10 22:32:53,429: 	 Task status:			SUBMITTED
+INFO 2015-06-10 22:32:53,429: 	 Glidemon monitoring URL:	http://glidemon.web.cern.ch/glidemon/jobs.php?taskname=150610_202726%3Ahardenbr_crab_qcd3200
+INFO 2015-06-10 22:32:53,429: 	 Dashboard monitoring URL:	http://dashb-cms-job.cern.ch/dashboard/templates/task-analysis/#user=crab&refresh=0&table=Jobs&p=1&records=25&activemenu=2&status=&site=&tid=150610_202726%3Ahardenbr_crab_qcd3200
+INFO 2015-06-10 22:32:53,429: 	 Details:			idle            5.3% ( 5/95)
+INFO 2015-06-10 22:32:53,429: 	 				unsubmitted    94.7% (90/95)
+INFO 2015-06-10 22:32:53,429: 	 
+No publication information (publication has been disabled in the CRAB configuration file)
+DEBUG 2015-06-11 08:32:18,975: 	 Executing command: 'status'
+DEBUG 2015-06-11 08:32:18,975: 	 Found CRAB cache file /afs/cern.ch/user/h/hardenbr/.crab3
+DEBUG 2015-06-11 08:32:18,985: 	 Checking credentials
+DEBUG 2015-06-11 08:32:18,985: 	 Found proxy file /tmp/x509up_u56682
+DEBUG 2015-06-11 08:32:18,985: 	 Getting proxy life time left
+DEBUG 2015-06-11 08:32:19,491: 	 Executing : 
+ command : voms-proxy-info -file /tmp/x509up_u56682 -timeleft
+ output : 42955
+
+ error: 
+ retcode : 0
+DEBUG 2015-06-11 08:32:19,996: 	 Executing : 
+ command : voms-proxy-info -file /tmp/x509up_u56682 -actimeleft
+ output : 42955
+
+ error: 
+ retcode : 0
+DEBUG 2015-06-11 08:32:19,996: 	 Proxy valid for 11:55:55 hours
+DEBUG 2015-06-11 08:32:20,256: 	 Executing : 
+ command : openssl x509 -in ~/.globus/usercert.pem -subject -noout
+ output : subject= /DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=hardenbr/CN=705168/CN=Joshua Robert Hardenbrook
+
+ error: WARNING: can't open config file: /build/dmwmbld/srv/state/dmwmbld/builds/comp_gcc481/w/tmp/BUILDROOT/779a792f862039a4ebba572299ebbb36/build/dmwmbld/srv/state/dmwmbld/builds/comp_gcc481/w/slc6_amd64_gcc481/external/openssl/1.0.1m-comp/ssl/openssl.cnf
+
+ retcode : 0
+DEBUG 2015-06-11 08:32:20,256: 	 Checking credentials
+DEBUG 2015-06-11 08:32:20,257: 	 Found proxy file /tmp/x509up_u56682
+DEBUG 2015-06-11 08:32:20,257: 	 Getting proxy life time left
+DEBUG 2015-06-11 08:32:20,765: 	 Executing : 
+ command : voms-proxy-info -file /tmp/x509up_u56682 -timeleft
+ output : 42954
+
+ error: 
+ retcode : 0
+DEBUG 2015-06-11 08:32:21,271: 	 Executing : 
+ command : voms-proxy-info -file /tmp/x509up_u56682 -actimeleft
+ output : 42953
+
+ error: 
+ retcode : 0
+DEBUG 2015-06-11 08:32:21,271: 	 Proxy valid for 11:55:54 hours
+DEBUG 2015-06-11 08:32:21,788: 	 Registering user credentials for server /DC=ch/DC=cern/OU=computers/CN=vocms(045|052|021|031).cern.ch
+DEBUG 2015-06-11 08:32:21,898: 	 Executing : 
+ command : openssl x509 -in ~/.globus/usercert.pem -subject -noout
+ output : subject= /DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=hardenbr/CN=705168/CN=Joshua Robert Hardenbrook
+
+ error: WARNING: can't open config file: /build/dmwmbld/srv/state/dmwmbld/builds/comp_gcc481/w/tmp/BUILDROOT/779a792f862039a4ebba572299ebbb36/build/dmwmbld/srv/state/dmwmbld/builds/comp_gcc481/w/slc6_amd64_gcc481/external/openssl/1.0.1m-comp/ssl/openssl.cnf
+
+ retcode : 0
+DEBUG 2015-06-11 08:32:21,898: 	 Getting myproxy life time left for myproxy.cern.ch
+DEBUG 2015-06-11 08:32:21,898: 	 Calculating hash of /DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=hardenbr/CN=705168/CN=Joshua Robert Hardenbrook_cmsweb.cern.ch for credential name
+DEBUG 2015-06-11 08:32:22,104: 	 Executing : 
+ command : myproxy-info -l fdbcd253c5e13180d036bb7f350ef35a4f8814ed -s myproxy.cern.ch
+ output : username: fdbcd253c5e13180d036bb7f350ef35a4f8814ed
+owner: /DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=hardenbr/CN=705168/CN=Joshua Robert Hardenbrook
+  renewal policy: /DC=ch/DC=cern/OU=computers/CN=vocms(045|052|021|031).cern.ch
+  trusted retrieval policy: /DC=ch/DC=cern/OU=computers/CN=vocms(045|052|021|031).cern.ch
+  timeleft: 364:37:34  (15.2 days)
+
+ error: 
+ retcode : 0
+DEBUG 2015-06-11 08:32:22,106: 	 Myproxy is valid: 1312654
+DEBUG 2015-06-11 08:32:22,106: 	 Command use: status
+DEBUG 2015-06-11 08:32:22,107: 	 Options use: ['crab_qcd3200']
+DEBUG 2015-06-11 08:32:22,581: 	 CRABClient version: 3.3.1506
+DEBUG 2015-06-11 08:32:22,581: 	 Instance is prod
+DEBUG 2015-06-11 08:32:22,581: 	 Server base url is cmsweb.cern.ch
+DEBUG 2015-06-11 08:32:22,581: 	 Command url /crabserver/prod/workflow
+DEBUG 2015-06-11 08:32:22,581: 	 Looking up detailed status of task 150610_202726:hardenbr_crab_qcd3200
+DEBUG 2015-06-11 08:32:23,817: 	 {'status': 'COMPLETED', 'schedd': 'crab3test-2@vocms095.cern.ch', 'saveLogs': 'F', 'jobsPerStatus': {'finished': 95}, 'jobs': {'24': {'State': 'finished'}, '25': {'State': 'finished'}, '26': {'State': 'finished'}, '27': {'State': 'finished'}, '20': {'State': 'finished'}, '21': {'State': 'finished'}, '22': {'State': 'finished'}, '23': {'State': 'finished'}, '28': {'State': 'finished'}, '29': {'State': 'finished'}, '4': {'State': 'finished'}, '8': {'State': 'finished'}, '59': {'State': 'finished'}, '58': {'State': 'finished'}, '55': {'State': 'finished'}, '54': {'State': 'finished'}, '57': {'State': 'finished'}, '56': {'State': 'finished'}, '51': {'State': 'finished'}, '50': {'State': 'finished'}, '53': {'State': 'finished'}, '52': {'State': 'finished'}, '88': {'State': 'finished'}, '89': {'State': 'finished'}, '82': {'State': 'finished'}, '83': {'State': 'finished'}, '80': {'State': 'finished'}, '81': {'State': 'finished'}, '86': {'State': 'finished'}, '87': {'State': 'finished'}, '84': {'State': 'finished'}, '85': {'State': 'finished'}, '3': {'State': 'finished'}, '7': {'State': 'finished'}, '39': {'State': 'finished'}, '38': {'State': 'finished'}, '33': {'State': 'finished'}, '32': {'State': 'finished'}, '31': {'State': 'finished'}, '30': {'State': 'finished'}, '37': {'State': 'finished'}, '36': {'State': 'finished'}, '35': {'State': 'finished'}, '34': {'State': 'finished'}, '60': {'State': 'finished'}, '61': {'State': 'finished'}, '62': {'State': 'finished'}, '63': {'State': 'finished'}, '64': {'State': 'finished'}, '65': {'State': 'finished'}, '66': {'State': 'finished'}, '67': {'State': 'finished'}, '68': {'State': 'finished'}, '69': {'State': 'finished'}, '2': {'State': 'finished'}, '6': {'State': 'finished'}, '91': {'State': 'finished'}, '90': {'State': 'finished'}, '93': {'State': 'finished'}, '92': {'State': 'finished'}, '95': {'State': 'finished'}, '94': {'State': 'finished'}, '11': {'State': 'finished'}, '10': {'State': 'finished'}, '13': {'State': 'finished'}, '12': {'State': 'finished'}, '15': {'State': 'finished'}, '14': {'State': 'finished'}, '17': {'State': 'finished'}, '16': {'State': 'finished'}, '19': {'State': 'finished'}, '18': {'State': 'finished'}, '48': {'State': 'finished'}, '49': {'State': 'finished'}, '46': {'State': 'finished'}, '47': {'State': 'finished'}, '44': {'State': 'finished'}, '45': {'State': 'finished'}, '42': {'State': 'finished'}, '43': {'State': 'finished'}, '40': {'State': 'finished'}, '41': {'State': 'finished'}, '1': {'State': 'finished'}, '5': {'State': 'finished'}, '9': {'State': 'finished'}, '77': {'State': 'finished'}, '76': {'State': 'finished'}, '75': {'State': 'finished'}, '74': {'State': 'finished'}, '73': {'State': 'finished'}, '72': {'State': 'finished'}, '71': {'State': 'finished'}, '70': {'State': 'finished'}, '79': {'State': 'finished'}, '78': {'State': 'finished'}}, 'publication': {'disabled': []}, 'taskWarningMsg': [], 'outdatasets': None, 'taskFailureMsg': '', 'failedJobdefs': 0, 'ASOURL': 'https://cmsweb.cern.ch/couchdb', 'pool': {}, 'totalJobdefs': 0, 'jobSetID': '150610_202726:hardenbr_crab_qcd3200', 'jobdefErrors': [], 'collector': 'vocms0115.cern.ch', 'jobList': [['finished', 24], ['finished', 25], ['finished', 26], ['finished', 27], ['finished', 20], ['finished', 21], ['finished', 22], ['finished', 23], ['finished', 28], ['finished', 29], ['finished', 4], ['finished', 8], ['finished', 59], ['finished', 58], ['finished', 55], ['finished', 54], ['finished', 57], ['finished', 56], ['finished', 51], ['finished', 50], ['finished', 53], ['finished', 52], ['finished', 88], ['finished', 89], ['finished', 82], ['finished', 83], ['finished', 80], ['finished', 81], ['finished', 86], ['finished', 87], ['finished', 84], ['finished', 85], ['finished', 3], ['finished', 7], ['finished', 39], ['finished', 38], ['finished', 33], ['finished', 32], ['finished', 31], ['finished', 30], ['finished', 37], ['finished', 36], ['finished', 35], ['finished', 34], ['finished', 60], ['finished', 61], ['finished', 62], ['finished', 63], ['finished', 64], ['finished', 65], ['finished', 66], ['finished', 67], ['finished', 68], ['finished', 69], ['finished', 2], ['finished', 6], ['finished', 91], ['finished', 90], ['finished', 93], ['finished', 92], ['finished', 95], ['finished', 94], ['finished', 11], ['finished', 10], ['finished', 13], ['finished', 12], ['finished', 15], ['finished', 14], ['finished', 17], ['finished', 16], ['finished', 19], ['finished', 18], ['finished', 48], ['finished', 49], ['finished', 46], ['finished', 47], ['finished', 44], ['finished', 45], ['finished', 42], ['finished', 43], ['finished', 40], ['finished', 41], ['finished', 1], ['finished', 5], ['finished', 9], ['finished', 77], ['finished', 76], ['finished', 75], ['finished', 74], ['finished', 73], ['finished', 72], ['finished', 71], ['finished', 70], ['finished', 79], ['finished', 78]]}
+INFO 2015-06-11 08:32:23,818: 	 CRAB project directory:		/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDIES/CMSSW_7_4_4/src/DisplacedJets/TrackAnalyzer/python/CRAB3_QCD_SPRING15_5UNITS/crab_qcd3200
+INFO 2015-06-11 08:32:23,818: 	 Task name:			150610_202726:hardenbr_crab_qcd3200
+INFO 2015-06-11 08:32:23,818: 	 Task status:			COMPLETED
+INFO 2015-06-11 08:32:23,818: 	 Glidemon monitoring URL:	http://glidemon.web.cern.ch/glidemon/jobs.php?taskname=150610_202726%3Ahardenbr_crab_qcd3200
+INFO 2015-06-11 08:32:23,818: 	 Dashboard monitoring URL:	http://dashb-cms-job.cern.ch/dashboard/templates/task-analysis/#user=crab&refresh=0&table=Jobs&p=1&records=25&activemenu=2&status=&site=&tid=150610_202726%3Ahardenbr_crab_qcd3200
+INFO 2015-06-11 08:32:23,818: 	 Details:			finished      100.0% (95/95)
+INFO 2015-06-11 08:32:23,818: 	 
+No publication information (publication has been disabled in the CRAB configuration file)
+DEBUG 2015-06-11 10:04:11,025: 	 Executing command: 'status'
+DEBUG 2015-06-11 10:04:11,025: 	 Found CRAB cache file /afs/cern.ch/user/h/hardenbr/.crab3
+DEBUG 2015-06-11 10:04:11,036: 	 Checking credentials
+DEBUG 2015-06-11 10:04:11,036: 	 Found proxy file /tmp/x509up_u56682
+DEBUG 2015-06-11 10:04:11,036: 	 Getting proxy life time left
+DEBUG 2015-06-11 10:04:11,644: 	 Executing : 
+ command : voms-proxy-info -file /tmp/x509up_u56682 -timeleft
+ output : 37443
+
+ error: 
+ retcode : 0
+DEBUG 2015-06-11 10:04:12,356: 	 Executing : 
+ command : voms-proxy-info -file /tmp/x509up_u56682 -actimeleft
+ output : 37442
+
+ error: 
+ retcode : 0
+DEBUG 2015-06-11 10:04:12,356: 	 Proxy valid for 10:24:03 hours
+DEBUG 2015-06-11 10:04:12,542: 	 Executing : 
+ command : openssl x509 -in ~/.globus/usercert.pem -subject -noout
+ output : subject= /DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=hardenbr/CN=705168/CN=Joshua Robert Hardenbrook
+
+ error: WARNING: can't open config file: /build/dmwmbld/srv/state/dmwmbld/builds/comp_gcc481/w/tmp/BUILDROOT/779a792f862039a4ebba572299ebbb36/build/dmwmbld/srv/state/dmwmbld/builds/comp_gcc481/w/slc6_amd64_gcc481/external/openssl/1.0.1m-comp/ssl/openssl.cnf
+
+ retcode : 0
+DEBUG 2015-06-11 10:04:12,543: 	 Checking credentials
+DEBUG 2015-06-11 10:04:12,543: 	 Found proxy file /tmp/x509up_u56682
+DEBUG 2015-06-11 10:04:12,543: 	 Getting proxy life time left
+DEBUG 2015-06-11 10:04:13,356: 	 Executing : 
+ command : voms-proxy-info -file /tmp/x509up_u56682 -timeleft
+ output : 37441
+
+ error: 
+ retcode : 0
+DEBUG 2015-06-11 10:04:14,066: 	 Executing : 
+ command : voms-proxy-info -file /tmp/x509up_u56682 -actimeleft
+ output : 37441
+
+ error: 
+ retcode : 0
+DEBUG 2015-06-11 10:04:14,067: 	 Proxy valid for 10:24:01 hours
+DEBUG 2015-06-11 10:04:14,522: 	 Registering user credentials for server /DC=ch/DC=cern/OU=computers/CN=vocms(045|052|021|031).cern.ch
+DEBUG 2015-06-11 10:04:14,639: 	 Executing : 
+ command : openssl x509 -in ~/.globus/usercert.pem -subject -noout
+ output : subject= /DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=hardenbr/CN=705168/CN=Joshua Robert Hardenbrook
+
+ error: WARNING: can't open config file: /build/dmwmbld/srv/state/dmwmbld/builds/comp_gcc481/w/tmp/BUILDROOT/779a792f862039a4ebba572299ebbb36/build/dmwmbld/srv/state/dmwmbld/builds/comp_gcc481/w/slc6_amd64_gcc481/external/openssl/1.0.1m-comp/ssl/openssl.cnf
+
+ retcode : 0
+DEBUG 2015-06-11 10:04:14,639: 	 Getting myproxy life time left for myproxy.cern.ch
+DEBUG 2015-06-11 10:04:14,639: 	 Calculating hash of /DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=hardenbr/CN=705168/CN=Joshua Robert Hardenbrook_cmsweb.cern.ch for credential name
+DEBUG 2015-06-11 10:04:15,050: 	 Executing : 
+ command : myproxy-info -l fdbcd253c5e13180d036bb7f350ef35a4f8814ed -s myproxy.cern.ch
+ output : username: fdbcd253c5e13180d036bb7f350ef35a4f8814ed
+owner: /DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=hardenbr/CN=705168/CN=Joshua Robert Hardenbrook
+  renewal policy: /DC=ch/DC=cern/OU=computers/CN=vocms(045|052|021|031).cern.ch
+  trusted retrieval policy: /DC=ch/DC=cern/OU=computers/CN=vocms(045|052|021|031).cern.ch
+  timeleft: 363:05:42  (15.1 days)
+
+ error: 
+ retcode : 0
+DEBUG 2015-06-11 10:04:15,052: 	 Myproxy is valid: 1307142
+DEBUG 2015-06-11 10:04:15,052: 	 Command use: status
+DEBUG 2015-06-11 10:04:15,052: 	 Options use: ['crab_qcd3200']
+DEBUG 2015-06-11 10:04:15,466: 	 CRABClient version: 3.3.1506
+DEBUG 2015-06-11 10:04:15,467: 	 Instance is prod
+DEBUG 2015-06-11 10:04:15,467: 	 Server base url is cmsweb.cern.ch
+DEBUG 2015-06-11 10:04:15,467: 	 Command url /crabserver/prod/workflow
+DEBUG 2015-06-11 10:04:15,467: 	 Looking up detailed status of task 150610_202726:hardenbr_crab_qcd3200
+DEBUG 2015-06-11 10:04:16,453: 	 {'status': 'COMPLETED', 'schedd': 'crab3test-2@vocms095.cern.ch', 'saveLogs': 'F', 'jobsPerStatus': {'finished': 95}, 'jobs': {'24': {'State': 'finished'}, '25': {'State': 'finished'}, '26': {'State': 'finished'}, '27': {'State': 'finished'}, '20': {'State': 'finished'}, '21': {'State': 'finished'}, '22': {'State': 'finished'}, '23': {'State': 'finished'}, '28': {'State': 'finished'}, '29': {'State': 'finished'}, '4': {'State': 'finished'}, '8': {'State': 'finished'}, '59': {'State': 'finished'}, '58': {'State': 'finished'}, '55': {'State': 'finished'}, '54': {'State': 'finished'}, '57': {'State': 'finished'}, '56': {'State': 'finished'}, '51': {'State': 'finished'}, '50': {'State': 'finished'}, '53': {'State': 'finished'}, '52': {'State': 'finished'}, '88': {'State': 'finished'}, '89': {'State': 'finished'}, '82': {'State': 'finished'}, '83': {'State': 'finished'}, '80': {'State': 'finished'}, '81': {'State': 'finished'}, '86': {'State': 'finished'}, '87': {'State': 'finished'}, '84': {'State': 'finished'}, '85': {'State': 'finished'}, '3': {'State': 'finished'}, '7': {'State': 'finished'}, '39': {'State': 'finished'}, '38': {'State': 'finished'}, '33': {'State': 'finished'}, '32': {'State': 'finished'}, '31': {'State': 'finished'}, '30': {'State': 'finished'}, '37': {'State': 'finished'}, '36': {'State': 'finished'}, '35': {'State': 'finished'}, '34': {'State': 'finished'}, '60': {'State': 'finished'}, '61': {'State': 'finished'}, '62': {'State': 'finished'}, '63': {'State': 'finished'}, '64': {'State': 'finished'}, '65': {'State': 'finished'}, '66': {'State': 'finished'}, '67': {'State': 'finished'}, '68': {'State': 'finished'}, '69': {'State': 'finished'}, '2': {'State': 'finished'}, '6': {'State': 'finished'}, '91': {'State': 'finished'}, '90': {'State': 'finished'}, '93': {'State': 'finished'}, '92': {'State': 'finished'}, '95': {'State': 'finished'}, '94': {'State': 'finished'}, '11': {'State': 'finished'}, '10': {'State': 'finished'}, '13': {'State': 'finished'}, '12': {'State': 'finished'}, '15': {'State': 'finished'}, '14': {'State': 'finished'}, '17': {'State': 'finished'}, '16': {'State': 'finished'}, '19': {'State': 'finished'}, '18': {'State': 'finished'}, '48': {'State': 'finished'}, '49': {'State': 'finished'}, '46': {'State': 'finished'}, '47': {'State': 'finished'}, '44': {'State': 'finished'}, '45': {'State': 'finished'}, '42': {'State': 'finished'}, '43': {'State': 'finished'}, '40': {'State': 'finished'}, '41': {'State': 'finished'}, '1': {'State': 'finished'}, '5': {'State': 'finished'}, '9': {'State': 'finished'}, '77': {'State': 'finished'}, '76': {'State': 'finished'}, '75': {'State': 'finished'}, '74': {'State': 'finished'}, '73': {'State': 'finished'}, '72': {'State': 'finished'}, '71': {'State': 'finished'}, '70': {'State': 'finished'}, '79': {'State': 'finished'}, '78': {'State': 'finished'}}, 'publication': {'disabled': []}, 'taskWarningMsg': [], 'outdatasets': None, 'taskFailureMsg': '', 'failedJobdefs': 0, 'ASOURL': 'https://cmsweb.cern.ch/couchdb', 'pool': {}, 'totalJobdefs': 0, 'jobSetID': '150610_202726:hardenbr_crab_qcd3200', 'jobdefErrors': [], 'collector': 'vocms0115.cern.ch', 'jobList': [['finished', 24], ['finished', 25], ['finished', 26], ['finished', 27], ['finished', 20], ['finished', 21], ['finished', 22], ['finished', 23], ['finished', 28], ['finished', 29], ['finished', 4], ['finished', 8], ['finished', 59], ['finished', 58], ['finished', 55], ['finished', 54], ['finished', 57], ['finished', 56], ['finished', 51], ['finished', 50], ['finished', 53], ['finished', 52], ['finished', 88], ['finished', 89], ['finished', 82], ['finished', 83], ['finished', 80], ['finished', 81], ['finished', 86], ['finished', 87], ['finished', 84], ['finished', 85], ['finished', 3], ['finished', 7], ['finished', 39], ['finished', 38], ['finished', 33], ['finished', 32], ['finished', 31], ['finished', 30], ['finished', 37], ['finished', 36], ['finished', 35], ['finished', 34], ['finished', 60], ['finished', 61], ['finished', 62], ['finished', 63], ['finished', 64], ['finished', 65], ['finished', 66], ['finished', 67], ['finished', 68], ['finished', 69], ['finished', 2], ['finished', 6], ['finished', 91], ['finished', 90], ['finished', 93], ['finished', 92], ['finished', 95], ['finished', 94], ['finished', 11], ['finished', 10], ['finished', 13], ['finished', 12], ['finished', 15], ['finished', 14], ['finished', 17], ['finished', 16], ['finished', 19], ['finished', 18], ['finished', 48], ['finished', 49], ['finished', 46], ['finished', 47], ['finished', 44], ['finished', 45], ['finished', 42], ['finished', 43], ['finished', 40], ['finished', 41], ['finished', 1], ['finished', 5], ['finished', 9], ['finished', 77], ['finished', 76], ['finished', 75], ['finished', 74], ['finished', 73], ['finished', 72], ['finished', 71], ['finished', 70], ['finished', 79], ['finished', 78]]}
+INFO 2015-06-11 10:04:16,453: 	 CRAB project directory:		/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDIES/CMSSW_7_4_4/src/DisplacedJets/TrackAnalyzer/python/CRAB3_QCD_SPRING15_5UNITS/crab_qcd3200
+INFO 2015-06-11 10:04:16,453: 	 Task name:			150610_202726:hardenbr_crab_qcd3200
+INFO 2015-06-11 10:04:16,453: 	 Task status:			COMPLETED
+INFO 2015-06-11 10:04:16,453: 	 Glidemon monitoring URL:	http://glidemon.web.cern.ch/glidemon/jobs.php?taskname=150610_202726%3Ahardenbr_crab_qcd3200
+INFO 2015-06-11 10:04:16,453: 	 Dashboard monitoring URL:	http://dashb-cms-job.cern.ch/dashboard/templates/task-analysis/#user=crab&refresh=0&table=Jobs&p=1&records=25&activemenu=2&status=&site=&tid=150610_202726%3Ahardenbr_crab_qcd3200
+INFO 2015-06-11 10:04:16,453: 	 Details:			finished      100.0% (95/95)
+INFO 2015-06-11 10:04:16,453: 	 
+No publication information (publication has been disabled in the CRAB configuration file)

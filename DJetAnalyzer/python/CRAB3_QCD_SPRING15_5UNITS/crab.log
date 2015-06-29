@@ -1,0 +1,46 @@
+DEBUG 2015-06-11 08:29:58,772: 	 Executing command: 'status'
+DEBUG 2015-06-11 08:29:58,774: 	 Found CRAB cache file /afs/cern.ch/user/h/hardenbr/.crab3
+DEBUG 2015-06-11 08:29:58,785: 	 Checking credentials
+DEBUG 2015-06-11 08:29:58,787: 	 Proxy file /tmp/x509up_u56682 not found
+DEBUG 2015-06-11 08:29:58,787: 	 Creating new proxy for 24:00 hours with VO group '' and VO role 'NULL'.
+DEBUG 2015-06-11 08:29:59,395: 	 Executing : 
+ command : voms-proxy-init -voms cms:/cms -valid 24:00 -rfc
+ output : None
+ error: None
+ retcode : 1
+DEBUG 2015-06-11 08:29:59,699: 	 Executing : 
+ command : voms-proxy-info -file /tmp/x509up_u56682 -timeleft
+ output : 
+ error: Proxy not found: /tmp/x509up_u56682 (No such file or directory)
+
+ retcode : 1
+ERROR 2015-06-11 08:29:59,699: 	 Error while checking proxy timeleft for /tmp/x509up_u56682
+DEBUG 2015-06-11 08:30:00,003: 	 Executing : 
+ command : env X509_USER_PROXY=/tmp/x509up_u56682 voms-proxy-info -fqan
+ output : 
+ error: Proxy not found: /tmp/x509up_u56682 (No such file or directory)
+
+ retcode : 1
+ERROR 2015-06-11 08:30:00,004: 	 Problems creating proxy.
+ERROR 2015-06-11 08:30:00,004: 	 Caught exception
+Traceback (most recent call last):
+  File "/cvmfs/cms.cern.ch/crab3/slc6_amd64_gcc481/cms/crabclient/3.3.1506/bin/crab", line 136, in <module>
+    client()
+  File "/cvmfs/cms.cern.ch/crab3/slc6_amd64_gcc481/cms/crabclient/3.3.1506/bin/crab", line 122, in __call__
+    self.cmd = sub_cmd(self.logger, args[1:])
+  File "/cvmfs/cms.cern.ch/crab3/slc6_amd64_gcc481/cms/crabclient/3.3.1506/lib/python2.6/site-packages/CRABClient/Commands/SubCommand.py", line 288, in __init__
+    self.proxyCreated = self.proxy.createNewVomsProxySimple(timeLeftThreshold = 720)
+  File "/cvmfs/cms.cern.ch/crab3/slc6_amd64_gcc481/cms/crabclient/3.3.1506/lib/python2.6/site-packages/CRABClient/CredentialInteractions.py", line 152, in createNewVomsProxySimple
+    raise ProxyCreationException("Problems creating proxy.")
+ProxyCreationException: Problems creating proxy.
+DEBUG 2015-06-11 08:30:26,421: 	 Executing command: 'status'
+DEBUG 2015-06-11 08:30:26,421: 	 Found CRAB cache file /afs/cern.ch/user/h/hardenbr/.crab3
+DEBUG 2015-06-11 08:30:26,429: 	 Checking credentials
+DEBUG 2015-06-11 08:30:26,429: 	 Proxy file /tmp/x509up_u56682 not found
+DEBUG 2015-06-11 08:30:26,429: 	 Creating new proxy for 24:00 hours with VO group '' and VO role 'NULL'.
+DEBUG 2015-06-11 08:30:27,035: 	 Executing : 
+ command : voms-proxy-init -voms cms:/cms -valid 24:00 -rfc
+ output : None
+ error: None
+ retcode : 1
+ERROR 2015-06-11 08:30:27,178: 	 Keyboard Interrupted

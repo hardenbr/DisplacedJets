@@ -1,6 +1,6 @@
 import FWCore.ParameterSet.Config as cms
 
-base = '/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDIES/CMSSW_7_4_6/src/DisplacedJets/'
+base = '/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDIES/CMSSW_7_4_6_patch2/src/DisplacedJets/'
 
 # output options (to be appended to the file name outputted)
 appendLifetime    = "test"
@@ -16,7 +16,7 @@ outputfile_string = "qcd.root"
 gtag = "MCRUN2_74_V9"
 #gtag = "PHYS14_25_V1"
 # run related
-nevents             = 100
+nevents             = 1000
 debugLevel          = 2
 doedm               = False
 # sample related
@@ -49,6 +49,9 @@ input_file_list = None
 #input_file_list = '/SignalMCLists/DISPLACED_SUSY/displaced_susy.list'
 #input_file_list = '/SignalMCLists/DISPLACED_SUSY/displaced_susy500_10.list'
 #input_file_list = '/SignalMCLists/EMERGING_JETS/emerging_jets.txt'
+
+# gun samples
+input_file_list = 'SignalMCLists/DIJET_GUN/dijet_gun_m300_ctau30mm.list'
 
 # parse the input files to the file list
 myfilelist = cms.untracked.vstring()
@@ -244,25 +247,25 @@ process.test_output = cms.OutputModule( "PoolOutputModule",
 
 # run the displaced jet tags
 process.load('DisplacedJets.Configuration.RecoDJTag_cff')
-process.load('DisplacedJets.Configuration.AdditionalPATSequences_cff')
+#process.load('DisplacedJets.Configuration.AdditionalPATSequences_cff')
 #process.load('DisplacedJets/DisplacedTriggerFilters/displacedTriggers_cff')
 
 #create the main path to run
 process.p = cms.Path()
 
-from PhysicsTools.PatAlgos.tools.jetTools import addJetCollection
+# from PhysicsTools.PatAlgos.tools.jetTools import addJetCollection
 
-# add the pat jets                                                                                                                                                          
-addJetCollection(
-   process,
-   labelName = 'AK4Calo',
-   jetSource = cms.InputTag('ak4CaloJets'),
-   jetCorrections = ('AK4Calo', cms.vstring(['L1FastJet', 'L2Relative', 'L3Absolute']), 'Type-1'), 
-   btagDiscriminators = ['None'] 
-   )
+# # add the pat jets                                                                                                                                                          
+# addJetCollection(
+#    process,
+#    labelName = 'AK4Calo',
+#    jetSource = cms.InputTag('ak4CaloJets'),
+#    jetCorrections = ('AK4Calo', cms.vstring(['L1FastJet', 'L2Relative', 'L3Absolute']), 'Type-1'), 
+#    btagDiscriminators = ['None'] 
+#    )
 
-#add the pat related sequences
-process.p *= process.makePatMETs
+# #add the pat related sequences
+# process.p *= process.makePatMETs
 
 if doApplyTrigger: #apply the triggers and run dj tagging
    process.p *= process.InclusiveTrigger * process.DisplacedTracktrigger * process.djtagging

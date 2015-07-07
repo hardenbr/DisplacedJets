@@ -77,7 +77,7 @@ class DisplacedJetEvent {
 
 private:
   static const int GEN_STATUS_CODE_MATCH     = 23;
-  static const int GEN_STATUS_CODE_MATCH_MOM = 23;
+  static const int GEN_STATUS_CODE_MATCH_MOM = 62;
 
   std::vector<DisplacedJet> djets;
   int jetIDCounter = 0;     
@@ -116,7 +116,7 @@ DisplacedJetEvent::DisplacedJetEvent(const bool& isMC, const reco::CaloJetCollec
   // merge primary vertices into event
   if (debug > 1) std::cout << "[DEBUG 1] Storing Primary Vertices " << std::endl;
   reco::VertexCollection::const_iterator pvIter = primaryVertices.begin();
-  for(; pvIter != primaryVertices.end(); ++pvIter;) { 
+  for(; pvIter != primaryVertices.end(); ++pvIter) { 
     pVertices.push_back(*pvIter);
   }
 }
@@ -307,20 +307,19 @@ void DisplacedJetEvent::doGenMatching( const reco::GenParticleCollection& genPar
 				       const float& ptMatch = 0.2, const float& dRMatch = 0.7,
 				       const float& vtxMatchThreshold = 0.05) {
 
-  reco::VertexCollection::const_iterator pvIter = pVertices.begin();
-  reco::GenParticleCollection::const_iterator genIter = genParticles.begin();
-  for(; pvIter != pVertices.end(); ++pvIter) {
-    for(; genIter != genParticles.end(); ++genIter) {
-      if (genIter->status() != GEN_STATUS_CODE_MATCH_MOM) continue;
+  /* reco::VertexCollection::const_iterator pvIter = pVertices.begin(); */
+  /* reco::GenParticleCollection::const_iterator genIter = genParticles.begin(); */
+  /* for(; pvIter != pVertices.end(); ++pvIter) { */
+  /*   for(; genIter != genParticles.end(); ++genIter) { */
+  /*     if (genIter->status() != GEN_STATUS_CODE_MATCH_MOM) continue; */
+      
+  /*   } */
 
-    }
-
-    float x  = pvIter->x(), y = pvIter->y(), z = pvIter->z();
-    float dx = x - selPV.x() , dy = y - selPV.y(), dz = z - selPV.z();
-    float metric = std::sqrt(((gx-vx)*(gx-vx))/(gx*gx) + ((gy-vy)*(gy-vy))/(gy*gy) + ((gz-vz)*(gz-vz))/(gz*gz));
+  /*   float x  = pvIter->x(), y = pvIter->y(), z = pvIter->z(); */
+  /*   float dx = x - selPV.x() , dy = y - selPV.y(), dz = z - selPV.z(); */
+  /*   float metric = std::sqrt(((gx-vx)*(gx-vx))/(gx*gx) + ((gy-vy)*(gy-vy))/(gy*gy) + ((gz-vz)*(gz-vz))/(gz*gz));     */
     
-    
-  }
+  /* } */
 
   // fill how many vertices are generator matched
   calcNIVFGenMatched(vtxMatchThreshold, genParticles);

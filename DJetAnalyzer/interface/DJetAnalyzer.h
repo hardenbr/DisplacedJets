@@ -10,7 +10,7 @@ class DJetAnalyzer : public edm::EDAnalyzer {
  private:
 
   void fillHandles(const edm::Event &);
-  void dumpPVInfo(const reco::VertexCollection &);
+
   void dumpGenInfo(const reco::GenParticleCollection &); 
   void dumpSimInfo(const edm::SimVertexContainer &);
   void dumpPreSelection(DisplacedJetEvent&);
@@ -21,6 +21,8 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   void dumpIPInfo(DisplacedJetEvent&);
   void dumpIVFInfo(DisplacedJetEvent&);
   void dumpDJTags(DisplacedJetEvent&);
+
+  void dumpPVInfo(DisplacedJetEvent &, const reco::VertexCollection &);
 
   //tree dumping track quantities
   void dumpDTrackInfo(DisplacedJetEvent&);
@@ -394,12 +396,6 @@ class DJetAnalyzer : public edm::EDAnalyzer {
 
   ///////////////// VERTEX TREE SPECIFIC MEMBERS /////////////////
   
-  // primary vertex candidates
-  Int_t     pvN;
-  Float_t   pvSumPtSq[MAX_VTX];
-  Float_t   pvX[MAX_VTX];
-  Float_t   pvY[MAX_VTX];
-  Float_t   pvZ[MAX_VTX];
 
   // Secondary Vertex Candidates from standalone
   Int_t	    vtxN;
@@ -509,23 +505,24 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   Float_t   simVtxLxyz[MAX_GEN];
 
   /////////////// PRIMARY VERTEX SPECIFIC MEMBERS ////////////////
-
+  Int_t     pvN;
   Float_t   pvMass[MAX_VTX];
   Float_t   pvLxy[MAX_VTX];
   Float_t   pvLxySig[MAX_VTX];
   Float_t   pvLxyz[MAX_VTX];
   Float_t   pvLxyzSig[MAX_VTX];
+  Float_t   pvChi2[MAX_VTX];
   Int_t	    pvNTrack[MAX_VTX];  
-
+  Float_t   pvSumPtSq[MAX_VTX];
   // PV  position
   Float_t   pvX[MAX_VTX];
   Float_t   pvY[MAX_VTX];
   Float_t   pvZ[MAX_VTX];
-
   Float_t   pvZErr[MAX_VTX];
   Float_t   pvYErr[MAX_VTX];
   Float_t   pvXErr[MAX_VTX];
-  
+
+
 
   ///////////////////HANDLES////////////////////
 

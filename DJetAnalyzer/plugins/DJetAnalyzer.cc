@@ -259,9 +259,8 @@ DJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   // dump the tracks associated to jets TODO
   //dumpDTrackInfo(djEvent);
 
-
   // dump the vertex info in the event TODO
-  dumpPVInfo(djEvent);
+  dumpPVInfo(djEvent, pvCollection);
 
   if(debug > 1) std::cout << "[DEBUG] Fill Event Tree" << std::endl;
   eventTree_->Fill();
@@ -565,35 +564,35 @@ DJetAnalyzer::beginJob()
 
   ////////////////////////////// LIFETIME Jet tags////////////////////////
 
-  // lifetime jets
-  trackTree_->Branch("liJetID", &liJetID, "liJetID[nLiJets]/I");
-  trackTree_->Branch("liJetPt", &liJetPt, "liJetPt[nLiJets]/F");
-  trackTree_->Branch("liJetPhi", &liJetPhi, "liJetPhi[nLiJets]/F");
-  trackTree_->Branch("liJetEta", &liJetEta, "liJetEta[nLiJets]/F");
-  trackTree_->Branch("liJetNSelTracks", &liJetNSelTracks, "liJetNSelTracks[nLiJets]/I");  
+  // // lifetime jets
+  // trackTree_->Branch("liJetID", &liJetID, "liJetID[nLiJets]/I");
+  // trackTree_->Branch("liJetPt", &liJetPt, "liJetPt[nLiJets]/F");
+  // trackTree_->Branch("liJetPhi", &liJetPhi, "liJetPhi[nLiJets]/F");
+  // trackTree_->Branch("liJetEta", &liJetEta, "liJetEta[nLiJets]/F");
+  // trackTree_->Branch("liJetNSelTracks", &liJetNSelTracks, "liJetNSelTracks[nLiJets]/I");  
 
-  // lifetime track info
-  trackTree_->Branch("liTrackEta", &liTrackEta, "liTrackEta[nLiTracks]/F");
-  trackTree_->Branch("liTrackPhi", &liTrackPhi, "liTrackPhi[nLiTracks]/F");
-  trackTree_->Branch("liTrackPt", &liTrackPt, "liTrackPt[nLiTracks]/F");
-  trackTree_->Branch("liTrackJetID", &liTrackJetID, "liTrackJetID[nLiTracks]/I");  
-  trackTree_->Branch("liJetTrackDR", &liJetTrackDR, "liJetTrackDR[nLiTracks]/F");  
+  // // lifetime track info
+  // trackTree_->Branch("liTrackEta", &liTrackEta, "liTrackEta[nLiTracks]/F");
+  // trackTree_->Branch("liTrackPhi", &liTrackPhi, "liTrackPhi[nLiTracks]/F");
+  // trackTree_->Branch("liTrackPt", &liTrackPt, "liTrackPt[nLiTracks]/F");
+  // trackTree_->Branch("liTrackJetID", &liTrackJetID, "liTrackJetID[nLiTracks]/I");  
+  // trackTree_->Branch("liJetTrackDR", &liJetTrackDR, "liJetTrackDR[nLiTracks]/F");  
 
-  // lifetime ip tag info
-  trackTree_->Branch("liTrackIP2D", &liTrackIP2D, "liTrackIP2D[nLiTracks]/F");
-  trackTree_->Branch("liTrackIPSig2D", &liTrackIPSig2D, "liTrackIPSig2D[nLiTracks]/F");
-  trackTree_->Branch("liTrackIP3D", &liTrackIP3D, "liTrackIP3D[nLiTracks]/F");
-  trackTree_->Branch("liTrackIPSig3D", &liTrackIPSig3D, "liTrackIPSig3D[nLiTracks]/F");
-  trackTree_->Branch("liTrackDistanceJetAxis", &liTrackDistanceJetAxis, "liTrackDistanceJetAxis[nLiTracks]/F");
-  trackTree_->Branch("liTrackDistanceJetAxisSig", &liTrackDistanceJetAxisSig, "liTrackDistanceJetAxisSig[nLiTracks]/F");
+  // // lifetime ip tag info
+  // trackTree_->Branch("liTrackIP2D", &liTrackIP2D, "liTrackIP2D[nLiTracks]/F");
+  // trackTree_->Branch("liTrackIPSig2D", &liTrackIPSig2D, "liTrackIPSig2D[nLiTracks]/F");
+  // trackTree_->Branch("liTrackIP3D", &liTrackIP3D, "liTrackIP3D[nLiTracks]/F");
+  // trackTree_->Branch("liTrackIPSig3D", &liTrackIPSig3D, "liTrackIPSig3D[nLiTracks]/F");
+  // trackTree_->Branch("liTrackDistanceJetAxis", &liTrackDistanceJetAxis, "liTrackDistanceJetAxis[nLiTracks]/F");
+  // trackTree_->Branch("liTrackDistanceJetAxisSig", &liTrackDistanceJetAxisSig, "liTrackDistanceJetAxisSig[nLiTracks]/F");
 
   //////////////////////////////SV Jet tags////////////////////////
 
   //sv jets
-  trackTree_->Branch("svJetPt", &svJetPt, "svJetPt[nSvJets]/F");
-  trackTree_->Branch("svJetEta", &svJetEta, "svJetEta[nSvJets]/F");
-  trackTree_->Branch("svJetPhi", &svJetPhi, "svJetPhi[nSvJets]/F");
-  trackTree_->Branch("svJetID", &svJetID, "svJetID[nSvJets]/I");
+  // trackTree_->Branch("svJetPt", &svJetPt, "svJetPt[nSvJets]/F");
+  // trackTree_->Branch("svJetEta", &svJetEta, "svJetEta[nSvJets]/F");
+  // trackTree_->Branch("svJetPhi", &svJetPhi, "svJetPhi[nSvJets]/F");
+  // trackTree_->Branch("svJetID", &svJetID, "svJetID[nSvJets]/I");
 
   // quality
   trackTree_->Branch("svChi2", &svChi2, "svChi2[nSV]/F");
@@ -796,7 +795,8 @@ void DJetAnalyzer::dumpPreSelection(DisplacedJetEvent & djEvent) {
   }
 }
 
-void DJetAnalyzer::dumpPVInfo(const reco::VertexCollection & pv) {
+// dump all information related to primary vertices into the event
+void DJetAnalyzer::dumpPVInfo(DisplacedJetEvent & djEvent, const reco::VertexCollection & pv) {
 
   if(debug > 1 ) std:: cout << "[DEBUG] PV Vertex Dumping" << std::endl;
   // dump the PV information
@@ -806,23 +806,30 @@ void DJetAnalyzer::dumpPVInfo(const reco::VertexCollection & pv) {
     float x  = iterPV->x(), y = iterPV->y(), z = iterPV->z();
     float xE = iterPV->xError(), yE = iterPV->yError(), zE = iterPV->zError();
 
-    pvMass[pvN]	  = 0;
-    pvLxy[pvN]	  = 0;
-    pvLxyz[pvN]	  = 0;
-    pvNTrack[pvN] = 0;
-    pvChi2[pvN]   = 0;
-
+    // absolute position
     pvX[pvN]	= x;
     pvY[pvN]	= y;
     pvZ[pvN]	= z;
-
     pvXErr[pvN] = xE;
     pvYErr[pvN] = yE;
     pvZErr[pvN] = zE;    
-    
+
+    // position variables
+    pvMass[pvN]	   = 0;
+    pvLxy[pvN]	   = std::sqrt( x * x + y * y );
+    pvLxyz[pvN]	   = std::sqrt( x * x + y * y + z * z) ;
+    pvLxySig[pvN]  = std::sqrt( x * x + y * y ) / std::sqrt(xE * xE + yE * yE);
+    pvLxyzSig[pvN] = std::sqrt( x * x + y * y + z * z / std::sqrt(xE * xE + yE * yE + zE * zE));
+
+    // quality
+    pvChi2[pvN]   = iterPV->chi2();   
+
+    // track sums
     reco::Vertex::trackRef_iterator vtxIter = iterPV->tracks_begin();
     pvSumPtSq[pvN] = 0;
+    pvNTrack[pvN] = 0;
     for(; vtxIter != iterPV->tracks_end(); ++vtxIter) {
+      pvNTrack[pvN]++;
       pvSumPtSq[pvN] += (*vtxIter)->pt() * (*vtxIter)->pt(); 
     }
   }

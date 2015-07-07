@@ -16,7 +16,7 @@ outputfile_string = "qcd.root"
 gtag = "MCRUN2_74_V9"
 #gtag = "PHYS14_25_V1"
 # run related
-nevents             = 1000
+nevents             = 5
 debugLevel          = 2
 doedm               = False
 # sample related

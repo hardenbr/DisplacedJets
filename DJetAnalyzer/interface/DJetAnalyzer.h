@@ -25,7 +25,8 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   void dumpPVInfo(DisplacedJetEvent &, const reco::VertexCollection &);
 
   //tree dumping track quantities
-  void dumpDTrackInfo(DisplacedJetEvent&);
+  void dumpTrackInfo(DisplacedJetEvent&, const reco::TrackCollection &, collectionID);
+  // void dumpDTrackInfo(DisplacedJetEvent&);
 
   virtual void beginJob() override;
   virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
@@ -88,7 +89,7 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   static const Int_t    SIM_STATUS_CODE_MATCH = 0; 
   static const Int_t    GEN_STATUS_CODE_MATCH = 23; 
   const float		VERTEX_MATCH_METRIC   = 0.05;
-  static const Int_t	MAX_TRACKS	      = 2000;
+  static const Int_t	MAX_TRACKS	      = 5000;
   static const Int_t	MAX_JETS	      = 40;
   static const Int_t	MAX_VTX		      = 100;
   static const Int_t	MAX_CAT		      = 100; // max number of tagging categories
@@ -108,6 +109,7 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   //tree variables
   Int_t nLiTracks = 0;
   Int_t nCaloJets = 0;
+  Int_t nTracks	  = 0; // general tracks
 
   ////////////////// EVENT TREE SPECIFIC MEMBERS//////////
 
@@ -522,11 +524,83 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   Float_t   pvYErr[MAX_VTX];
   Float_t   pvXErr[MAX_VTX];
 
+  ///////////////////// TRACK INFORMATION ////////////////////
 
+  // nominal kinematics
+  Float_t   trCharge[MAX_TRACKS];
+  Float_t   trQOverP[MAX_TRACKS];
+  Float_t   trPt[MAX_TRACKS];
+  //Float_t   trPtError[MAX_TRACKS];
+  Float_t   trEta[MAX_TRACKS];
+  //Float_t   trEtaError[MAX_TRACKS];
+  Float_t   trPhi[MAX_TRACKS];
+  //Float_t   trPhiError[MAX_TRACKS];
+  
+  // tracking angles
+  Float_t   trTheta[MAX_TRACKS];
+  Float_t   trThetaError[MAX_TRACKS];
+  Float_t   trThetaSig[MAX_TRACKS];
+  Float_t   trLambda[MAX_TRACKS];
+  Float_t   trLambdaError[MAX_TRACKS];
+  Float_t   trLambdaSig[MAX_TRACKS];
+
+  // impact parameter proxies
+  Float_t   trDxy[MAX_TRACKS];
+  Float_t   trDxyError[MAX_TRACKS];
+  Float_t   trDxySig[MAX_TRACKS];
+  Float_t   trDz[MAX_TRACKS];
+  Float_t   trDzError[MAX_TRACKS];
+  Float_t   trDzSig[MAX_TRACKS];
+  Float_t   trDsz[MAX_TRACKS];
+  Float_t   trDszError[MAX_TRACKS];
+  Float_t   trDszSig[MAX_TRACKS];
+
+  // reference point
+  Float_t   trRefX[MAX_TRACKS];
+  Float_t   trRefY[MAX_TRACKS];
+  Float_t   trRefZ[MAX_TRACKS];
+
+  // inner positions
+  Float_t   trInnerX[MAX_TRACKS];
+  Float_t   trInnerY[MAX_TRACKS];
+  Float_t   trInnerZ[MAX_TRACKS];
+  Float_t   trInnerEta[MAX_TRACKS];
+  Float_t   trInnerPhi[MAX_TRACKS];
+  // inner momentum
+  Float_t   trInnerPt[MAX_TRACKS];
+  Float_t   trInnerPx[MAX_TRACKS];
+  Float_t   trInnerPy[MAX_TRACKS];
+  Float_t   trInnerPz[MAX_TRACKS];
+  Float_t   trInnerP[MAX_TRACKS];
+
+  // outer positions
+  Float_t   trOuterX[MAX_TRACKS];
+  Float_t   trOuterY[MAX_TRACKS];
+  Float_t   trOuterZ[MAX_TRACKS];
+  Float_t   trOuterEta[MAX_TRACKS];
+  Float_t   trOuterPhi[MAX_TRACKS];
+  Float_t   trOuterRadius[MAX_TRACKS];
+
+  // outer momentum
+  Float_t   trOuterPt[MAX_TRACKS];
+  Float_t   trOuterPx[MAX_TRACKS];
+  Float_t   trOuterPy[MAX_TRACKS];
+  Float_t   trOuterPz[MAX_TRACKS];
+  Float_t   trOuterP[MAX_TRACKS];
+
+  // quality
+  Float_t	trChi2[MAX_TRACKS];
+  Float_t	trNDoF[MAX_TRACKS];
+  Float_t	trNChi2[MAX_TRACKS];
+  Float_t	trValidFraction[MAX_TRACKS];
+  Int_t		trNLost[MAX_TRACKS];
+  Int_t		trNFound[MAX_TRACKS];
+  std::string	trAlgo[MAX_TRACKS];
+  Int_t		trAlgoInt[MAX_TRACKS];
 
   ///////////////////HANDLES////////////////////
 
-  edm::Handle<reco::TrackCollection> tracks;
+  edm::Handle<reco::TrackCollection> gTracks;
   edm::Handle<reco::CaloJetCollection> ak4CaloJets;
 
   edm::Handle<reco::TrackIPTagInfoCollection>		lifetimeIPTagInfo;

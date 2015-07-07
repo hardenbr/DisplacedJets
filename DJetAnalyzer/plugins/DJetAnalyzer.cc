@@ -1,4 +1,3 @@
-
 // -*- C++ -*-
 //
 // Package:    DisplacedJets/DJetAnalyzer
@@ -156,7 +155,7 @@ DJetAnalyzer::~DJetAnalyzer(){ }
 void DJetAnalyzer::fillHandles(const edm::Event & iEvent ) {
 
   // AOD Compatible
-  iEvent.getByLabel(tag_generalTracks_, tracks); 
+  iEvent.getByLabel(tag_generalTracks_, gTracks); 
   iEvent.getByLabel(tag_ak4CaloJets_, ak4CaloJets);
 
   // tag info
@@ -197,6 +196,7 @@ DJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   const reco::VertexCollection &		    incSV	     = *(inclusiveSecondaryVertices.product());
   const reco::GenParticleCollection &		    genCollection    = *(genParticles.product());     
   const edm::SimVertexContainer &		    simVtxCollection = *(simVertices.product()); 
+  const reco::TrackCollection &                     generalTracks    = *(gTracks.product());
 
   // build the displaced event from the calo jet collection and kinematic cuts
   DisplacedJetEvent djEvent(isMC_, caloJets, pvCollection, cut_jetPt, cut_jetEta, debug);
@@ -256,7 +256,10 @@ DJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   dumpSVTagInfo(djEvent);
   dumpDJTags(djEvent);
 
-  // dump the tracks associated to jets TODO
+  // dump the track information
+  nTracks = 0; 
+  dumpTrackInfo(djEvent, generalTracks, 0);
+
   //dumpDTrackInfo(djEvent);
 
   // dump the vertex info in the event TODO
@@ -760,6 +763,85 @@ DJetAnalyzer::beginJob()
   genTree_->Branch("simVtxZ", &simVtxZ, "simVtxZ[simVtxN]/F");
   genTree_->Branch("simVtxLxy", &simVtxLxy, "simVtxLxy[simVtxN]/F");
   genTree_->Branch("simVtxLxyz", &simVtxLxyz, "simVtxLxyz[simVtxN]/F");    
+
+
+  ///////////  ///////////  ///////////  ///////////  ///////////  ///////////  ////
+  //////////////////////////////// TRACKING QUANITIES // ////////////////////////////
+  ///////////  ///////////  ///////////  ///////////  ///////////  /////////// /////
+
+  // nominal kinematics
+  trackTree_->Branch("trCharge", &trCharge, "trCharge[nTracks]/F");
+  trackTree_->Branch("trQOverP", &trQOverP, "trQOverP[nTracks]/F");
+  trackTree_->Branch("trPt", &trPt, "trPt[nTracks]/F");
+  trackTree_->Branch("trPtError", &trPtError, "trPtError[nTracks]/F");
+  trackTree_->Branch("trEta", &trEta, "trEta[nTracks]/F");
+  trackTree_->Branch("trEtaError", &trEtaError, "trEtaError[nTracks]/F");
+  trackTree_->Branch("trPhi", &trPhi, "trPhi[nTracks]/F");
+  trackTree_->Branch("trPhiError", &trPhiError, "trPhiError[nTracks]/F");
+
+  // tracking angles 
+  trackTree_->Branch("trTheta", &trTheta, "trTheta[nTracks]/F");
+  trackTree_->Branch("trThetaError", &trThetaError, "trThetaError[nTracks]/F");
+  trackTree_->Branch("trThetaSig", &trThetaSig, "trThetaSig[nTracks]/F");
+  trackTree_->Branch("trLambda", &trLambda, "trLambda[nTracks]/F");
+  trackTree_->Branch("trLambdaError", &trLambdaError, "trLambdaError[nTracks]/F");
+  trackTree_->Branch("trLambdaSig", &trLambdaSig, "trLambdaSig[nTracks]/F");
+
+  // impact parameter proxies
+  trackTree_->Branch("trDxy", &trDxy, "trDxy[nTracks]/F");
+  trackTree_->Branch("trDxyError", &trDxyError, "trDxyError[nTracks]/F");
+  trackTree_->Branch("trDxySig", &trDxySig, "trDxySig[nTracks]/F");
+  trackTree_->Branch("trDz", &trDz, "trDz[nTracks]/F");
+  trackTree_->Branch("trDzError", &trDzError, "trDzError[nTracks]/F");
+  trackTree_->Branch("trDzSig", &trDzSig, "trDzSig[nTracks]/F");
+  trackTree_->Branch("trDsz", &trDsz, "trDsz[nTracks]/F");
+  trackTree_->Branch("trDszError", &trDszError, "trDszError[nTracks]/F");
+  trackTree_->Branch("trDszSig", &trDszSig, "trDszSig[nTracks]/F");
+
+  // reference positions
+  trackTree_->Branch("trRefX", &trRefX, "trRefX[nTracks]/F");
+  trackTree_->Branch("trRefY", &trRefY, "trRefY[nTracks]/F");
+  trackTree_->Branch("trRefZ", &trRefZ, "trRefZ[nTracks]/F");
+
+  // inner hit positions
+  trackTree_->Branch("trInnerX", &trInnerX, "trInnerX[nTracks]/F");
+  trackTree_->Branch("trInnerY", &trInnerY, "trInnerY[nTracks]/F");
+  trackTree_->Branch("trInnerZ", &trInnerZ, "trInnerZ[nTracks]/F");
+
+  // inner hit positions
+  trackTree_->Branch("trInnerX", &trInnerX, "trInnerX[nTracks]/F");
+  trackTree_->Branch("trInnerY", &trInnerY, "trInnerY[nTracks]/F");
+  trackTree_->Branch("trInnerZ", &trInnerZ, "trInnerZ[nTracks]/F");
+  trackTree_->Branch("trInnerEta", &trInnerEta, "trInnerEta[nTracks]/F");
+  trackTree_->Branch("trInnerPhi", &trInnerPhi, "trInnerPhi[nTracks]/F");
+  trackTree_->Branch("trInnerPt", &trInnerPt, "trInnerPt[nTracks]/F");
+  trackTree_->Branch("trInnerPx", &trInnerPt, "trInnerPx[nTracks]/F");
+  trackTree_->Branch("trInnerPz", &trInnerPt, "trInnerPy[nTracks]/F");
+  trackTree_->Branch("trInnerP", &trInnerP, "trInnerP[nTracks]/F");
+
+  // outer hit kinematics
+  trackTree_->Branch("trOuterX", &trOuterX, "trOuterX[nTracks]/F");
+  trackTree_->Branch("trOuterY", &trOuterY, "trOuterY[nTracks]/F");
+  trackTree_->Branch("trOuterZ", &trOuterZ, "trOuterZ[nTracks]/F");
+  trackTree_->Branch("trOuterEta", &trOuterEta, "trOuterEta[nTracks]/F");
+  trackTree_->Branch("trOuterPhi", &trOuterPhi, "trOuterPhi[nTracks]/F");
+
+  // outer hit kinematics
+  trackTree_->Branch("trOuterPt", &trOuterPt, "trOuterPt[nTracks]/F");
+  trackTree_->Branch("trOuterPx", &trOuterPt, "trOuterPx[nTracks]/F");
+  trackTree_->Branch("trOuterPz", &trOuterPt, "trOuterPy[nTracks]/F");
+  trackTree_->Branch("trOuterP", &trOuterP, "trOuterP[nTracks]/F");
+
+  // track quality
+  trackTree_->Branch("trChi2", &trChi2, "trChi2[nTracks]/F");
+  trackTree_->Branch("trNDof", &trNDoF, "trNDoF[nTracks]/F");
+  trackTree_->Branch("trNChi2", &trNChi2, "trNChi2[nTracks]/F");
+  trackTree_->Branch("trValidFraction", &trValidFraction, "trValidFraction[nTracks]/F");
+  trackTree_->Branch("trNLost", &trNLost, "trNLost[nTracks]/I");
+  trackTree_->Branch("trNFound", &trNFound, "trNFound[nTracks]/I");
+  //trackTree_->Branch("trAlgo", &trAlgo, "trAlgo[nTracks]/F");
+  trackTree_->Branch("trAlgoInt", &trAlgoInt, "trAlgoInt[nTracks]/I");
+
 }
 
 void DJetAnalyzer::endJob() 
@@ -767,10 +849,10 @@ void DJetAnalyzer::endJob()
   outputFile_->cd();
   runStatTree_->Write();
   jetTree_->Write();
-  // trackTree_->Write(); TODO
+  trackTree_->Write();
   eventTree_->Write();
   // genTree_->Write(); TODO
-  // vertexTree_->Write(); TODO
+  vertexTree_->Write(); 
   outputFile_->Close();
 }
 
@@ -1057,6 +1139,87 @@ DJetAnalyzer::dumpSimInfo(const edm::SimVertexContainer & simVtx) {
 	
     simVtxN++;
   }
+}
+
+// dump all of the track info available at AOD into the branches and label with a collection ID
+void DJetAnalyzer::dumpTrackInfo(DisplacedJetEvent djEvent, reco::TrackCollection tracks, const int & collectionID) {
+  reco::TrackCollection::const_iterator tt = tracks.begin();
+  for(; tt != tracks.end(); ++tt) {
+    // nominal kinematics
+    trCollectionID[nTracks]  = collectionID; 
+    trCharge[nTracks]	     = tt->charge();
+    trQOverP[nTracks]	     = tt->qoverp();
+    trPt[nTracks]	     = tt->pt();
+    trEta[nTracks]	     = tt->eta();
+    trPhi[nTracks]	     = tt->phi();
+    //tracking angles
+    trTheta[nTracks]	     = 0;
+    trThetaError[nTracks]    = 0;
+    trThetaSig[nTracks]	     = 0;
+    trLambda[nTracks]	     = 0;
+    trLambdaError[nTracks]   = 0;
+    trLambdaSig[nTracks]     = 0;
+
+    // impact parameter proxies
+    trDxy[nTracks]	     = tt->dxy();
+    trDxyError[nTracks]	     = 0;
+    trDxySig[nTracks]	     = 0;
+    trDz[nTracks]	     = 0;
+    trDzError[nTracks]	     = 0;
+    trDzSig[nTracks]	     = 0;
+    trDsz[nTracks]	     = 0;
+    trDszError[nTracks]	     = 0;
+    trDszSig[nTracks]	     = 0;
+
+    // reference point
+    trRefX[nTracks]	     = tt->vx();
+    trRefY[nTracks]	     = tt->vy();
+    trRefZ[nTracks]	     = tt->vz();
+
+    // inner positions
+    trInnerX[nTracks]	     = 0;
+    trInnerY[nTracks]	     = 0;
+    trInnerZ[nTracks]	     = 0;
+    trInnerEta[nTracks]	     = 0;
+    trInnerPhi[nTracks]	     = 0;
+
+    // inne momentum
+    trInnerPt[nTracks]	     = 0;
+    trInnerPx[nTracks]	     = 0;
+    trInnerPy[nTracks]	     = 0;
+    trInnerPz[nTracks]	     = 0;
+    trInnerP[nTracks]	     = 0;
+
+    // outer position
+    trOuterX[nTracks]	     = 0;
+    trOuterY[nTracks]	     = 0;
+    trOuterZ[nTracks]	     = 0;
+    trOuterEta[nTracks]	     = 0;
+    trOuterPhi[nTracks]	     = 0;
+    trOuterRadius[nTracks]   = 0;
+
+    // outer momentum
+    trOuterPt[nTracks]	     = 0;
+    trOuterPx[nTracks]	     = 0;
+    trOuterPy[nTracks]	     = 0;
+    trOuterPz[nTracks]	     = 0;
+    trOuterP[nTracks]	     = 0;
+
+    // quality
+    trChi2[nTracks]	     = tt->chi2();
+    trNDoF[nTracks]	     = tt->ndof();
+    trNChi2[nTracks]	     = tt->normalizedChi2();
+    trValidFraction[nTracks] = 0;
+    trNLost[nTracks]	     = 0;
+    trNFound[nTracks]	     = 0;
+
+    //    trAlgo[nTracks]	     = ;
+    trAlgoInt[nTracks]	     = tt->algo();
+
+    nTracks++;
+  }
+    
+  
 }
 
 void DJetAnalyzer::dumpGenInfo(const reco::GenParticleCollection & gen) {

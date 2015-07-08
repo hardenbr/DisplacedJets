@@ -256,13 +256,14 @@ DJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   dumpSVTagInfo(djEvent);
   dumpDJTags(djEvent);
 
+  // dump the gen particle information
+  if(isMC_ && doGenMatch_) dumpGenInfo(genCollection);
+
   // dump the track information
   nTracks = 0; 
   dumpTrackInfo(djEvent, generalTracks, 0);
 
-  //dumpDTrackInfo(djEvent);
-
-  // dump the vertex info in the event TODO
+  // dump the vertex info in the event
   dumpPVInfo(djEvent, pvCollection);
 
   if(debug > 1) std::cout << "[DEBUG] Fill Event Tree" << std::endl;
@@ -770,6 +771,14 @@ DJetAnalyzer::beginJob()
   ///////////  ///////////  ///////////  ///////////  ///////////  /////////// /////
 
   // nominal kinematics
+
+  // file run numbers
+  trackTree_->Branch("evNum",  &evNum,  "evNum/I");
+  trackTree_->Branch("run",  &run,  "run/I");
+  trackTree_->Branch("lumi",  &lumi,  "lumi/I");
+  trackTree_->Branch("event",  &event,  "event/I");
+
+  trackTree_->Branch("nTracks", &nTracks, "nTracks/I");
   trackTree_->Branch("trCharge", &trCharge, "trCharge[nTracks]/F");
   trackTree_->Branch("trQOverP", &trQOverP, "trQOverP[nTracks]/F");
   trackTree_->Branch("trPt", &trPt, "trPt[nTracks]/F");
@@ -1142,9 +1151,12 @@ DJetAnalyzer::dumpSimInfo(const edm::SimVertexContainer & simVtx) {
 }
 
 // dump all of the track info available at AOD into the branches and label with a collection ID
-void DJetAnalyzer::dumpTrackInfo(DisplacedJetEvent djEvent, reco::TrackCollection tracks, const int & collectionID) {
+void DJetAnalyzer::dumpTrackInfo(DisplacedJetEvent& djEvent, const reco::TrackCollection & tracks, const int & collectionID) {
+  if(debug > 1 ) std::cout << "[DEBUG] Dumping Track Info for Collection " << collectionID << std::endl;
+
   reco::TrackCollection::const_iterator tt = tracks.begin();
   for(; tt != tracks.end(); ++tt) {
+    if(debug > 3 ) std::cout << "[DEBUG 2] Kinematics " << collectionID << std::endl;
     // nominal kinematics
     trCollectionID[nTracks]  = collectionID; 
     trCharge[nTracks]	     = tt->charge();
@@ -1152,24 +1164,29 @@ void DJetAnalyzer::dumpTrackInfo(DisplacedJetEvent djEvent, reco::TrackCollectio
     trPt[nTracks]	     = tt->pt();
     trEta[nTracks]	     = tt->eta();
     trPhi[nTracks]	     = tt->phi();
-    //tracking angles
-    trTheta[nTracks]	     = 0;
-    trThetaError[nTracks]    = 0;
-    trThetaSig[nTracks]	     = 0;
-    trLambda[nTracks]	     = 0;
-    trLambdaError[nTracks]   = 0;
-    trLambdaSig[nTracks]     = 0;
 
+    if(debug > 3 ) std::cout << "[DEBUG 2] trackingAngles " << collectionID << std::endl;
+    //tracking angles
+    trTheta[nTracks]	     = tt->theta();
+    trThetaError[nTracks]    = tt->thetaError();
+    trThetaSig[nTracks]	     = tt->theta() / tt->thetaError();
+    trLambda[nTracks]	     = tt->lambda();
+    trLambdaError[nTracks]   = tt->lambdaError();
+    trLambdaSig[nTracks]     = tt->lambda() / tt->lambdaError();
+
+    const reco::TrackBase::Point & zeroPoint(0,0,0);
+
+    if(debug > 3 ) std::cout << "[DEBUG 2] impact pamameter proxies " << collectionID << std::endl;
     // impact parameter proxies
-    trDxy[nTracks]	     = tt->dxy();
-    trDxyError[nTracks]	     = 0;
-    trDxySig[nTracks]	     = 0;
-    trDz[nTracks]	     = 0;
-    trDzError[nTracks]	     = 0;
-    trDzSig[nTracks]	     = 0;
-    trDsz[nTracks]	     = 0;
-    trDszError[nTracks]	     = 0;
-    trDszSig[nTracks]	     = 0;
+    trDxy[nTracks]	     = tt->dxy(zeroPoint);
+    trDxyError[nTracks]	     = tt->dxyError();
+    trDxySig[nTracks]	     = tt->dxy(zeroPoint) / tt->dxyError();
+    trDz[nTracks]	     = tt->dz();
+    trDzError[nTracks]	     = tt->dzError();
+    trDzSig[nTracks]	     = tt->dzSig();
+    trDsz[nTracks]	     = tt->dsz();
+    trDszError[nTracks]	     = tt->dszError();
+    trDszSig[nTracks]	     = tt->dsz() / tt->dszError();
 
     // reference point
     trRefX[nTracks]	     = tt->vx();
@@ -1183,20 +1200,23 @@ void DJetAnalyzer::dumpTrackInfo(DisplacedJetEvent djEvent, reco::TrackCollectio
     trInnerEta[nTracks]	     = 0;
     trInnerPhi[nTracks]	     = 0;
 
-    // inne momentum
+    if(debug > 3 ) std::cout << "[DEBUG 2] inner momentum " << collectionID << std::endl;
+    // inner momentum
     trInnerPt[nTracks]	     = 0;
-    trInnerPx[nTracks]	     = 0;
-    trInnerPy[nTracks]	     = 0;
-    trInnerPz[nTracks]	     = 0;
+    trInnerPx[nTracks]	     = 0;//tt->innerMomentum().x();
+    trInnerPy[nTracks]	     = 0;//tt->innerMomentum().y();
+    trInnerPz[nTracks]	     = 0;//tt->innerMomentum().z();
     trInnerP[nTracks]	     = 0;
 
+    if(debug > 3 ) std::cout << "[DEBUG 2] outer position " << collectionID << std::endl;
     // outer position
+    trOuterPt[nTracks]	     = 0;//tt->outerPt();
     trOuterX[nTracks]	     = 0;
     trOuterY[nTracks]	     = 0;
     trOuterZ[nTracks]	     = 0;
     trOuterEta[nTracks]	     = 0;
     trOuterPhi[nTracks]	     = 0;
-    trOuterRadius[nTracks]   = 0;
+    trOuterRadius[nTracks]   = 0; //tt->outerRadius();
 
     // outer momentum
     trOuterPt[nTracks]	     = 0;
@@ -1205,21 +1225,19 @@ void DJetAnalyzer::dumpTrackInfo(DisplacedJetEvent djEvent, reco::TrackCollectio
     trOuterPz[nTracks]	     = 0;
     trOuterP[nTracks]	     = 0;
 
+    if(debug > 3 ) std::cout << "[DEBUG 2] track quality " << collectionID << std::endl;
     // quality
     trChi2[nTracks]	     = tt->chi2();
     trNDoF[nTracks]	     = tt->ndof();
     trNChi2[nTracks]	     = tt->normalizedChi2();
-    trValidFraction[nTracks] = 0;
-    trNLost[nTracks]	     = 0;
-    trNFound[nTracks]	     = 0;
-
+    trValidFraction[nTracks] = tt->validFraction();
+    trNLost[nTracks]	     = tt->numberOfLostHits();
+    trNFound[nTracks]	     = tt->numberOfValidHits();
     //    trAlgo[nTracks]	     = ;
     trAlgoInt[nTracks]	     = tt->algo();
 
     nTracks++;
-  }
-    
-  
+  }      
 }
 
 void DJetAnalyzer::dumpGenInfo(const reco::GenParticleCollection & gen) {

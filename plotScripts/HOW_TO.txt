@@ -91,3 +91,30 @@ python plot2D.py -f vtx2D.list -v "simVtxY:simVtxX" -c "evNum==1 && simVtxProcTy
 python plot2D.py -f vtx2D.list -v "vtxIncSecY:vtxIncSecX" -c "evNum==1" -t vtx --xmin -5 --xmax 5 --nxbins 50  --xlabel "Inclusive Secondary Vertex X [cm]" --ymin -5 --ymax 5 --nybins 50 --ylabel "Inclusive Secondary Vertex Y [cm]" -o test.root
 python plot2D.py -f vtx2D.list -v "vtxIncSecY:vtxIncSecX" -c "vtxIncSecGenMatchMetric * (vtxIncSecGenMatched > 0 && evNum==1) " -t vtx --xmin -5 --xmax 5 --nxbins 50  --xlabel "Inclusive Secondary Vertex X [cm]" --ymin -5 --ymax 5 --nybins 50 --ylabel "Inclusive Secondary Vertex Y [cm]" -o test.root
 python plot2D.py -f vtx2D.list -v "jetSvX:jetSvY" -c "evNum==1" -t jets --xmin -5 --xmax 5 --nxbins 50  --xlabel "AVF Vertex X [cm]" --ymin -5 --ymax 5 --nybins 50 --ylabel "AVF Vertex Y [cm]" -o test.root
+
+
+
+
+
+
+python plot1D.py -f gun.list -v "log(abs(trDxySig))" -c "1" -t tracks --xmin -5 --xmax 15 --nbins 100 --xlabel "Track log(|D_{xy} Significance|)" -o test.root
+python plot1D.py -f gun.list -v "trDxySig" -c "1" -t tracks --xmin -1000 --xmax 1000 --nbins 100 --xlabel "Track D_{xy} Significance" -o test.root
+python plot1D.py -f gun.list -v "trDxy" -c "1" -t tracks --xmin -100 --xmax 100 --nbins 100 --xlabel "Track D_{xy} [cm]" -o test.root
+python plot1D.py -f gun.list -v "trDsz" -c "1" -t tracks --xmin -100 --xmax 100 --nbins 100 --xlabel "Track D_{sz}" -o test.root
+
+python plot1D.py -f gun.list -v "trChi2" -c "1" -t tracks --xmin 0 --xmax 100 --nbins 100 --xlabel "Track #Chi^{2}" -o test.root
+python plot1D.py -f gun.list -v "trNDoF" -c "1" -t tracks --xmin 0 --xmax 0 --nbins 100 --xlabel "Track Degrees of Freedom" -o test.root
+python plot1D.py -f gun.list -v "trAlgoInt" -c "1" -t tracks --xmin 0 --xmax 30 --nbins 30 --xlabel "Track Algorithm" -o test.root
+
+python plot1D.py -f gun.list -v "log(trRefX*trRefX + trRefY*trRefY)" -c "1" -t tracks --xmin -10 --xmax 10 --nbins 100 --xlabel "log (Track Reference Vertex R^{2}) " -o test.roo
+
+python plot1D.py -f gun.list -v "trPt" -c "1" -t tracks --xmin 0 --xmax 100 --nbins 100 --xlabel "Track P_{t} [GeV]" -o test.root
+python plot1D.py -f gun.list -v "trEta" -c "1" -t tracks --xmin 0 --xmax -3 --nbins 100 --xlabel "Track #eta" -o test.root
+python plot1D.py -f gun.list -v "trPhi" -c "1" -t tracks --xmin 0 --xmax -3 --nbins 100 --xlabel "Track #phi" -o test.root
+python plot1D.py -f gun.list -v "trTheta" -c "1" -t tracks --xmin -3 --xmax -3 --nbins 100 --xlabel "Track #Theta" -o test.root
+
+python plot1D.py -f gun.list -v "trNLost" -c "1"  -t tracks  --xmin 0 --xmax 12 --nbins 12  --xlabel  "Track Hits Lost" -o test.root
+python plot1D.py -f gun.list -v "trNFound" -c "1" -t tracks  --xmin 0 --xmax 12 --nbins 12 --xlabel "Track Hits Found" -o test.root
+python plot1D.py -f gun.list -v "trCharge" -c "1" -t tracks  --xmin -2 --xmax 2 --nbins 5 --xlabel "Track Charge" -o test.root
+python plot1D.py -f gun.list -v "trValidFraction" -c "1" -t tracks --xmin 0 --xmax 1 --nbins 100 --xlabel "Valid Fraction of Hits" -o test.root
+

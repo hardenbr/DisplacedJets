@@ -25,7 +25,7 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   void dumpPVInfo(DisplacedJetEvent &, const reco::VertexCollection &);
 
   //tree dumping track quantities
-  void dumpTrackInfo(DisplacedJetEvent&, const reco::TrackCollection &, collectionID);
+  void dumpTrackInfo(DisplacedJetEvent&, const reco::TrackCollection &, const int & collectionID);
   // void dumpDTrackInfo(DisplacedJetEvent&);
 
   virtual void beginJob() override;
@@ -526,15 +526,16 @@ class DJetAnalyzer : public edm::EDAnalyzer {
 
   ///////////////////// TRACK INFORMATION ////////////////////
 
+  Int_t   trCollectionID[MAX_TRACKS];
   // nominal kinematics
   Float_t   trCharge[MAX_TRACKS];
   Float_t   trQOverP[MAX_TRACKS];
   Float_t   trPt[MAX_TRACKS];
-  //Float_t   trPtError[MAX_TRACKS];
+  Float_t   trPtError[MAX_TRACKS];
   Float_t   trEta[MAX_TRACKS];
-  //Float_t   trEtaError[MAX_TRACKS];
+  Float_t   trEtaError[MAX_TRACKS];
   Float_t   trPhi[MAX_TRACKS];
-  //Float_t   trPhiError[MAX_TRACKS];
+  Float_t   trPhiError[MAX_TRACKS];
   
   // tracking angles
   Float_t   trTheta[MAX_TRACKS];

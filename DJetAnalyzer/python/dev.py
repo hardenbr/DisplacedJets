@@ -3,7 +3,7 @@ import FWCore.ParameterSet.Config as cms
 base = '/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDIES/CMSSW_7_4_6_patch2/src/DisplacedJets/'
 
 # output options (to be appended to the file name outputted)
-appendLifetime    = "test"
+appendLifetime    = "gun300mm5k"
 #appendLifetime   = "600_30mm"
 #appendLifetime   = "dsusy500_10mm"
 #appendLifetime   = "emerge"
@@ -16,8 +16,8 @@ outputfile_string = "qcd.root"
 gtag = "MCRUN2_74_V9"
 #gtag = "PHYS14_25_V1"
 # run related
-nevents             = 5
-debugLevel          = 2
+nevents             = 5000
+debugLevel          = 0
 doedm               = False
 # sample related
 isSignalMC          = True
@@ -52,6 +52,8 @@ input_file_list = None
 
 # gun samples
 input_file_list = 'SignalMCLists/DIJET_GUN/dijet_gun_m300_ctau30mm.list'
+input_file_list = 'SignalMCLists/DIJET_GUN/dijet_gun_m300_ctau0mm.list'
+input_file_list = 'SignalMCLists/DIJET_GUN/dijet_gun_m300_ctau300mm.list'
 
 # parse the input files to the file list
 myfilelist = cms.untracked.vstring()
@@ -283,3 +285,9 @@ from SLHCUpgradeSimulations.Configuration.postLS1Customs import customisePostLS1
 
 #call to customisation function customisePostLS1 imported from SLHCUpgradeSimulations.Configuration.postLS1Customs                                                           
 process = customisePostLS1(process)
+
+
+process.options = cms.untracked.PSet(
+    SkipEvent = cms.untracked.vstring('ProductNotFound'),
+    wantSummary = cms.untracked.bool( True )
+)

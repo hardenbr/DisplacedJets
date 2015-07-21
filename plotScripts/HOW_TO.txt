@@ -97,24 +97,82 @@ python plot2D.py -f vtx2D.list -v "jetSvX:jetSvY" -c "evNum==1" -t jets --xmin -
 
 
 
-python plot1D.py -f gun.list -v "log(abs(trDxySig))" -c "1" -t tracks --xmin -5 --xmax 15 --nbins 100 --xlabel "Track log(|D_{xy} Significance|)" -o test.root
-python plot1D.py -f gun.list -v "trDxySig" -c "1" -t tracks --xmin -1000 --xmax 1000 --nbins 100 --xlabel "Track D_{xy} Significance" -o test.root
-python plot1D.py -f gun.list -v "trDxy" -c "1" -t tracks --xmin -100 --xmax 100 --nbins 100 --xlabel "Track D_{xy} [cm]" -o test.root
-python plot1D.py -f gun.list -v "trDsz" -c "1" -t tracks --xmin -100 --xmax 100 --nbins 100 --xlabel "Track D_{sz}" -o test.root
+python plot1D.py -f gun.list --ylabel "N Tracks" -v "log(abs(trDxySig))" -c "1" -t tracks --xmin -5 --xmax 15 --nbins 100 --xlabel "Track log(|D_{xy} Significance|)" -o test.root
+python plot1D.py -f gun.list --ylabel "N Tracks" -v "trDxySig" -c "1" -t tracks --xmin -1000 --xmax 1000 --nbins 100 --xlabel "Track D_{xy} Significance" -o test.root
+python plot1D.py -f gun.list --ylabel "N Tracks" -v "trDxy" -c "1" -t tracks --xmin -100 --xmax 100 --nbins 100 --xlabel "Track D_{xy} [cm]" -o test.root
+python plot1D.py -f gun.list --ylabel "N Tracks" -v "trDsz" -c "1" -t tracks --xmin -100 --xmax 100 --nbins 100 --xlabel "Track D_{sz}" -o test.root
 
-python plot1D.py -f gun.list -v "trChi2" -c "1" -t tracks --xmin 0 --xmax 100 --nbins 100 --xlabel "Track #Chi^{2}" -o test.root
-python plot1D.py -f gun.list -v "trNDoF" -c "1" -t tracks --xmin 0 --xmax 0 --nbins 100 --xlabel "Track Degrees of Freedom" -o test.root
-python plot1D.py -f gun.list -v "trAlgoInt" -c "1" -t tracks --xmin 0 --xmax 30 --nbins 30 --xlabel "Track Algorithm" -o test.root
+python plot1D.py -f gun.list --ylabel "N Tracks" -v "trChi2" -c "1" -t tracks --xmin 0 --xmax 100 --nbins 100 --xlabel "Track #Chi^{2}" -o test.root
+python plot1D.py -f gun.list --ylabel "N Tracks" -v "trNDoF" -c "1" -t tracks --xmin 0 --xmax 0 --nbins 100 --xlabel "Track Degrees of Freedom" -o test.root
+python plot1D.py -f gun.list --ylabel "N Tracks" -v "trAlgoInt" -c "1" -t tracks --xmin 0 --xmax 30 --nbins 30 --xlabel "Track Algorithm" -o test.root
 
-python plot1D.py -f gun.list -v "log(trRefX*trRefX + trRefY*trRefY)" -c "1" -t tracks --xmin -10 --xmax 10 --nbins 100 --xlabel "log (Track Reference Vertex R^{2}) " -o test.roo
+python plot1D.py -f gun.list --ylabel "N Tracks" -v "log(trRefR2D)" -c "1" -t tracks --xmin -10 --xmax 10 --nbins 100 --xlabel "log (Track Reference Vertex R^{2}) " -o test.roo
 
-python plot1D.py -f gun.list -v "trPt" -c "1" -t tracks --xmin 0 --xmax 100 --nbins 100 --xlabel "Track P_{t} [GeV]" -o test.root
-python plot1D.py -f gun.list -v "trEta" -c "1" -t tracks --xmin 0 --xmax -3 --nbins 100 --xlabel "Track #eta" -o test.root
-python plot1D.py -f gun.list -v "trPhi" -c "1" -t tracks --xmin 0 --xmax -3 --nbins 100 --xlabel "Track #phi" -o test.root
-python plot1D.py -f gun.list -v "trTheta" -c "1" -t tracks --xmin -3 --xmax -3 --nbins 100 --xlabel "Track #Theta" -o test.root
+python plot1D.py -f gun.list --ylabel "N Tracks" -v "nTracks" -c "1" -t tracks --xmin 0 --xmax 100 --nbins 100 --xlabel "N Track" -o test.root
+python plot1D.py -f gun.list --ylabel "N Tracks" -v "trPt" -c "1" -t tracks --xmin 0 --xmax 100 --nbins 100 --xlabel "Track P_{t} [GeV]" -o test.root
+python plot1D.py -f gun.list --ylabel "N Tracks" -v "trEta" -c "1" -t tracks --xmin 0 --xmax -3 --nbins 100 --xlabel "Track #eta" -o test.root
+python plot1D.py -f gun.list --ylabel "N Tracks" -v "trPhi" -c "1" -t tracks --xmin 0 --xmax -3 --nbins 100 --xlabel "Track #phi" -o test.root
+python plot1D.py -f gun.list --ylabel "N Tracks" -v "trTheta" -c "1" -t tracks --xmin -3 --xmax -3 --nbins 100 --xlabel "Track #Theta" -o test.root
 
-python plot1D.py -f gun.list -v "trNLost" -c "1"  -t tracks  --xmin 0 --xmax 12 --nbins 12  --xlabel  "Track Hits Lost" -o test.root
-python plot1D.py -f gun.list -v "trNFound" -c "1" -t tracks  --xmin 0 --xmax 12 --nbins 12 --xlabel "Track Hits Found" -o test.root
-python plot1D.py -f gun.list -v "trCharge" -c "1" -t tracks  --xmin -2 --xmax 2 --nbins 5 --xlabel "Track Charge" -o test.root
-python plot1D.py -f gun.list -v "trValidFraction" -c "1" -t tracks --xmin 0 --xmax 1 --nbins 100 --xlabel "Valid Fraction of Hits" -o test.root
+python plot1D.py -f gun.list --ylabel "N Tracks" -v "trNLost" -c "1"  -t tracks  --xmin 0 --xmax 12 --nbins 12  --xlabel  "Track Hits Lost" -o test.root
+python plot1D.py -f gun.list --ylabel "N Tracks" -v "trNFound" -c "1" -t tracks  --xmin 0 --xmax 12 --nbins 12 --xlabel "Track Hits Found" -o test.root
+python plot1D.py -f gun.list --ylabel "N Tracks" -v "trCharge" -c "1" -t tracks  --xmin -2 --xmax 2 --nbins 5 --xlabel "Track Charge" -o test.root
+python plot1D.py -f gun.list --ylabel "N Tracks" -v "trValidFraction" -c "1" -t tracks --xmin 0 --xmax 1 --nbins 100 --xlabel "Valid Fraction of Hits" -o test.root
 
+
+python plot1D.py -f gun.list --ylabel "N Tracks" -v "genMomCTau0" -c "1" -t genp --xmin 0 --xmax 100 --nbins 100 --xlabel "CTau0" -o test.root
+python plot1D.py -f gun.list --ylabel "N Tracks" -v "genMomBeta" -c "1" -t genp --xmin 0 --xmax 1 --nbins 100 --xlabel "Beta" -o test.root
+python plot1D.py -f gun.list --ylabel "N Tracks" -v "genMomLxyz" -c "1" -t genp --xmin 0 --xmax 100 --nbins 100 --xlabel "Lxyz" -o test.root
+python plot1D.py -f gun.list --ylabel "N Tracks" -v "genMomLxy" -c "1" -t genp --xmin 0 --xmax 100 --nbins 100 --xlabel "Lxy" -o test.root
+python plot1D.py -f gun.list --ylabel "N Tracks" -v "genMomLz" -c "1" -t genp --xmin 0 --xmax 100 --nbins 100 --xlabel "Lz" -o test.root
+
+
+python plot1D.py -f gun.list --ylabel "N PV" -v "pvSumPtSq[0]" -c "1" -t vtx --xmin 0 --xmax 2000 --nbins 100 --xlabel "0th Primary Vertex SumPtSq" -o test.root
+python plot1D.py -f gun.list --ylabel "N PV" -v "pvNTrack" -c "1" -t vtx --xmin 0 --xmax 100 --nbins 100 --xlabel "Primary Vertex N tracks" -o test.root
+python plot1D.py -f gun.list --ylabel "N PV" -v "pvX*pvX + pvY*pvY" -c "1" -t vtx --xmin -.005 --xmax .005 --nbins 100 --xlabel "Primary Vertex R^{2}2D" -o test.root
+
+
+python plot1D.py -f gun.list --ylabel "N Tracks" -v "fabs(trOuterEta- trInnerEta)" -c "1" -t tracks  --xmin 0 --xmax 4 --nbins 100 --xlabel "Track |#eta_{inner}-#eta_{outer}|" -o test.root
+python plot1D.py -f gun.list --ylabel "N Tracks" -v "fabs(trOuterPt- trInnerPt)" -c "1" -t tracks  --xmin 0 --xmax 4 --nbins 100 --xlabel "Track |pt_{inner}-pt_{outer}|" -o test.root
+python plot1D.py -f gun.list --ylabel "N Tracks" -v "fabs(trOuterPhi- trInnerPhi)" -c "1" -t tracks  --xmin 0 --xmax 4 --nbins 100 --xlabel "Track |phi_{inner}-phi_{outer}|" -o test.root
+python plot1D.py -f gun.list --ylabel "N Tracks" -v "fabs(trOuterPhi- trInnerPhi)" -c "1" -t tracks  --xmin 0 --xmax 4 --nbins 100 --xlabel "Track |phi_{inner}-phi_{outer}|" -o test.root
+python plot1D.py -f gun.list --ylabel "N Tracks" -v "trInnerR2D - trOuterR2D" -c "1" -t tracks  --xmin 0 --xmax 100 --nbins 50 --xlabel "Track R2D_{inner} - R2D_{outer}" -o test.root
+python plot1D.py -f gun.list --ylabel "N Tracks" -v "trInnerR3D - trOuterR3D" -c "1" -t tracks  --xmin 0 --xmax 100 --nbins 50 --xlabel "Track R2D_{inner} - R2D_{outer}" -o test.root
+python plot1D.py -f gun.list --ylabel "N Tracks" -v "trInnerR2D" -c "1" -t tracks  --xmin 0 --xmax 100 --nbins 50 --xlabel "Track Inner R2D" -o test.root
+python plot1D.py -f gun.list --ylabel "N Tracks" -v "trInnerR3D" -c "1" -t tracks  --xmin 0 --xmax 100 --nbins 50 --xlabel "Track Inner R3D" -o test.root
+python plot1D.py -f gun.list --ylabel "N Tracks" -v "trOuterR2D" -c "1" -t tracks  --xmin 0 --xmax 100 --nbins 50 --xlabel "Track Outer R2D" -o test.root
+python plot1D.py -f gun.list --ylabel "N Tracks" -v "trOuterR3D" -c "1" -t tracks  --xmin 0 --xmax 100 --nbins 50 --xlabel "Track Outer R3D" -o test.root
+
+
+
+
+
+python plot1D.py -f xx4j.list --ylabel "N Tracks" -v "nTracks" -c "1" -t tracks --xmin 0 --xmax 100 --nbins 100 --xlabel "N Track" -o test.root
+python plot1D.py -f xx4j.list --ylabel "N Tracks" -v "log(abs(trDxySig))" -c "1" -t tracks --xmin -5 --xmax 15 --nbins 100 --xlabel "Track log(|D_{xy} Significance|)" -o test.root
+python plot1D.py -f xx4j.list --ylabel "N Tracks" -v "trDxySig" -c "1" -t tracks --xmin -1000 --xmax 1000 --nbins 100 --xlabel "Track D_{xy} Significance" -o test.root
+python plot1D.py -f xx4j.list --ylabel "N Tracks" -v "trDxy" -c "1" -t tracks --xmin -100 --xmax 100 --nbins 100 --xlabel "Track D_{xy} [cm]" -o test.root
+python plot1D.py -f xx4j.list --ylabel "N Tracks" -v "trDsz" -c "1" -t tracks --xmin -100 --xmax 100 --nbins 100 --xlabel "Track D_{sz}" -o test.root
+
+python plot1D.py -f xx4j.list --ylabel "N Tracks" -v "trChi2" -c "1" -t tracks --xmin 0 --xmax 100 --nbins 100 --xlabel "Track #Chi^{2}" -o test.root
+python plot1D.py -f xx4j.list --ylabel "N Tracks" -v "trNDoF" -c "1" -t tracks --xmin 0 --xmax 0 --nbins 100 --xlabel "Track Degrees of Freedom" -o test.root
+python plot1D.py -f xx4j.list --ylabel "N Tracks" -v "trAlgoInt" -c "1" -t tracks --xmin 0 --xmax 30 --nbins 30 --xlabel "Track Algorithm" -o test.root
+
+python plot1D.py -f xx4j.list --ylabel "N Tracks" -v "log(trRefR2D)" -c "1" -t tracks --xmin -10 --xmax 10 --nbins 100 --xlabel "log (Track Reference Vertex R^{2}) " -o test.roo
+
+python plot1D.py -f xx4j.list --ylabel "N Tracks" -v "nTracks" -c "1" -t tracks --xmin 0 --xmax 100 --nbins 100 --xlabel "Track P_{t} [GeV]" -o test.root
+python plot1D.py -f xx4j.list --ylabel "N Tracks" -v "trPt" -c "1" -t tracks --xmin 0 --xmax 100 --nbins 100 --xlabel "Track P_{t} [GeV]" -o test.root
+python plot1D.py -f xx4j.list --ylabel "N Tracks" -v "trEta" -c "1" -t tracks --xmin 0 --xmax -3 --nbins 100 --xlabel "Track #eta" -o test.root
+python plot1D.py -f xx4j.list --ylabel "N Tracks" -v "trPhi" -c "1" -t tracks --xmin 0 --xmax -3 --nbins 100 --xlabel "Track #phi" -o test.root
+python plot1D.py -f xx4j.list --ylabel "N Tracks" -v "trTheta" -c "1" -t tracks --xmin -3 --xmax -3 --nbins 100 --xlabel "Track #Theta" -o test.root
+
+python plot1D.py -f xx4j.list --ylabel "N Tracks" -v "trNLost" -c "1"  -t tracks  --xmin 0 --xmax 12 --nbins 12  --xlabel  "Track Hits Lost" -o test.root
+python plot1D.py -f xx4j.list --ylabel "N Tracks" -v "trNFound" -c "1" -t tracks  --xmin 0 --xmax 12 --nbins 12 --xlabel "Track Hits Found" -o test.root
+python plot1D.py -f xx4j.list --ylabel "N Tracks" -v "trCharge" -c "1" -t tracks  --xmin -2 --xmax 2 --nbins 5 --xlabel "Track Charge" -o test.root
+python plot1D.py -f xx4j.list --ylabel "N Tracks" -v "trValidFraction" -c "1" -t tracks --xmin 0 --xmax 1 --nbins 100 --xlabel "Valid Fraction of Hits" -o test.root
+
+
+python plot1D.py -f xx4j.list --ylabel "N Tracks" -v "genMomCTau0" -c "1" -t genp --xmin 0 --xmax 100 --nbins 100 --xlabel "CTau0" -o test.root
+python plot1D.py -f xx4j.list --ylabel "N Tracks" -v "genMomBeta" -c "1" -t genp --xmin 0 --xmax 1 --nbins 100 --xlabel "Beta" -o test.root
+python plot1D.py -f xx4j.list --ylabel "N Tracks" -v "genMomLxyz" -c "1" -t genp --xmin 0 --xmax 100 --nbins 100 --xlabel "Lxyz" -o test.root
+python plot1D.py -f xx4j.list --ylabel "N Tracks" -v "genMomLxy" -c "1" -t genp --xmin 0 --xmax 100 --nbins 100 --xlabel "Lxy" -o test.root
+python plot1D.py -f xx4j.list --ylabel "N Tracks" -v "genMomLz" -c "1" -t genp --xmin 0 --xmax 100 --nbins 100 --xlabel "Lz" -o test.root

@@ -105,6 +105,10 @@ class DisplacedJet {
 
   // selection related
   bool doesPassPreSelection() const;
+  int  getNDispTracks(const bool & isHLT) const;
+  int  getNPromptTracks(const bool & isHLT) const;
+  bool isInclusive(const bool & isHLT) const;
+  bool isDispTrack(const bool & isHLT) const;
 
   // jet info integration
   void addCaloTrackInfo(const reco::TrackRefVector&);
@@ -239,6 +243,7 @@ class DisplacedJet {
   reco::TrackCollection vertexMatchedTracks; 
   std::vector<reco::btag::TrackIPData> lifetimeIPData; 
   std::vector<float> ip3dVector, ip3dsVector, ip2dVector, ip2dsVector;
+  std::vector<int>   trackAlgo;
   std::vector<float> ipLog3dVector, ipLog3dsVector, ipLog2dVector, ipLog2dsVector;
   std::vector<float> jetAxisDistVector, jetAxisDistSigVector; 
 
@@ -360,31 +365,47 @@ void DisplacedJet::doGenVertexID(const float & metricThreshold, const reco::GenP
 
 bool DisplacedJet::doesPassPreSelection() const {
   if (debug > 2) std::cout << "[DEBUG] Checking Jet Preselection  " << std::endl;
-
-  bool	passDisplacedTracks = false;	// has
-  bool	passPromptTracks    = false;
-
-  int nPTracks = 0;
-  int nDTracks = 0;
-
-  std::vector<float>::const_iterator ip2DSigIter = ip2dsVector.begin();
-  std::vector<float>::const_iterator ip2DIter	 = ip2dVector.begin();
-
-  for(; ip2DSigIter != ip2dsVector.end(); ++ip2DSigIter) {
-    if (fabs(*ip2DSigIter) > 10 ) nDTracks++;
-  }
-  if (debug > 3) std::cout << "[DEBUG] 2DIP sig requirements...Complete  " << std::endl;
-  for(; ip2DIter != ip2dVector.end(); ++ip2DIter) {
-    if (fabs(*ip2DIter) < 0.05 ) nPTracks++;
-  }
-  if (debug > 3) std::cout << "[DEBUG] 2DIP requirements...Complete  " << std::endl;
-  passDisplacedTracks = nDTracks >= 2;
-  passPromptTracks = nPTracks <= 2;
-
-  if (debug > 3) std::cout << "[DEBUG] Checking Jet Preselection...Complete  " << std::endl;
-  return (passPromptTracks && passDisplacedTracks);
+  return isInclusive(true) && isDispTrack(true);
 }
 
+// returns number of tracks found in iter 0,1,2 (run at HLT)
+int DisplacedJet::getNPromptTracks(const bool& isHLT) const {  
+  int nPTracks = 0;
+  std::vector<float>::const_iterator ip2DIter = ip2dVector.begin();
+  int index = 0;
+  for(; ip2DIter != ip2dVector.end(); ++ip2DIter, ++index) {
+    int algo  = trackAlgo[index];
+    // hlt only runs iter 0,1,2 for prompt track calculations
+    // algo != iteration
+    if (fabs(*ip2DIter) < 0.1 && ((algo <= 6 || !isHLT)) nPTracks++;
+  }  
+  return  nPTracks;
+}
+
+//returns the number of tracks with ip significance >5 
+//tracks must be found in iter 0,1,2, or 4 
+int DisplacedJet::getNDispTracksHLT(const bool & isHLT) const {
+  int	nDTracks	    = 0;
+  std::vector<float>::const_iterator ip2DSigIter = ip2dsVector.begin();
+  int index = 0;
+  for(; ip2DSigIter != ip2dsVector.end(); ++ip2DSigIter, ++index) {
+    int index = ip2dsVector.index(*ip2DSigIter);
+    int algo  = trackAlgo[index];
+    // if this is for HLT then only use iter 0,1,2,4
+    // algo != iteration
+    if (fabs(*ip2DSigIter) > 5.0 && ((algo != 7 && algo < 8) || !isHLT) nDTracks++;
+  }
+  return nDTracks;
+}
+
+// returns true if the inclusive criteria is satisfied (at most 2 prompt tracks)
+bool DisplacedJet::isInclusive(const bool & isHLT) const {
+  return isHLT ? (getNPromptTracks(true) >= 2) : (getNPromptracks(false) >= 2) ;
+}
+
+bool DisplacedJet::isDispTrack(const bool & isHLT) const {
+  return isHLT ? (getNDispTracks(true) >= 2) : (getNDispTracks(false) >= 2) ;
+}
 
 bool DisplacedJet::doGenCaloJetMatching(const float& ptMatch, const float& dRMatch, const reco::GenParticleCollection& genParticles) {
   if (debug > 2) std::cout << "\n[GEN MATCHING] CALO JET INFO  " << " pt " << caloPt << " eta " << caloEta <<  " phi " << caloPhi << std::endl;
@@ -599,7 +620,7 @@ void DisplacedJet::addIPTagInfo(const reco::TrackIPTagInfo & ipTagInfo) {
   reco::TrackRefVector selectedTracks = ipTagInfo.selectedTracks();   
   reco::TrackRefVector::const_iterator trackIter = selectedTracks.begin();
   for(; trackIter != selectedTracks.end(); ++trackIter) {    
-    
+    trackAlgo.push_back(trackIter->algo);
   }
 
   if (debug > 2) std::cout << "[DEBUG 2] Deriving Distributional Quantities of IP Info  " << std::endl;  

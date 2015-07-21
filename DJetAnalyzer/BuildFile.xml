@@ -2,9 +2,11 @@
 <use name="FWCore/PluginManager"/>
 <use name="FWCore/ParameterSet"/>
 <use name="DataFormats/VertexReco"/>
+<use name="DataFormats/Common"/>
 <use name="RecoBTag/SecondaryVertex"/>
 <use name="DataFormats/TrackReco"/>
 <use name="SimDataFormats/SimVertex"/>
 <use name="SimDataFormats/Vertex"/>
+<use name="RecoTracker/DebugTools"/>
 <use name="CommonTools/UtilAlgos"/>
 <flags EDM_PLUGIN="1"/>

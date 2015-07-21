@@ -1,0 +1,109 @@
+python ratio_plot.py -f dataCALOPD_DisplacedJet.root -o test.root --cut1 "triggerPass[45]" --cut2 "triggerPass[46]" -t eventInfo -v eventCaloHT --xmin 0 --xmax 1000 --nbins 100 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "HLT_HT500_DisplacedDijet40_Inclusive" --label2 "HLT_HT550_DisplacedDijet40_Inclusive"
+
+python ratio_plot.py -f dataCALOPD_DisplacedJet.root -o test.root --cut1 "triggerPass[43]" --cut2 "triggerPass[44]" -t eventInfo -v eventCaloHT --xmin 0 --xmax 1000 --nbins 50 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "HLT_HT350_DisplacedDijet40_DisplacedTrack" --label2 "HLT_HT350_DisplacedDijet80_DisplacedTrack"
+
+python ratio_plot.py -f dataCALOPD_DisplacedJet.root -o test.root --cut1 "triggerPass[45]" --cut2 "triggerPass[41]" -t eventInfo -v eventCaloHT --xmin 0 --xmax 2500 --nbins 40 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "HLT_HT500_DisplacedDijet40_Inclusive" --label2 "HLT_HT650_DisplacedDijet80_Inclusive"
+
+
+
+python ratio_plot.py -f signalCALOXX4J100mm.root -o test.root --cut2 "(triggerPass[4] + triggerPass[8] + triggerPass[36] + triggerPass[38]) > 0" --cut1 "1" -t eventInfo -v eventCaloHT --xmin 0 --xmax 2500 --nbins 40 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "All Events" --label2 "Big OR"
+
+python ratio_plot.py -f signalCALOXX4J100mm.root -o test.root --cut2 "(triggerPass[4] + triggerPass[8] + triggerPass[36] + triggerPass[38]) > 0" --cut1 "1" -t eventInfo -v eventCaloHT --xmin 0 --xmax 2500 --nbins 40 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "All Events" --label2 "Big OR"
+
+
+
+python ratio_plot.py -f ~/work/dataCALOPD_DisplacedJet_v3.root -o test.root --cut2 "passHTControl && passDisplaced350_40" --cut1 "passHTControl" -t eventInfo -v eventCaloHT --xmin 0 --xmax 2500 --nbins 40 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "All Events" --label2 "HLT_HT350_DisplacedDijet40_DisplacedTrack"
+
+python ratio_plot.py -f ~/work/dataCALOPD_JetHT_v3.root -o test.root --cut2 "passHTControl && passDisplaced350_40" --cut1 "passHTControl" -t eventInfo -v eventCaloHT --xmin 0 --xmax 2500 --nbins 40 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "All Events" --label2 "HLT_HT350_DisplacedDijet40_DisplacedTrack"
+
+
+
+
+python ratio_plot.py -f ~/work/dataCALOPD_JetHT_v3.root -o test.root --cut1 "passDisplaced500_40 && eventCaloHT > 400 && passDisplaced500_40" --cut2 "passHTControl && eventCaloHT > 400" -t eventInfo -v eventCaloHT --xmin 0 --xmax 2500 --nbins 40 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "All Events" --label2 "HLT_HT500_DisplacedDijet40_Inclusive"
+
+python ratio_plot.py -f JETHTPD.root -o test.root --cut1 "passHT400" --cut2 "passHT400 && passDisplaced500_40" -t eventInfo -v eventCaloHT --xmin 0 --xmax 1000 --nbins 20 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "All Events" --label2 "HLT_HT500_DisplacedDijet40_Inclusive"
+
+
+
+python ratio_plot.py -f dataCALO_PD_JETHT.root -o test.root --cut1 "passHT200" --cut2 "passHT200 && passDisplaced350_40" -t eventInfo -v eventCaloHT --xmin 0 --xmax 500 --nbins 20 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "All Events" --label2 "HLT_HT500_DisplacedDijet40_Inclusive"
+
+
+
+
+python ratio_plot.py -f dataFULL.root -o test.root --cut1 "passPFMET170 && caloFewestPromptTracks < 8 && caloSubFewestPromptTracks < 8" --cut2 "passDisplaced500_40 && passPFMET170 && caloFewestPromptTracks < 8 && caloSubFewestPromptTracks < 8" -t eventInfo -v eventCaloHT --xmin 0 --xmax 1000 --nbins 20 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "All Events" --label2 "HLT_HT500_DisplacedDijet40_Inclusive"
+
+
+
+python ratio_plot.py -f JETHT.root -o test.root --cut1 "passPFMET170" --cut2 "passDisplaced500_40 && passPFMET170" -t eventInfo -v eventCaloHT --xmin 0 --xmax 800 --nbins 20 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "All Events" --label2 "HLT_HT500_DisplacedDijet40_Inclusive"
+
+
+
+python ratio_plot.py -f METPD.root -o test.root --cut1 "passPFMET170" --cut2 "passDisplaced500_40 && passPFMET170" -t eventInfo -v eventCaloHT --xmin 0 --xmax 800 --nbins 20 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "All Events" --label2 "HLT_HT500_DisplacedDijet40_Inclusive"
+
+
+
+-------------------------EVENT HT
+
+python ratio_plot.py -f JETHTPD.root -o test.root --cut1 "passHT400 && (passHT800 == 0) && caloFewestPromptTracks < 6" --cut2 "passDisplaced500_40 && passHT400 && (passHT800 == 0) && caloFewestPromptTracks < 6 " -t eventInfo -v eventCaloHT --xmin 250 --xmax 800 --nbins 25 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "HLT_PFHT400" --label2 "HLT_HT500_DisplacedDijet40_Inclusive OR HLT_PFHT400"
+
+python ratio_plot.py -f JETHTPD.root -o test.root --cut1 "passHTControl && (passHT800 == 0)" --cut2 "passDisplaced500_40 && passHTControl && (passHT800 == 0)" -t eventInfo -v eventCaloHT --xmin 250 --xmax 800 --nbins 25 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "HLT_PFHT400" --label2 "HLT_HT500_DisplacedDijet40_Inclusive OR HLT_PFHT400"
+
+python ratio_plot.py -f JETHTPD.root -o test.root --cut1 "passHTControl && (passHT800 == 0)" --cut2 "passDisplaced350_40 && passHTControl && (passHT800 == 0)" -t eventInfo -v eventCaloHT --xmin 0 --xmax 500 --nbins 25 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "HLT_PFHT400" --label2 "HLT_HT350_DisplacedDijet40_Inclusive"
+
+
+--------------------FEWEST TRACKS
+python ratio_plot.py -f JETHTPD.root -o test.root --cut1 "passHT400 && (passHT800 == 0) && caloFewestPromptTracks < 6" --cut2 "passDisplaced500_40 && passHT400 && (passHT800 == 0) && caloFewestPromptTracks < 6 " -t eventInfo -v eventCaloHT --xmin 250 --xmax 800 --nbins 25 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "HLT_PFHT400" --label2 "HLT_HT500_DisplacedDijet40_Inclusive OR HLT_PFHT400"
+
+
+python ratio_plot.py -f JETHTPD.root -o test.root --cut1 "passHT400 && (passHT800 == 0) && eventCaloHT > 550" --cut2 "passDisplaced500_40 && passHT400 && (passHT800 == 0) && eventCaloHT > 550 " -t eventInfo -v caloFewestPromptTracks --xmin 0 --xmax 20 --nbins 20 --xlabel "offline Jet Fewest Prompt Tracks" --ylabel "N Events" --label1 "HLT_PFHT400" --label2 "HLT_HT500_DisplacedDijet40_Inclusive"
+
+python ratio_plot.py -f JETHTPD.root -o test.root --cut1 "passHT400 && (passHT800 == 0) && eventCaloHT > 550" --cut2 "passDisplaced500_40 && passHT400 && (passHT800 == 0) && eventCaloHT > 550 " -t eventInfo -v caloSubFewestPromptTracks --xmin 0 --xmax 20 --nbins 20 --xlabel "offline Jet 2nd Fewest Tracks" --ylabel "N Events" --label1 "HLT_PFHT400" --label2 "HLT_HT500_DisplacedDijet40_Inclusive"
+
+python ratio_plot.py -f JETHTPD.root -o test.root --cut1 "passHT400 && eventCaloHT > 550" --cut2 "passDisplaced500_40 && passHT400 && eventCaloHT > 550 " -t eventInfo -v caloSubFewestPromptTracks --xmin 0 --xmax 20 --nbins 20 --xlabel "offline Jet 2nd Fewest Tracks" --ylabel "N Events" --label1 "HLT_PFHT400" --label2 "HLT_HT500_DisplacedDijet40_Inclusive"
+
+----- 350 trigger
+
+python ratio_plot.py -f JETHTPD.root -o test.root --cut1 "passHT200 && (passHT800 == 0)" --cut2 "passDisplaced350_40 && passHT200 && (passHT800 == 0) " -t eventInfo -v caloSubFewestPromptTracks --xmin 0 --xmax 20 --nbins 20 --xlabel "offline Jet 2nd Fewest Tracks" --ylabel "N Events" --label1 "HLT_PFHT400" --label2 "HLT_HT350_DisplacedDijet40_DisplacedTrack"
+
+python ratio_plot.py -f JETHTPD.root -o test.root --cut1 "passHTControl && (passHT800 == 0)" --cut2 "passDisplaced350_40 && passHTControl && (passHT800 == 0) " -t eventInfo -v caloFewestPromptTracks --xmin 0 --xmax 20 --nbins 20 --xlabel "offline Jet 2nd Fewest Tracks" --ylabel "N Events" --label1 "HLT_PFHT400" --label2 "HLT_HT350_DisplacedDijet40_DisplacedTrack"
+
+-------------------DISPLACED TRACKS
+
+
+python ratio_plot.py -f JETHTPD.root -o test.root --cut1 "passHT200 && (passHT800 == 0) && eventCaloHT > 400" --cut2 "passDisplaced350_40 && passHT200 && (passHT800 == 0) && eventCaloHT > 400 " -t eventInfo -v caloMostDispTrack --xmin 0 --xmax 20 --nbins 20 --xlabel "offline Jet Most Displaced Tracks" --ylabel "N Events" --label1 "HLT_PFHT400" --label2 "HLT_HT500_DisplacedDijet40_Inclusive"
+
+python ratio_plot.py -f JETHTPD.root -o test.root --cut1 "passHT200 && (passHT800 == 0) && eventCaloHT > 400" --cut2 "passDisplaced350_40 && passHT200" -t eventInfo -v caloSubMostDispTrack --xmin 0 --xmax 20 --nbins 20 --xlabel "offline Jet 2nd Most Displaced Tracks" --ylabel "N Events" --label1 "HLT_PFHT400" --label2 "HLT_HT350_DisplacedDijet40_DisplacedTrack"
+
+
+
+
+
+
+python ratio_plot.py -f JETHTPD.root -o test.root --cut1 "passHT400 && eventCaloHT > 550" --cut2 "passDisplaced500_40 && passHT400 && eventCaloHT > 550 " -t eventInfo -v caloSubFewestPromptTracks --xmin 0 --xmax 20 --nbins 20 --xlabel "offline Jet 2nd Least Tracks" --ylabel "N Events" --label1 "HLT_PFHT400" --label2 "HLT_HT500_DisplacedDijet40_Inclusive"
+
+
+
+python ratio_plot.py -f JETHTPD.root -o test.root --cut1 "passHT400 && (passHT800 == 0)" --cut2 "passDisplaced500_40 && passHT400 && (passHT800 == 0)" -t eventInfo -v caloFewestPromptTracks --xmin 0 --xmax 20 --nbins 20 --xlabel "offline N Prompt Tracks" --ylabel "N Events" --label1 "HLT_PFHT400" --label2 "HLT_HT500_DisplacedDijet40_Inclusive OR HLT_PFHT400"
+
+
+
+python ratio_plot.py -f JETHTPD.root -o test.root --cut1 "passHT400 && eventCaloHT > 500" --cut2 "passDisplaced500_40 && passHT400 && eventCaloHT > 500 " -t eventInfo -v caloFewestPromptTracks --xmin 0 --xmax 20 --nbins 20 --xlabel "offline N Prompt Tracks" --ylabel "N Events" --label1 "HLT_PFHT400" --label2 "HLT_HT500_DisplacedDijet40_Inclusive OR HLT_PFHT400"
+
+
+
+python ratio_plot.py -f JETHTPD.root -o test.root --cut1 "passHT200" --cut2 "passDisplaced350_40 && passHT200 " -t eventInfo -v caloFewestPromptTracks --xmin 0 --xmax 20 --nbins 20 --xlabel "offline N Prompt Tracks" --ylabel "N Events" --label1 "HLT_PFHT400" --label2 "HLT_HT500_DisplacedDijet40_Inclusive OR HLT_PFHT400"
+
+
+
+
+python ratio_plot.py -f JETHTPD.root -o test.root --cut1 "passVBFTriple && (passHT800 == 0)" --cut2 "(passHT800 == 0) && passVBFHadronic && passVBFTriple" -t eventInfo -v caloLeadingHadronicFraction --xmin .5 --xmax 1 --nbins 25 --xlabel "offline Hadronic Energy Fraction" --ylabel "N Events" --label1 "VBF TripleJet" --label2 "VBF Hadronic"
+
+
+python ratio_plot.py -f JETHTPD.root -o test.root --cut1 "passVBFTriple && (passHT800 == 0) && caloLeadingHadronicFraction > .85" --cut2 "(passHT800 == 0) && passVBFHadronic && passVBFTriple && caloLeadingHadronicFraction > .85" -t eventInfo -v caloFewestPromptTracks --xmin 0 --xmax 10 --nbins 10 --xlabel "offline Fewest Prompt Tracks Jet" --ylabel "N Events" --label1 "VBF TripleJet" --label2 "VBF Hadronic"
+
+
+
+python ratio_plot.py -f JETHTPD.root -o test.root --cut1 "passVBFTriple && (passHT800 == 0) " --cut2 "(passHT800 == 0) && passVBFDispTrack && passVBFTriple" -t eventInfo -v caloMostDispTrack --xmin 0 --xmax 10 --nbins 10 --xlabel "offline Most N Displaced Tracks Jet" --ylabel "N Events" --label1 "VBF TripleJet" --label2 "VBF Displaced Track"
+
+
+python ratio_plot.py -f JETHTPD.root -o test.root --cut1 "passVBFTriple && (passHT800 == 0) " --cut2 "(passHT800 == 0) && passVBFDispTrack && passVBFTriple" -t eventInfo -v caloFewestPromptTracks --xmin 0 --xmax 10 --nbins 10 --xlabel "offline Fewest Prompt Tracks Jet" --ylabel "N Events" --label1 "VBF TripleJet" --label2 "VBF Displaced Track"

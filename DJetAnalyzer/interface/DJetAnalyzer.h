@@ -1,4 +1,3 @@
-
 class DJetAnalyzer : public edm::EDAnalyzer {
 
  public:
@@ -8,12 +7,15 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   static void	fillDescriptions(edm::ConfigurationDescriptions& descriptions);
   
  private:
-
   void fillHandles(const edm::Event &);
 
+  // gnerator
   void dumpGenInfo(const reco::GenParticleCollection &); 
   void dumpSimInfo(const edm::SimVertexContainer &);
   void dumpPreSelection(DisplacedJetEvent&);
+
+  // trigger information
+  void fillTriggerInfo(const edm::Event &  iEvent, const edm::TriggerResults & trigResults);
 
   // tree dumping displaced jet quantities
   void dumpCaloInfo(DisplacedJetEvent&);
@@ -21,13 +23,10 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   void dumpIPInfo(DisplacedJetEvent&);
   void dumpIVFInfo(DisplacedJetEvent&);
   void dumpDJTags(DisplacedJetEvent&);
-
   void dumpPVInfo(DisplacedJetEvent &, const reco::VertexCollection &);
-
   //tree dumping track quantities
-  void dumpTrackInfo(DisplacedJetEvent&, const reco::TrackCollection &, const int & collectionID);
-  // void dumpDTrackInfo(DisplacedJetEvent&);
-
+  void dumpTrackInfo(DisplacedJetEvent&, const reco::TrackCollection &, const int & collectionID, const edm::EventSetup & iSetup);
+  
   virtual void beginJob() override;
   virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
   virtual void endJob() override;
@@ -40,14 +39,25 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   std::string	genTreeName_;
 
   TFile *outputFile_;
+  // analysis to dos
   bool	 doGenMatch_;
   bool	 doSimMatch_;
   bool	 applyEventPreSelection_;
   bool	 applyJetPreSelection_;
-
-
+  bool   dumpGeneralTracks_;
+  // keep trees
+  bool   writeJetTree_;
+  bool   writeTrackTree_;
+  bool   writeEventTree_;
+  bool   writeGenTree_;
+  bool   writeVertexTree_;
+  // event flags
   bool	 isMC_;
   bool	 isSignalMC_;
+  
+  //trigger tags
+  std::string triggerResultPath_;
+  edm::InputTag tag_triggerResults_;
 
   //tracking tags
   edm::InputTag tag_generalTracks_;
@@ -89,6 +99,7 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   static const Int_t    SIM_STATUS_CODE_MATCH = 0; 
   static const Int_t    GEN_STATUS_CODE_MATCH = 23; 
   const float		VERTEX_MATCH_METRIC   = 0.05;
+  static const Int_t	MAX_TRIGGERS	      = 1000;
   static const Int_t	MAX_TRACKS	      = 5000;
   static const Int_t	MAX_JETS	      = 40;
   static const Int_t	MAX_VTX		      = 100;
@@ -138,6 +149,27 @@ class DJetAnalyzer : public edm::EDAnalyzer {
 
   // jet kinematics
   Int_t	    caloJetID[MAX_JETS];
+  // ordered flat numbers
+  // by pt
+  Float_t   caloLeadingJetPT;
+  Float_t   caloSubLeadingJetPT;
+  // All Iterations
+  Float_t   caloFewestPromptTracks;
+  Float_t   caloSubFewestPromptTracks;
+  Float_t   caloMostDispTracks;
+  Float_t   caloSubMostDispTracks;
+  // HLT Iterations
+  Float_t   caloFewestPromptTracksHLT;
+  Float_t   caloSubFewestPromptTracksHLT;
+  Float_t   caloMostDispTracksHLT;
+  Float_t   caloSubMostDispTracksHLT;
+
+  // by hadronic fraction for pt > 40 GeV
+  Float_t   caloLeadingHadronicFraction;
+  // vbf numbers
+  // Mqq for minimum dEta 3.0 max dEta 5 and min pt 20
+  Float_t   caloLeadingMqq;
+
   Float_t   caloJetPt[MAX_JETS];
   Float_t   caloJetEta[MAX_JETS];
   Float_t   caloJetPhi[MAX_JETS];
@@ -163,8 +195,7 @@ class DJetAnalyzer : public edm::EDAnalyzer {
 
   ///////////////////// TRACK MATCHING ////////////////////
 
-  Int_t   jetNTracks[MAX_JETS];
-  
+  Int_t   jetNTracks[MAX_JETS];  
 
   //////////////////// LIFETIME TAG /////////////////  
 
@@ -473,7 +504,6 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   Int_t	    vtxIncSecSimMatched[MAX_VTX];
   Float_t   vtxIncSecSimMatchMetric[MAX_VTX];
 
-
   ///////////////// GENERATOR TREE SPECIFIC MEMBERS /////////////////
 
   // Qualities
@@ -492,6 +522,31 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   Float_t   genPartVZ[MAX_GEN];
   Float_t   genPartVLxy[MAX_GEN];
   Float_t   genPartVLxyz[MAX_GEN];
+
+  // mother quantities
+  Int_t	    genMomStatus[MAX_GEN];
+  // Position
+  Float_t   genMomPt[MAX_GEN];
+  Float_t   genMomEta[MAX_GEN];
+  Float_t   genMomPhi[MAX_GEN];
+  Int_t	    genMomPID[MAX_GEN];
+  Float_t   genMomBeta[MAX_GEN];
+  Float_t   genMomGamma[MAX_GEN];
+  Float_t   genMomLxy[MAX_GEN];
+  Float_t   genMomLz[MAX_GEN];
+  Float_t   genMomLxyz[MAX_GEN];
+  Float_t   genMomCTau0[MAX_GEN];
+  Float_t   genMom1CTau0 ;
+  Float_t   genMom2CTau0 ;
+  Float_t   genMom1Lxy ;
+  Float_t   genMom2Lxy ;
+  Float_t   genMom1Lxyz ;
+  Float_t   genMom2Lxyz ;
+  Float_t   genMom1Lz ;
+  Float_t   genMom2Lz ;
+  Float_t   genMom1Pt ;
+  Float_t   genMom2Pt ;
+
 
   // Sim Vertex Information
   Int_t simVtxN;
@@ -557,11 +612,15 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   Float_t   trDszSig[MAX_TRACKS];
 
   // reference point
+  Float_t   trRefR2D[MAX_TRACKS];
+  Float_t   trRefR3D[MAX_TRACKS];
   Float_t   trRefX[MAX_TRACKS];
   Float_t   trRefY[MAX_TRACKS];
   Float_t   trRefZ[MAX_TRACKS];
 
   // inner positions
+  Float_t   trInnerR2D[MAX_TRACKS];
+  Float_t   trInnerR3D[MAX_TRACKS];
   Float_t   trInnerX[MAX_TRACKS];
   Float_t   trInnerY[MAX_TRACKS];
   Float_t   trInnerZ[MAX_TRACKS];
@@ -575,6 +634,8 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   Float_t   trInnerP[MAX_TRACKS];
 
   // outer positions
+  Float_t   trOuterR2D[MAX_TRACKS];
+  Float_t   trOuterR3D[MAX_TRACKS];
   Float_t   trOuterX[MAX_TRACKS];
   Float_t   trOuterY[MAX_TRACKS];
   Float_t   trOuterZ[MAX_TRACKS];
@@ -599,22 +660,50 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   std::string	trAlgo[MAX_TRACKS];
   Int_t		trAlgoInt[MAX_TRACKS];
 
+  // trigger related
+  Int_t		nTrig;
+  std::vector<std::string>   triggerNames;
+  Int_t         triggerPass[MAX_TRIGGERS];
+  Int_t         passDisplacedOR5e33;
+  Int_t         passDisplacedOR14e34;
+  Int_t         passHTControl; 
+  Int_t         passHT200; 
+  Int_t         passHT250; 
+  Int_t         passHT300; 
+  Int_t         passHT350; 
+  Int_t         passHT400; 
+  Int_t         passDisplaced350_40; 
+  Int_t         passDisplaced500_40;
+  Int_t         passDisplaced550_40;
+  Int_t         passVBFHadronic;
+  Int_t         passVBFDispTrack;
+  Int_t         passVBFTriple;
+  Int_t         passBigOR; 
+  Int_t         passHT800;
+  Int_t         passPFMET170;
+  Int_t         passPFMET170NC;
+
   ///////////////////HANDLES////////////////////
-
-  edm::Handle<reco::TrackCollection> gTracks;
-  edm::Handle<reco::CaloJetCollection> ak4CaloJets;
-
+  // tracks
+  edm::Handle<reco::TrackCollection>			gTracks;
+  // jets
+  edm::Handle<reco::CaloJetCollection>			ak4CaloJets;
+  // vertices
   edm::Handle<reco::TrackIPTagInfoCollection>		lifetimeIPTagInfo;
   edm::Handle<reco::SecondaryVertexTagInfoCollection>	secondaryVertexTagInfo;
-
-  edm::Handle<reco::VertexCollection > secondaryVertices;
-  edm::Handle<reco::VertexCollection > inclusiveVertexCandidates;
-  edm::Handle<reco::VertexCollection > inclusiveSecondaryVertices;
-  edm::Handle<reco::VertexCollection > offlinePrimaryVertices;
-
+  edm::Handle<reco::VertexCollection>			secondaryVertices;
+  edm::Handle<reco::VertexCollection>			inclusiveVertexCandidates;
+  edm::Handle<reco::VertexCollection>			inclusiveSecondaryVertices;
+  edm::Handle<reco::VertexCollection>			offlinePrimaryVertices;
   //SIM Compatible 
-  edm::Handle<reco::GenParticleCollection > genParticles;
-  edm::Handle<edm::SimVertexContainer > simVertices;
+  edm::Handle<reco::GenParticleCollection>		genParticles;
+  edm::Handle<edm::SimVertexContainer>			simVertices;
+  edm::Handle<edm::TriggerResults>			triggerResults;
+
+  // trigger related
+
+  //edm::TriggerNames					tNames;
+  //edm::TriggerResultsByName				triggerResultsByName;
 
 };
 

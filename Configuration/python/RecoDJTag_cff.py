@@ -28,7 +28,7 @@ djtagging = cms.Sequence( #track matching for ak5 jets
      #displacedImpactParameterTagInfos + 
      #trackCountingDJTags + 
      #unconstrained PV collection
-     displacedOfflinePrimaryVertices + 
+     #     displacedOfflinePrimaryVertices + 
      #vertex matched tracks
      displacedLifetimeTagInfos + 
      displacedSecondaryVertexTagInfos +

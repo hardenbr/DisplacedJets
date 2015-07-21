@@ -11,7 +11,6 @@ class DisplacedJetEvent {
   void calcNIVFGenMatched(const float & metricThreshold, const reco::GenParticleCollection& genParticles);
   float genMatchMetric(const reco::GenParticle & particle, const reco::Vertex& vertex);
 
-
   // accessors
   int	getNJets() { return djets.size(); } 
   std::vector<int>  getNNoVertexTags() { return nNoVertexTagsVector; }
@@ -31,6 +30,7 @@ class DisplacedJetEvent {
   // jet associated info mergers
   void mergeCaloIPTagInfo(const reco::TrackIPTagInfoCollection&) ;
   void mergeSVTagInfo(const reco::SecondaryVertexTagInfoCollection&);
+  void fillLeadingSubleadingJets(const bool & isHLT);
   
   // associated collections
   void addIVFVertices(const reco::VertexCollection & vertices);
@@ -54,6 +54,20 @@ class DisplacedJetEvent {
   float caloHT;
   std::vector<float> caloDHT;
   float caloMET;
+
+  // ordered quantities 
+  float caloLeadingJetPT,  caloSubLeadingJetPT;
+  // by pt for inclusive requirements                                                                                                                                                             
+  float caloFewestPromptTracks, caloSubFewestPromptTracks;
+  float caloFewestPromptTracksHLT, caloSubFewestPromptTracksHLT;
+  // by pt for disp requirements                                                                                                                                                                  
+  float caloMostDispTracks, caloSubMostDispTracks;
+  float caloMostDispTracksHLT, caloSubMostDispTracksHLT;
+  // by hadronic fraction for pt > 40 GeV                                                                                                                                                         
+  float caloLeadingHadronicFraction;
+  // vbf numbers
+  // Mqq for minimum dEta 3.0 max dEta 5 and min pt 20                                                                                                                                            
+  float caloLeadingMqq;
 
   // ivf related 
   int nIVFReconstructed; 
@@ -84,6 +98,7 @@ private:
   int debug = 0;
 };
 
+
 // constructor designating the calojets, primary vertices, and kinematics cuts
 DisplacedJetEvent::DisplacedJetEvent(const bool& isMC, const reco::CaloJetCollection & caloJets, const reco::VertexCollection & primaryVertices, const float& minPT_, const float& minEta_, const int & debug_) {
 
@@ -102,10 +117,27 @@ DisplacedJetEvent::DisplacedJetEvent(const bool& isMC, const reco::CaloJetCollec
   // construct the empty displaced jet objects to merge info later
   if (debug > 1) std::cout << "[DEBUG 1] Constructing Event From Calo jets " << std::endl;
   reco::CaloJetCollection::const_iterator jetIter = caloJets.begin();
+  caloLeadingJetPT = -1;
+  caloSubLeadingJetPT = -1;
   for(; jetIter != caloJets.end(); ++jetIter) {    
     float pt = jetIter->pt(),  eta = jetIter->eta();
-    if (pt > 40 && fabs(eta) < 2.4) caloHT += pt;
+
+    if (pt > 40 && fabs(eta) < 3.0) caloHT += pt;
     if (pt < minPT || fabs(eta) > minEta) continue;
+    
+    // check leading sub-leading kinematic quantities
+    // if this is the first jet
+    if (pt > caloLeadingJetPT && caloLeadingJetPT == -1) {
+      caloLeadingJetPT = pt;
+    }
+    // shift down the leading jet
+    else if( pt > caloLeadingJetPT && caloLeadingJetPT > 0) {
+      caloSubLeadingJetPT = caloLeadingJetPT;
+      caloLeadingJetPT = pt;
+    }
+    else if (pt > caloSubLeadingJetPT) {
+      caloSubLeadingJetPT = pt;
+    }       
     
     DisplacedJet djet(*jetIter, selPV, isMC, jetIDCounter, debug);
     
@@ -121,6 +153,106 @@ DisplacedJetEvent::DisplacedJetEvent(const bool& isMC, const reco::CaloJetCollec
   }
 }
 
+/* void DisplacedJetEvent::fillTriggerObjects(trigger::TriggerEvent trigEvent, std::string process) { */
+
+/*   std::string filterName("hltSingleJet190Regional");  */
+
+/*   trigger::size_type filterIndex = trigEvent->filterIndex(edm::InputTag(filterName));  */
+/*   if(filterIndex<trigEvent->sizeFilters()){  */
+/*     const trigger::Keys& trigKeys = trigEvent->filterKeys(filterIndex);  */
+/*     const trigger::TriggerObjectCollection & trigObjColl(trigEvent->getObjects()); */
+/*     //now loop of the trigger objects passing filter */
+/*     for(trigger::Keys::const_iterator keyIt=trigKeys.begin();keyIt!=trigKeys.end();++keyIt){  */
+/*       const trigger::TriggerObject& obj = trigObjColl[*keyIt]; */
+/*       //do what you want with the trigger objects, you have */
+/*       //eta,phi,pt,mass,p,px,py,pz,et,energy accessors */
+/*     } */
+    
+/*   }//end filter size check */
+  
+
+/* } */
+
+
+// fill leading sub leading quantities for displaced jets
+void DisplacedJetEvent::fillLeadingSubleadingJets(const bool & isHLT) {
+  
+  // defualt everything to -1
+  caloFewestPromptTracks      = 999;
+  caloSubFewestPromptTracks   = 999;
+  caloMostDispTracks	      = -1;
+  caloSubMostDispTracks	      = -1;
+  // HLT
+  caloFewestPromptTracksHLT      = 999;
+  caloSubFewestPromptTracksHLT   = 999;
+  caloMostDispTracksHLT	      = -1;
+  caloSubMostDispTracksHLT	      = -1;
+
+  // by hadronic fraction for pt > 40 GeV                                     
+  caloLeadingHadronicFraction = -1;
+
+  // temporary storage  
+  float caloFewestPromptTracks_temp = 999, caloSubFewestPromptTracks_temp = 999;
+  float caloMostDispTracks_temp = -1, caloSubMostDispTracks_temp = -1;
+
+  std::vector<DisplacedJet>::iterator djetIter = djets.begin();
+  for(; djetIter != djets.end(); ++djetIter) {    
+
+    int nPrompt = djetIter->getNPromptTracks(isHLT);
+    int nDisp = djetIter->getNDispTracks(isHLT);
+    float pt = djetIter->caloPt;
+
+    //Highest Hadronic Fraction 
+    if (djetIter->isInclusive(true)  && pt > 40.0) {
+      caloLeadingHadronicFraction = std::max(djetIter->caloHadEnergyFrac, caloLeadingHadronicFraction);
+    }
+
+    //Inclusive check
+    if (pt > 40.0 && djetIter->caloHadEnergyFrac > 0.01){
+      if (nPrompt < caloFewestPromptTracks && caloFewestPromptTracks == 999) {
+	  caloFewestPromptTracks_temp = nPrompt;
+      }
+      // shift down the leading jet
+      else if( nPrompt < caloFewestPromptTracks_temp && caloFewestPromptTracks_temp >= 0) {
+	caloSubFewestPromptTracks_temp = caloFewestPromptTracks_temp;
+	caloFewestPromptTracks_temp = nPrompt;
+      }
+      else if (nPrompt < caloSubFewestPromptTracks_temp) {
+	caloSubFewestPromptTracks_temp = nPrompt;
+      }     
+    }
+
+    //Disp Track Check
+    // include an inclusive requirement using HLT iterations 0,1,2
+    if (djetIter->isInclusive(true) && pt > 40 && djetIter->caloHadEnergyFrac > 0.01){
+      if (nDisp > caloMostDispTracks_temp && caloMostDispTracks_temp <= 0) {
+	caloMostDispTracks_temp = nDisp;
+      }
+      // shift down the leading jet
+      else if( nDisp > caloMostDispTracks_temp && caloMostDispTracks_temp > 0) {
+	caloSubMostDispTracks_temp = caloMostDispTracks_temp;
+	caloMostDispTracks_temp = nDisp;
+      }
+      else if (pt > caloSubMostDispTracks_temp) {
+	caloSubMostDispTracks_temp = nDisp;
+      }     
+    }
+  }
+
+  if(isHLT) {
+    caloFewestPromptTracksHLT	 = caloFewestPromptTracks ;
+    caloSubFewestPromptTracksHLT = caloSubFewestPromptTracks;
+    caloMostDispTracksHLT	 = caloMostDispTracks;
+    caloSubMostDispTracksHLT	 = caloSubMostDispTracks;
+  }
+  else{
+    caloFewestPromptTracks	 = caloFewestPromptTracks ;
+    caloSubFewestPromptTracks = caloSubFewestPromptTracks;
+    caloMostDispTracks	 = caloMostDispTracks;
+    caloSubMostDispTracks	 = caloSubMostDispTracks;
+  }  
+}
+
 // checks if the event passes the preselection after checking the preselection 
 // on each jet
 bool DisplacedJetEvent::doesPassPreSelection() {
@@ -129,7 +261,7 @@ bool DisplacedJetEvent::doesPassPreSelection() {
   int nJetsPass = 0;
   std::vector<DisplacedJet>::iterator djetIter = djets.begin();
   for(; djetIter != djets.end(); ++djetIter) {
-    if(djetIter->doesPassPreSelection() && djetIter->caloPt > 80.0) nJetsPass++;
+    if(djetIter->doesPassPreSelection() && djetIter->caloPt > 40.0) nJetsPass++;
   }  
 
   bool didPass = nJetsPass >= 2;

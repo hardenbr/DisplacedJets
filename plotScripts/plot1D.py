@@ -112,7 +112,7 @@ class sample:
 
         # set configuration
         self.file_name = file_name 
-        self.tree_name = tree_name 
+        self.tree_name = options.tree 
         self.xsec = xsec 
         self.fillColor = fillColor
         self.fillStyle = fillStyle

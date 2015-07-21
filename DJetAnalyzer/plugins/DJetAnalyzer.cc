@@ -4,11 +4,6 @@
 // Class:      DJetAnalyzer
 // 
 /**\class DJetAnalyzer DJetAnalyzer.cc DJetAnalyzer/DJetAnalyzer/plugins/DJetAnalyzer.cc
-
- Description: [one line class summary]
-
- Implementation:
-     [Notes on implementation]
 */
 //
 // Original Author:  Joshua Robert Hardenbrook
@@ -21,6 +16,7 @@
 #include "TH2F.h"   
 #include "TH1F.h"   
 #include "TTree.h"                      
+
 
 // system include files                                                                                                                                                 
 #include <vector> 
@@ -43,6 +39,10 @@
 
 // trigger
 #include "DataFormats/Common/interface/TriggerResults.h"
+#include "FWCore/Common/interface/TriggerNames.h"
+#include "FWCore/Common/interface/TriggerResultsByName.h"
+#include "DataFormats/HLTReco/interface/TriggerObject.h"
+#include "DataFormats/HLTReco/interface/TriggerEvent.h"
 
 // C++ EDM Replacements
 #include "DataFormats/Common/interface/Ref.h"
@@ -62,6 +62,7 @@
 // tracking
 #include "DataFormats/TrackReco/interface/TrackFwd.h"
 #include "DataFormats/TrackReco/interface/Track.h"
+#include "RecoTracker/DebugTools/interface/GetTrackTrajInfo.h"
 
 //vertex
 #include "DataFormats/VertexReco/interface/Vertex.h"
@@ -124,6 +125,16 @@ DJetAnalyzer::DJetAnalyzer(const edm::ParameterSet& iConfig)
   doSimMatch_		  = iConfig.getUntrackedParameter<bool>("doSimMatch");
   applyEventPreSelection_ = iConfig.getUntrackedParameter<bool>("applyEventPreSelection");
   applyJetPreSelection_	  = iConfig.getUntrackedParameter<bool>("applyJetPreSelection");
+  dumpGeneralTracks_      = iConfig.getUntrackedParameter<bool>("dumpGeneralTracks");
+  writeJetTree_		  = iConfig.getUntrackedParameter<bool>("writeJetTree");
+  writeTrackTree_	  = iConfig.getUntrackedParameter<bool>("writeTrackTree");
+  writeEventTree_	  = iConfig.getUntrackedParameter<bool>("writeEventTree");
+  writeGenTree_		  = iConfig.getUntrackedParameter<bool>("writeEventTree");
+  writeVertexTree_	  = iConfig.getUntrackedParameter<bool>("writeVertexTree");
+
+  // trigger tags
+  triggerResultPath_  = iConfig.getUntrackedParameter<std::string>("triggerResultPath");
+  tag_triggerResults_ = iConfig.getUntrackedParameter<edm::InputTag>("triggerResults");
 
   // collection tags
   tag_generalTracks_		  = iConfig.getUntrackedParameter<edm::InputTag>("generalTracks");
@@ -152,6 +163,176 @@ DJetAnalyzer::DJetAnalyzer(const edm::ParameterSet& iConfig)
 
 DJetAnalyzer::~DJetAnalyzer(){ }
 
+void DJetAnalyzer::fillTriggerInfo(const edm::Event & iEvent, const edm::TriggerResults & trigResults) {
+
+  const edm::TriggerNames&	    trigNames  = iEvent.triggerNames(trigResults);   
+  //const edm::TriggerResultsByName & trigByName = iEvent.triggerResultsByName(triggerResultPath_);
+
+  // index for the branch array
+  nTrig = 0;
+
+  //record the trigger results for important triggers
+  passHT200	       = 0;
+  passHT250	       = 0;
+  passHT300	       = 0;
+  passHTControl	       = 0;
+  passHT350	       = 0;
+  passHT400	       = 0;
+  passHT800	       = 0;
+  passDisplaced350_40  = 0;
+  passDisplaced500_40  = 0;
+  passDisplaced550_40  = 0;
+  passDisplacedOR5e33  = 0;
+  passVBFHadronic      = 0;
+  passVBFDispTrack     = 0;
+  passDisplacedOR14e34 = 0;
+  passBigOR            = 0;
+  passPFMET170	       = 0;
+  passPFMET170NC       = 0;
+
+  for (size_t i = 0; i < trigNames.size(); ++i) {
+    const std::string &name = trigNames.triggerName(i);
+    bool fired = trigResults.accept(i);
+
+
+    //if(fired) std::cout << name << " " << fired << std::endl;
+
+    // specific triggers
+    std::size_t searchHT350DispTrack40 = name.find("HT350_DisplacedDijet40_DisplacedTrack");
+    std::size_t searchHT350DispTrack80 = name.find("HT350_DisplacedDijet80_DisplacedTrack");
+    std::size_t searchHT500Inclusive40 = name.find("HT500_DisplacedDijet40_Inclusive");
+    std::size_t searchHT550Inclusive40 = name.find("HT550_DisplacedDijet40_Inclusive");
+    std::size_t searchHT650Inclusive80 = name.find("HT650_DisplacedDijet80_Inclusive");
+    std::size_t searchVBFHadronic      = name.find("VBF_DisplacedJet40_Hadronic");
+    std::size_t searchVBFDispTrack     = name.find("VBF_DisplacedJet40_DisplacedTrack");
+    // pfht
+    std::size_t searchPFHT800          = name.find("PFHT800");
+    std::size_t searchPFHT200          = name.find("PFHT200");
+    std::size_t searchPFHT250          = name.find("PFHT250");
+    std::size_t searchPFHT300          = name.find("PFHT300");
+    std::size_t searchPFHT350          = name.find("PFHT350");
+    std::size_t searchPFHT400          = name.find("PFHT400");
+    // vbf
+    std::size_t searchVBFTriple        = name.find("L1_TripleJet_VBF");
+    // met triggers
+    std::size_t searchPFMET170        = name.find("PFMET170_v");
+    std::size_t searchPFMET170NC        = name.find("PFMET170_NoiseCleaned");
+
+    // build important bits for the tree
+    // control
+    bool    pfht800        = searchPFHT800 != std::string::npos && fired;
+    bool    pfht200        = searchPFHT200 != std::string::npos && fired;
+    bool    pfht250        = searchPFHT250 != std::string::npos && fired;
+    bool    pfht300        = searchPFHT300 != std::string::npos && fired;
+    bool    pfht350        = searchPFHT350 != std::string::npos && fired;
+    bool    pfht400        = searchPFHT400 != std::string::npos && fired;    
+    // displaced triggers
+    bool    ht350_40       = searchHT350DispTrack40 != std::string::npos && fired;
+    bool    ht350_80       = searchHT350DispTrack80 != std::string::npos && fired;
+    bool    ht500_40       = searchHT500Inclusive40 != std::string::npos && fired;
+    bool    ht550_40       = searchHT550Inclusive40 != std::string::npos && fired;
+    bool    ht650_80       = searchHT650Inclusive80 != std::string::npos && fired;
+    // vbf displaced
+    bool    vbfHadronic    = searchVBFHadronic  != std::string::npos && fired;
+    bool    vbfDispTrack   = searchVBFDispTrack != std::string::npos && fired;
+    bool    vbfTriple      = searchVBFTriple != std::string::npos && fired;
+    // pure pfmet
+    bool    pfmet170       = searchPFMET170 != std::string::npos && fired;
+    bool    pfmet170nc     = searchPFMET170NC != std::string::npos && fired;
+
+    // record the trigger results for important triggers
+    passHTControl	  = ((passHTControl) || pfht200 || pfht250 || pfht300 || pfht350 || pfht400) ;
+    passHT800		  = (passHT800) || pfht800;
+    passHT200		  = (passHT200) || pfht200;
+    passHT250		  = (passHT250) || pfht250;
+    passHT300		  = (passHT300) || pfht300;
+    passHT350		  = (passHT350) || pfht350;
+    passHT400		  = (passHT400) || pfht400;
+    passDisplacedOR5e33	  = (passDisplacedOR5e33) || ht350_40 || ht500_40;
+    passDisplacedOR14e34  = (passDisplacedOR14e34) || ht350_80 || ht650_80;
+    passDisplaced350_40   = passDisplaced350_40 || ht350_40; 
+    passDisplaced500_40   = passDisplaced500_40 || ht500_40;
+    passDisplaced550_40   = passDisplaced550_40 || ht550_40;
+    passVBFHadronic       = passVBFHadronic || vbfHadronic;
+    passVBFDispTrack      = passVBFDispTrack || vbfDispTrack;
+    passVBFTriple         = passVBFTriple || vbfTriple;
+    passBigOR             = passBigOR || ht500_40 || ht350_40 || pfht800;
+    passPFMET170          = passPFMET170 || pfmet170;
+    passPFMET170NC        = passPFMET170NC || pfmet170nc;
+  }
+
+    // record the trigger results for important triggers
+    // passHT200	       = trigResults.accept(trigNames.triggerIndex("HLT_PFHT200_v"));
+    // passHT250	       = trigResults.accept(trigNames.triggerIndex("HLT_PFHT250_v"));
+    // passHT300	       = trigResults.accept(trigNames.triggerIndex("HLT_PFHT300_v"));
+    // passHTControl	       = passHT200 || passHT250 || passHT300;
+    // passHT350	       = trigResults.accept(trigNames.triggerIndex("HLT_PFHT350_v"));
+    // passHT400	       = trigResults.accept(trigNames.triggerIndex("HLT_PFHT400_v"));
+    // passHT800	       = trigResults.accept(trigNames.triggerIndex("HLT_PFHT800_v"));
+    // passDisplaced350_40  = trigResults.accept(trigNames.triggerIndex("HLT_HT350_DisplacedDijet40_DisplacedTrack_v"));
+    // passDisplaced500_40  = trigResults.accept(trigNames.triggerIndex("HLT_HT500_DisplacedDijet40_Inclusive_v"));
+    // passDisplaced550_40  = trigResults.accept(trigNames.triggerIndex("HLT_HT550_DisplacedDijet40_Inclusive_v"));
+    // passDisplacedOR5e33  = passDisplaced350_40 || passDisplaced500_40;
+    // passVBFHadronic      = trigResults.accept(trigNames.triggerIndex("HLT_VBF_DisplacedJet40_Hadronic_v"));
+    // passVBFDispTrack     = trigResults.accept(trigNames.triggerIndex("HLT_VBF_DisplacedJet40_DisplacedTrack_v"));
+    // passDisplacedOR14e34 = 0;
+    // passBigOR            = passDisplaced350_40 || passDisplaced500_40 || passHT800;
+  
+  // loop over all the triggers in the result and keep the result
+  // std::vector<std::string>::const_iterator nameIter = trigByName.triggerNames().begin();
+  // for(; nameIter != trigByName.triggerNames().end(); ++nameIter) {
+  //   const std::string & name  = *nameIter;
+  //   bool		fired = trigByName.accept(name);
+
+    //std::cout << "trigger " << *nameIter << " fired? " << fired << std::endl;
+
+    // look for only triggers applicable to displaced jets
+    // std::size_t searchHT	       = name.find("HT");
+    // std::size_t searchDisplaced	       = name.find("Displaced");
+    // std::size_t searchVBF	       = name.find("VBF");
+    // std::size_t searchEle	       = name.find("Ele");
+    // std::size_t searchMu	       = name.find("Mu");
+    // std::size_t searchPhoton	       = name.find("Photon");
+    // std::size_t searchForMC	       = name.find("ForMC");
+    // std::size_t searchTriple	       = name.find("Triple");
+
+    // include HT, VBF, and Displaced paths
+    // bool    foundHT	   = searchHT != std::string::npos && fired;
+    // bool    foundDisplaced = searchDisplaced != std::string::npos && fired;
+    // bool    foundVBF	   = searchVBF != std::string::npos && fired;
+    // bool    foundTriple	   = searchTriple != std::string::npos && fired;
+
+    // dont include lepton paths
+    // bool    foundEle	   = searchEle != std::string::npos;
+    // bool    foundMu	   = searchMu  != std::string::npos;
+    // bool    foundPhoton	   = searchPhoton  != std::string::npos;
+    // // dont include MC only paths
+    // bool    foundMC	   = searchForMC  != std::string::npos;        
+    // bool    noVeto	   = !foundEle && !foundMu && !foundMC && !foundPhoton;    
+
+    // fill the full trigger list
+    //if((foundTriple || foundHT || foundDisplaced || foundVBF) && noVeto) {
+
+
+    // // fill the array
+    // const std::string & indexString = std::to_string(nTrig);
+    // const std::string & sumString   = indexString + *nameIter;
+    // triggerNames.push_back(sumString);
+    // triggerPass[nTrig]	      = fired;
+    // nTrig++;
+
+
+
+    //    if (debug > 5) std::cout << " passDisplaced after OR" << passDisplacedOR5e33 << std::endl;
+    //}
+
+  // std::cout << "---------------------- " << std::endl;
+  // std::cout << "passHT200 " << passHT200 << std::endl;
+  // std::cout << "passHT300 " << passHT300 << std::endl;
+  // std::cout << "passHT800 " << passHT800 << std::endl;
+
+}
+
 void DJetAnalyzer::fillHandles(const edm::Event & iEvent ) {
 
   // AOD Compatible
@@ -168,24 +349,33 @@ void DJetAnalyzer::fillHandles(const edm::Event & iEvent ) {
   iEvent.getByLabel(tag_inclusiveSecondaryVertices_, inclusiveSecondaryVertices);  
   iEvent.getByLabel(tag_offlinePrimaryVertices_, offlinePrimaryVertices);  
 
+  // trigger info
+  iEvent.getByLabel(tag_triggerResults_, triggerResults);  
+
   // and sim matching quantities related to MC
   if(isMC_) {    
     if(doGenMatch_) iEvent.getByLabel(tag_genParticles_, genParticles);
     if(doSimMatch_) iEvent.getByLabel(tag_simVertex_, simVertices);
   }  
+
+  
 }
 
-void 
-DJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
+void  DJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
   if(debug > 0) std::cout << "[----------------- ANALYZE EVENT DEBUG LEVEL: " << debug  << " --------------------]" << std::endl;
    
   /////////////////////////////////
   // Event Setup
   /////////////////////////////////
-
+  if(debug > 0) std::cout << "[----------------- FILLING HANDLES -------------------] " <<std::endl;
   // fill the handles before grabbing the products from them
   fillHandles(iEvent);
+
+  if(debug > 0) std::cout << "[----------------- FILLING TRIGGERS -------------------] " <<std::endl;
+
+  // fill the trigger result information
+  fillTriggerInfo(iEvent, *(triggerResults.product()));
 
   // collection products
   const reco::CaloJetCollection &		    caloJets	     = *(ak4CaloJets.product());
@@ -197,6 +387,8 @@ DJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   const reco::GenParticleCollection &		    genCollection    = *(genParticles.product());     
   const edm::SimVertexContainer &		    simVtxCollection = *(simVertices.product()); 
   const reco::TrackCollection &                     generalTracks    = *(gTracks.product());
+
+  if(debug > 0) std::cout << "[----------------- HANLDES RETRIEVED -------------------] " <<std::endl;
 
   // build the displaced event from the calo jet collection and kinematic cuts
   DisplacedJetEvent djEvent(isMC_, caloJets, pvCollection, cut_jetPt, cut_jetEta, debug);
@@ -248,6 +440,11 @@ DJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   // ThresDist = Threshold Distance in cm for the vertex used to categorize the jets
   djEvent.doJetTagging(thresholds, thresholds, thresholds, thresholds,
 		       shortTagThresDist, mediumTagThresDist, longTagThresDist, dHTWorkingPoint);
+
+  // fill the leading and subleading jets (pt and hadronic fraction)
+  // inclusive requirement and displaced track requirement
+  djEvent.fillLeadingSubleadingJets(false); // count not HLT
+  djEvent.fillLeadingSubleadingJets(true); // count for HLT (divisioned by tracking iteration)
     
   // dump the displaced jet info into the corresponding branches by event
   dumpCaloInfo(djEvent);
@@ -261,21 +458,22 @@ DJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   // dump the track information
   nTracks = 0; 
-  dumpTrackInfo(djEvent, generalTracks, 0);
+  
+  if(dumpGeneralTracks_) dumpTrackInfo(djEvent, generalTracks, 0, iSetup);
 
   // dump the vertex info in the event
   dumpPVInfo(djEvent, pvCollection);
 
   if(debug > 1) std::cout << "[DEBUG] Fill Event Tree" << std::endl;
-  eventTree_->Fill();
+  if(writeEventTree_) eventTree_->Fill();
   if(debug > 1) std::cout << "[DEBUG] Fill Track Tree" << std::endl;
-  trackTree_->Fill();
+  if(writeTrackTree_) trackTree_->Fill();
   if(debug > 1) std::cout << "[DEBUG] Fill Jet Tree" << std::endl;
-  jetTree_->Fill();
+  if(writeJetTree_) jetTree_->Fill();
   if(debug > 1) std::cout << "[DEBUG] Fill VTX Tree" << std::endl; 
-  vertexTree_->Fill();
-  //   if(debug > 1) std::cout << "[DEBUG] Fill GEN Tree" << std::endl; TODO
-  //  genTree_->Fill();
+  if(writeVertexTree_) vertexTree_->Fill();
+  if(debug > 1) std::cout << "[DEBUG] Fill GEN Tree" << std::endl;
+  if(writeGenTree_)genTree_->Fill();
 }
 
 void 
@@ -294,13 +492,17 @@ DJetAnalyzer::beginJob()
   runStatTree_  = new TTree("runStats", "Run Statistics");
 
   ///////////  ///////////  ///////////  ///////////  ///////////  ///////////  ////
-  //////////////////////////////// EVENT TREE QUANITIES ////////////////////////////
+  //////////////////////////////// PROCESSING JOB QUANITIES ////////////////////////////
   ///////////  ///////////  ///////////  ///////////  ///////////  /////////// /////
 
   // global book keeping
   runStatTree_->Branch("run", &run, "run/I");
   runStatTree_->Branch("lumi", &lumi, "lumi/I");
-  runStatTree_->Branch("event", &event, "event/I");
+  runStatTree_->Branch("event", &event, "event/I");  
+
+  //runStatTree_->Branch("nTrig", &nTrig, "nTrig/I");
+  //runStatTree_->Branch("triggerNames", &triggerNames);
+  //runStatTree_->Branch("triggerPass", &triggerPass, "triggerPass[nTrig]/I");
 
   // local event book keeping 
   runStatTree_->Branch("evNum", &evNum, "evNum/I");
@@ -311,10 +513,58 @@ DJetAnalyzer::beginJob()
   //////////////////////////////// EVENT TREE QUANITIES ////////////////////////////
   ///////////  ///////////  ///////////  ///////////  ///////////  /////////// /////
 
+  if(isSignalMC_){
+    eventTree_->Branch("genPartN", &genPartN, "genPartN/I");
+    eventTree_->Branch("genMomStatus", &genMomStatus, "genMomStatus[genPartN]/I");
+    eventTree_->Branch("genMomPt", &genMomPt, "genMomPt[genPartN]/F");
+    eventTree_->Branch("genMomEta", &genMomEta, "genMomEta[genPartN]/F");
+    eventTree_->Branch("genMomPhi", &genMomPhi, "genMomPhi[genPartN]/F");
+    eventTree_->Branch("genMomPID", &genMomPID, "genMomPID[genPartN]/I");
+    eventTree_->Branch("genMomBeta", &genMomBeta, "genMomBeta[genPartN]/F");
+    eventTree_->Branch("genMomLxy", &genMomLxy, "genMomLxy[genPartN]/F");
+    eventTree_->Branch("genMomLz", &genMomLz, "genMomLz[genPartN]/F");
+    eventTree_->Branch("genMomLxyz", &genMomLxyz, "genMomLxyz[genPartN]/F");
+    eventTree_->Branch("genMomCTau0", &genMomCTau0, "genMomCTau0[genPartN]/F");
+
+    // single numbers to avoid indexing against other varaibles
+    eventTree_->Branch("genMom1CTau0", &genMom1CTau0, "genMom1CTau0/F");
+    eventTree_->Branch("genMom2CTau0", &genMom2CTau0, "genMom2CTau0/F");
+    eventTree_->Branch("genMom1Lxy", &genMom1Lxy, "genMom1Lxy/F");
+    eventTree_->Branch("genMom2Lxy", &genMom2Lxy, "genMom2Lxy/F");
+    eventTree_->Branch("genMom1Lxyz", &genMom1Lxyz, "genMom1Lxyz/F");
+    eventTree_->Branch("genMom2Lxyz", &genMom2Lxyz, "genMom2Lxyz/F");
+    eventTree_->Branch("genMom1Lz", &genMom1Lz, "genMom1Lz/F");
+    eventTree_->Branch("genMom2Lz", &genMom2Lz, "genMom2Lz/F");
+    eventTree_->Branch("genMom1Pt", &genMom1Pt, "genMom1Pt/F");
+    eventTree_->Branch("genMom2Pt", &genMom2Pt, "genMom2Pt/F");
+  }
+
   // global book keeping
   eventTree_->Branch("run", &run, "run/I");
   eventTree_->Branch("lumi", &lumi, "lumi/I");
   eventTree_->Branch("event", &event, "event/I");
+
+  // trigger 
+  eventTree_->Branch("nTrig", &nTrig, "nTrig/I");
+  //eventTree_->Branch("triggerNames", &triggerNames);
+  //eventTree_->Branch("triggerPass", &triggerPass, "triggerPass[nTrig]/I");
+  eventTree_->Branch("passDisplacedOR5e33", &passDisplacedOR5e33, "passDisplacedOR5e33/I");
+  eventTree_->Branch("passDisplacedOR14e34", &passDisplacedOR14e34, "passDisplacedOR14e34/I");
+  eventTree_->Branch("passHTControl", &passHTControl, "passHTControl/I");
+  eventTree_->Branch("passHT200", &passHT200, "passHT200/I");
+  eventTree_->Branch("passHT250", &passHT250, "passHT250/I");
+  eventTree_->Branch("passHT300", &passHT300, "passHT300/I");
+  eventTree_->Branch("passHT400", &passHT400, "passHT400/I");
+  eventTree_->Branch("passDisplaced350_40", &passDisplaced350_40, "passDisplaced350_40/I");
+  eventTree_->Branch("passDisplaced500_40", &passDisplaced500_40, "passDisplaced500_40/I");
+  eventTree_->Branch("passDisplaced550_40", &passDisplaced550_40, "passDisplaced550_40/I");
+  eventTree_->Branch("passBigOR", &passBigOR, "passBigOR/I");
+  eventTree_->Branch("passHT800", &passHT800, "passHT800/I");
+  eventTree_->Branch("passVBFHadronic", &passVBFHadronic, "passVBFHadronic/I");
+  eventTree_->Branch("passVBFDispTrack", &passVBFDispTrack, "passVBFDispTrack/I");
+  eventTree_->Branch("passVBFTriple", &passVBFTriple, "passVBFTriple/I");
+  eventTree_->Branch("passPFMET170", &passPFMET170, "passPFMET170/I");
+  eventTree_->Branch("passPFMET170NC", &passPFMET170NC, "passPFMET170NC/I");
 
   // local event book keeping 
   eventTree_->Branch("evNum", &evNum, "evNum/I");
@@ -338,16 +588,78 @@ DJetAnalyzer::beginJob()
   eventTree_->Branch("eventNLongTags", &eventNLongTags, "eventNLongTags[eventNWP]/I");
   eventTree_->Branch("eventNTotalTags", &eventNTotalTags, "eventNTotalTags[eventNWP]/I");
 
+  // important branches
+  eventTree_->Branch("nCaloJets", &nCaloJets, "nCaloJets/I");
+  eventTree_->Branch("jetIPSigLogSum2D", &jetIPSigLogSum2D, "jetIPSigLogSum2D[nCaloJets]/F");
+  eventTree_->Branch("jetMedianIPLogSig2D", &jetMedianIPLogSig2D, "jetMedianIPLogSig2D[nCaloJets]/F");
+  eventTree_->Branch("jetIVFLxySig", &jetIVFLxySig, "jetIVFLxySig[nCaloJets]/F");
+  eventTree_->Branch("jetIVFLxyz", &jetIVFLxyz, "jetIVFLxyz[nCaloJets]/F");
+
+  // important leading and sub leading jet quantities
+  eventTree_->Branch("caloLeadingJetPT", &caloLeadingJetPT, "caloLeadingJetPT/F");
+  eventTree_->Branch("caloSubLeadingJetPT", &caloSubLeadingJetPT, "caloSubLeadingJetPT/F");
+  // most and least displaced tracks per jet ALL iterations
+  eventTree_->Branch("caloFewestPromptTracks", &caloFewestPromptTracks, "caloFewestPromptTracks/F");
+  eventTree_->Branch("caloSubFewestPromptTracks", &caloSubFewestPromptTracks, "caloSubFewestPromptTracks/F");
+  eventTree_->Branch("caloMostDispTrack", &caloMostDispTracks, "caloMostDispTrack/F");
+  eventTree_->Branch("caloSubMostDispTrack", &caloSubMostDispTracks, "caloSubMostDispTrack/F");
+  // HLT tracking iterations (0,1,2,4)
+  eventTree_->Branch("caloFewestPromptTracksHLT", &caloFewestPromptTracksHLT, "caloFewestPromptTracksHLT/F");
+  eventTree_->Branch("caloSubFewestPromptTracksHLT", &caloSubFewestPromptTracksHLT, "caloSubFewestPromptTracksHLT/F");
+  eventTree_->Branch("caloMostDispTrackHLT", &caloMostDispTracksHLT, "caloMostDispTrackHLT/F");
+  eventTree_->Branch("caloSubMostDispTrackHLT", &caloSubMostDispTracksHLT, "caloSubMostDispTrackHLT/F");
+  
+  eventTree_->Branch("caloLeadingHadronicFraction", &caloLeadingHadronicFraction, "caloLeadingHadronicFraction/F");  
+  eventTree_->Branch("caloLeadingMqq", &caloLeadingMqq, "caloLeadingMqq/F");
+
   ///////////  ///////////  ///////////  ///////////  ///////////  ///////////  ////
   //////////////////////////////// JET TREE QUANITIES //////////////////////////////
   ///////////  ///////////  ///////////  ///////////  ///////////  /////////// /////
   //////// Everything is either a flat number or indexed by nCaloJets //////////////
   //////// Exceptions are made for IVF gen matching quantities for moms and sons ///
 
+  if(isSignalMC_) {
+    jetTree_->Branch("genPartN", &genPartN, "genPartN/I");
+    jetTree_->Branch("genMomStatus", &genMomStatus, "genMomStatus[genPartN]/I");
+    jetTree_->Branch("genMomPt", &genMomPt, "genMomPt[genPartN]/F");
+    jetTree_->Branch("genMomEta", &genMomEta, "genMomEta[genPartN]/F");
+    jetTree_->Branch("genMomPhi", &genMomPhi, "genMomPhi[genPartN]/F");
+    jetTree_->Branch("genMomPID", &genMomPID, "genMomPID[genPartN]/I");
+    jetTree_->Branch("genMomBeta", &genMomBeta, "genMomBeta[genPartN]/F");
+    jetTree_->Branch("genMomLxy", &genMomLxy, "genMomLxy[genPartN]/F");
+    jetTree_->Branch("genMomLz", &genMomLz, "genMomLz[genPartN]/F");
+    jetTree_->Branch("genMomLxyz", &genMomLxyz, "genMomLxyz[genPartN]/F");
+    jetTree_->Branch("genMomCTau0", &genMomCTau0, "genMomCTau0[genPartN]/F");
+
+    jetTree_->Branch("genMom1CTau0", &genMom1CTau0, "genMom1CTau0/F");
+    jetTree_->Branch("genMom2CTau0", &genMom2CTau0, "genMom2CTau0/F");
+    jetTree_->Branch("genMom1Lxy", &genMom1Lxy, "genMom1Lxy/F");
+    jetTree_->Branch("genMom2Lxy", &genMom2Lxy, "genMom2Lxy/F");
+    jetTree_->Branch("genMom1Lxyz", &genMom1Lxyz, "genMom1Lxyz/F");
+    jetTree_->Branch("genMom2Lxyz", &genMom2Lxyz, "genMom2Lxyz/F");
+    jetTree_->Branch("genMom1Lz", &genMom1Lz, "genMom1Lz/F");
+    jetTree_->Branch("genMom2Lz", &genMom2Lz, "genMom2Lz/F");
+    jetTree_->Branch("genMom1Pt", &genMom1Pt, "genMom1Pt/F");
+    jetTree_->Branch("genMom2Pt", &genMom2Pt, "genMom2Pt/F");
+  }
   // global book keeping
   jetTree_->Branch("run", &run, "run/I");
   jetTree_->Branch("lumi", &lumi, "lumi/I");
   jetTree_->Branch("event", &event, "event/I");
+  
+  // trigger Related
+  jetTree_->Branch("nTrig", &nTrig, "nTrig/I");
+  //jetTree_->Branch("triggerNames", &triggerNames);
+  //jetTree_->Branch("triggerPass", &triggerPass, "triggerPass[nTrig]/I");
+  jetTree_->Branch("passDisplacedOR5e33", &passDisplacedOR5e33, "passDisplacedOR5e33/O");
+  jetTree_->Branch("passDisplacedOR14e34", &passDisplacedOR14e34, "passDisplacedOR14e34/O");
+  jetTree_->Branch("passHTControl", &passHTControl, "passHTControl/O");
+  jetTree_->Branch("passDisplaced350_40", &passDisplaced350_40, "passDisplaced350_40/O");
+  jetTree_->Branch("passDisplaced500_40", &passDisplaced500_40, "passDisplaced500_40/O");
+  jetTree_->Branch("passBigOR", &passBigOR, "passBigOR/O");
+  jetTree_->Branch("passHT800", &passHT800, "passHT800/O");
+  jetTree_->Branch("passVBFHadronic", &passVBFHadronic, "passVBFHadronic/O");
+  jetTree_->Branch("passVBFDispTrack", &passVBFDispTrack, "passVBFDispTrack/O");
 
   // branch indices must be defined first
   jetTree_->Branch("nCaloJets", &nCaloJets, "nCaloJets/I");
@@ -377,12 +689,13 @@ DJetAnalyzer::beginJob()
   jetTree_->Branch("caloJetHfrac", &caloJetHfrac, "caloJetHfrac[nCaloJets]/F");
   jetTree_->Branch("caloJetEfrac", &caloJetEfrac, "caloJetEFrac[nCaloJets]/F");
 
-  jetTree_->Branch("caloGenMatch", &caloGenMatch, "caloGenMatch[nCaloJets]/I");  
-  jetTree_->Branch("caloGenPt", &caloGenPt, "caloGenPt[nCaloJets]/F");  
-  jetTree_->Branch("caloGenEta", &caloGenEta, "caloGenEta[nCaloJets]/F");  
-  jetTree_->Branch("caloGenPhi", &caloGenPhi, "caloGenPhi[nCaloJets]/F");  
-  jetTree_->Branch("caloGenM", &caloGenM, "caloGenM[nCaloJets]/F");  
-
+  if(isMC_) {
+    jetTree_->Branch("caloGenMatch", &caloGenMatch, "caloGenMatch[nCaloJets]/I");  
+    jetTree_->Branch("caloGenPt", &caloGenPt, "caloGenPt[nCaloJets]/F");  
+    jetTree_->Branch("caloGenEta", &caloGenEta, "caloGenEta[nCaloJets]/F");  
+    jetTree_->Branch("caloGenPhi", &caloGenPhi, "caloGenPhi[nCaloJets]/F");  
+    jetTree_->Branch("caloGenM", &caloGenM, "caloGenM[nCaloJets]/F");  
+  }
   //////////////// IP TAG INFORMATION ////////////
 
   //number of selected tracks
@@ -524,7 +837,19 @@ DJetAnalyzer::beginJob()
   //////////////////////////////// TRACK TREE QUANITIES ////////////////////////////
   ///////////  ///////////  ///////////  ///////////  ///////////  /////////// /////
   //////// Everything is either a flat number or indexed by nCaloJets //////////////
-
+  
+  if(isSignalMC_) {
+    trackTree_->Branch("genMom1CTau0", &genMom1CTau0, "genMom1CTau0/F");
+    trackTree_->Branch("genMom2CTau0", &genMom2CTau0, "genMom2CTau0/F");
+    trackTree_->Branch("genMom1Lxy", &genMom1Lxy, "genMom1Lxy/F");
+    trackTree_->Branch("genMom2Lxy", &genMom2Lxy, "genMom2Lxy/F");
+    trackTree_->Branch("genMom1Lxyz", &genMom1Lxyz, "genMom1Lxyz/F");
+    trackTree_->Branch("genMom2Lxyz", &genMom2Lxyz, "genMom2Lxyz/F");
+    trackTree_->Branch("genMom1Lz", &genMom1Lz, "genMom1Lz/F");
+    trackTree_->Branch("genMom2Lz", &genMom2Lz, "genMom2Lz/F");
+    trackTree_->Branch("genMom1Pt", &genMom1Pt, "genMom1Pt/F");
+    trackTree_->Branch("genMom2Pt", &genMom2Pt, "genMom2Pt/F");
+  }
 
   // indices which index the branches 
   trackTree_->Branch("nCaloJets", &nCaloJets, "nCaloJets/I");
@@ -540,6 +865,20 @@ DJetAnalyzer::beginJob()
   trackTree_->Branch("run", &run, "run/I");
   trackTree_->Branch("lumi", &lumi, "lumi/I");
   trackTree_->Branch("event", &event, "event/I");
+
+  // trigger related
+  trackTree_->Branch("nTrig", &nTrig, "nTrig/I");
+  //trackTree_->Branch("triggerNames", &triggerNames);
+  //trackTree_->Branch("triggerPass", &triggerPass, "triggerPass[nTrig]/I");
+  trackTree_->Branch("passDisplacedOR5e33", &passDisplacedOR5e33, "passDisplacedOR5e33/O");
+  trackTree_->Branch("passDisplacedOR14e34", &passDisplacedOR14e34, "passDisplacedOR14e34/O");
+  trackTree_->Branch("passHTControl", &passHTControl, "passHTControl/O");
+  trackTree_->Branch("passDisplaced350_40", &passDisplaced350_40, "passDisplaced350_40/O");
+  trackTree_->Branch("passDisplaced500_40", &passDisplaced500_40, "passDisplaced500_40/O");  
+  trackTree_->Branch("passBigOR", &passBigOR, "passBigOR/O");
+  trackTree_->Branch("passHT800", &passHT800, "passHT800/O");
+  trackTree_->Branch("passVBFHadronic", &passVBFHadronic, "passVBFHadronic/O");
+  trackTree_->Branch("passVBFDispTrack", &passVBFDispTrack, "passVBFDispTrack/O");
 
   ////////////////////////////// Calo Jet Information////////////////////////
   
@@ -646,6 +985,19 @@ DJetAnalyzer::beginJob()
   vertexTree_->Branch("run", &run, "run/I");
   vertexTree_->Branch("lumi", &lumi, "lumi/I");
   vertexTree_->Branch("event", &event, "event/I");
+
+  vertexTree_->Branch("genPartN", &genPartN, "genPartN/I");
+  vertexTree_->Branch("genMomStatus", &genMomStatus, "genMomStatus[genPartN]/I");
+  vertexTree_->Branch("genMomPt", &genMomPt, "genMomPt[genPartN]/F");
+  vertexTree_->Branch("genMomEta", &genMomEta, "genMomEta[genPartN]/F");
+  vertexTree_->Branch("genMomPhi", &genMomPhi, "genMomPhi[genPartN]/F");
+  vertexTree_->Branch("genMomPID", &genMomPID, "genMomPID[genPartN]/I");
+  vertexTree_->Branch("genMomBeta", &genMomBeta, "genMomBeta[genPartN]/F");
+  vertexTree_->Branch("genMomLxy", &genMomLxy, "genMomLxy[genPartN]/F");
+  vertexTree_->Branch("genMomLz", &genMomLz, "genMomLz[genPartN]/F");
+  vertexTree_->Branch("genMomLxyz", &genMomLxyz, "genMomLxyz[genPartN]/F");
+  vertexTree_->Branch("genMomCTau0", &genMomCTau0, "genMomCTau0[genPartN]/F");
+
 
   // primary vertices
   vertexTree_->Branch("pvN", &pvN, "pvN/I");
@@ -754,21 +1106,74 @@ DJetAnalyzer::beginJob()
   genTree_->Branch("genPartVLxy", &genPartVLxy, "genPartVLxy[genPartN]/F");
   genTree_->Branch("genPartVLxyz", &genPartVLxyz, "genPartVLxyz[genPartN]/F");
 
+  //  genTree_->Branch("genPartN", &genPartN, "genPartN/I");
+  genTree_->Branch("genMomStatus", &genMomStatus, "genMomStatus[genPartN]/I");
+  genTree_->Branch("genMomPt", &genMomPt, "genMomPt[genPartN]/F");
+  genTree_->Branch("genMomEta", &genMomEta, "genMomEta[genPartN]/F");
+  genTree_->Branch("genMomPhi", &genMomPhi, "genMomPhi[genPartN]/F");
+  genTree_->Branch("genMomPID", &genMomPID, "genMomPID[genPartN]/I");
+  genTree_->Branch("genMomBeta", &genMomBeta, "genMomBeta[genPartN]/F");
+  genTree_->Branch("genMomLxy", &genMomLxy, "genMomLxy[genPartN]/F");
+  genTree_->Branch("genMomLz", &genMomLz, "genMomLz[genPartN]/F");
+  genTree_->Branch("genMomLxyz", &genMomLxyz, "genMomLxyz[genPartN]/F");
+  genTree_->Branch("genMomCTau0", &genMomCTau0, "genMomCTau0[genPartN]/F");
+  // single number quantities
+  genTree_->Branch("genMom1CTau0", &genMom1CTau0, "genMom1CTau0/F");
+  genTree_->Branch("genMom2CTau0", &genMom2CTau0, "genMom2CTau0/F");
+  genTree_->Branch("genMom1Lxy", &genMom1Lxy, "genMom1Lxy/F");
+  genTree_->Branch("genMom2Lxy", &genMom2Lxy, "genMom2Lxy/F");
+  genTree_->Branch("genMom1Lxyz", &genMom1Lxyz, "genMom1Lxyz/F");
+  genTree_->Branch("genMom2Lxyz", &genMom2Lxyz, "genMom2Lxyz/F");
+  genTree_->Branch("genMom1Lz", &genMom1Lz, "genMom1Lz/F");
+  genTree_->Branch("genMom2Lz", &genMom2Lz, "genMom2Lz/F");
+  genTree_->Branch("genMom1Pt", &genMom1Pt, "genMom1Pt/F");
+  genTree_->Branch("genMom2Pt", &genMom2Pt, "genMom2Pt/F");
+
+
   // SIM Vertex Quantites
-  genTree_->Branch("simVtxN", &simVtxN, "simVtxN/I");
-  genTree_->Branch("simVtxProcType", &simVtxProcType, "simVtxProcType[simVtxN]/I");
-  genTree_->Branch("simVtxID", &simVtxID, "simVtxID[simVtxN]/I");
-  genTree_->Branch("simVtxTOF", &simVtxTOF, "simVtxTOF[simVtxN]/F");
-  genTree_->Branch("simVtxX", &simVtxX, "simVtxX[simVtxN]/F");
-  genTree_->Branch("simVtxY", &simVtxY, "simVtxY[simVtxN]/F");
-  genTree_->Branch("simVtxZ", &simVtxZ, "simVtxZ[simVtxN]/F");
-  genTree_->Branch("simVtxLxy", &simVtxLxy, "simVtxLxy[simVtxN]/F");
-  genTree_->Branch("simVtxLxyz", &simVtxLxyz, "simVtxLxyz[simVtxN]/F");    
+  // genTree_->Branch("simVtxN", &simVtxN, "simVtxN/I");
+  // genTree_->Branch("simVtxProcType", &simVtxProcType, "simVtxProcType[simVtxN]/I");
+  // genTree_->Branch("simVtxID", &simVtxID, "simVtxID[simVtxN]/I");
+  // genTree_->Branch("simVtxTOF", &simVtxTOF, "simVtxTOF[simVtxN]/F");
+  // genTree_->Branch("simVtxX", &simVtxX, "simVtxX[simVtxN]/F");
+  // genTree_->Branch("simVtxY", &simVtxY, "simVtxY[simVtxN]/F");
+  // genTree_->Branch("simVtxZ", &simVtxZ, "simVtxZ[simVtxN]/F");
+  // genTree_->Branch("simVtxLxy", &simVtxLxy, "simVtxLxy[simVtxN]/F");
+  // genTree_->Branch("simVtxLxyz", &simVtxLxyz, "simVtxLxyz[simVtxN]/F");    
 
 
   ///////////  ///////////  ///////////  ///////////  ///////////  ///////////  ////
   //////////////////////////////// TRACKING QUANITIES // ////////////////////////////
   ///////////  ///////////  ///////////  ///////////  ///////////  /////////// /////
+
+  trackTree_->Branch("genPartN", &genPartN, "genPartN/I");
+  trackTree_->Branch("genPartN", &genPartN, "genPartN/I");
+  trackTree_->Branch("genPartPID", &genPartPID, "genPartPID[genPartN]/I");
+  trackTree_->Branch("genPartStatus", &genPartStatus, "genPartStatus[genPartN]/I");
+  trackTree_->Branch("genPartPt", &genPartPt, "genPartPt[genPartN]/F");
+  trackTree_->Branch("genPartEta", &genPartEta, "genPartEta[genPartN]/F");
+  trackTree_->Branch("genPartPhi", &genPartPhi, "genPartPhi[genPartN]/F");
+  trackTree_->Branch("genMomStatus", &genMomStatus, "genMomStatus[genPartN]/I");
+  trackTree_->Branch("genMomPt", &genMomPt, "genMomPt[genPartN]/F");
+  trackTree_->Branch("genMomEta", &genMomEta, "genMomEta[genPartN]/F");
+  trackTree_->Branch("genMomPhi", &genMomPhi, "genMomPhi[genPartN]/F");
+  trackTree_->Branch("genMomPID", &genMomPID, "genMomPID[genPartN]/I");
+  trackTree_->Branch("genMomBeta", &genMomBeta, "genMomBeta[genPartN]/F");
+  trackTree_->Branch("genMomLxy", &genMomLxy, "genMomLxy[genPartN]/F");
+  trackTree_->Branch("genMomLz", &genMomLz, "genMomLz[genPartN]/F");
+  trackTree_->Branch("genMomLxyz", &genMomLxyz, "genMomLxyz[genPartN]/F");
+  trackTree_->Branch("genMomCTau0", &genMomCTau0, "genMomCTau0[genPartN]/F");
+  // single number
+  trackTree_->Branch("genMom1CTau0", &genMom1CTau0, "genMom1CTau0/F");
+  trackTree_->Branch("genMom2CTau0", &genMom2CTau0, "genMom2CTau0/F");
+  trackTree_->Branch("genMom1Lxy", &genMom1Lxy, "genMom1Lxy/F");
+  trackTree_->Branch("genMom2Lxy", &genMom2Lxy, "genMom2Lxy/F");
+  trackTree_->Branch("genMom1Lxyz", &genMom1Lxyz, "genMom1Lxyz/F");
+  trackTree_->Branch("genMom2Lxyz", &genMom2Lxyz, "genMom2Lxyz/F");
+  trackTree_->Branch("genMom1Lz", &genMom1Lz, "genMom1Lz/F");
+  trackTree_->Branch("genMom2Lz", &genMom2Lz, "genMom2Lz/F");
+  trackTree_->Branch("genMom1Pt", &genMom1Pt, "genMom1Pt/F");
+  trackTree_->Branch("genMom2Pt", &genMom2Pt, "genMom2Pt/F");
 
   // nominal kinematics
 
@@ -808,6 +1213,8 @@ DJetAnalyzer::beginJob()
   trackTree_->Branch("trDszSig", &trDszSig, "trDszSig[nTracks]/F");
 
   // reference positions
+  trackTree_->Branch("trRefR2D", &trRefR2D, "trRefR2D[nTracks]/F");
+  trackTree_->Branch("trRefR3D", &trRefR3D, "trRefR3D[nTracks]/F");
   trackTree_->Branch("trRefX", &trRefX, "trRefX[nTracks]/F");
   trackTree_->Branch("trRefY", &trRefY, "trRefY[nTracks]/F");
   trackTree_->Branch("trRefZ", &trRefZ, "trRefZ[nTracks]/F");
@@ -818,6 +1225,8 @@ DJetAnalyzer::beginJob()
   trackTree_->Branch("trInnerZ", &trInnerZ, "trInnerZ[nTracks]/F");
 
   // inner hit positions
+  trackTree_->Branch("trInnerR2D", &trInnerR2D, "trInnerR2D[nTracks]/F");
+  trackTree_->Branch("trInnerR3D", &trInnerR3D, "trInnerR3D[nTracks]/F");
   trackTree_->Branch("trInnerX", &trInnerX, "trInnerX[nTracks]/F");
   trackTree_->Branch("trInnerY", &trInnerY, "trInnerY[nTracks]/F");
   trackTree_->Branch("trInnerZ", &trInnerZ, "trInnerZ[nTracks]/F");
@@ -829,6 +1238,8 @@ DJetAnalyzer::beginJob()
   trackTree_->Branch("trInnerP", &trInnerP, "trInnerP[nTracks]/F");
 
   // outer hit kinematics
+  trackTree_->Branch("trOuterR2D", &trOuterR2D, "trOuterR2D[nTracks]/F");
+  trackTree_->Branch("trOuterR3D", &trOuterR3D, "trOuterR3D[nTracks]/F");
   trackTree_->Branch("trOuterX", &trOuterX, "trOuterX[nTracks]/F");
   trackTree_->Branch("trOuterY", &trOuterY, "trOuterY[nTracks]/F");
   trackTree_->Branch("trOuterZ", &trOuterZ, "trOuterZ[nTracks]/F");
@@ -857,11 +1268,11 @@ void DJetAnalyzer::endJob()
 {
   outputFile_->cd();
   runStatTree_->Write();
-  jetTree_->Write();
-  trackTree_->Write();
-  eventTree_->Write();
-  // genTree_->Write(); TODO
-  vertexTree_->Write(); 
+  if(writeJetTree_) jetTree_->Write();
+  if(writeTrackTree_) trackTree_->Write();
+  if(writeEventTree_) eventTree_->Write();
+  if(writeGenTree_ || isMC_ ) genTree_->Write(); 
+  if(writeVertexTree_) vertexTree_->Write(); 
   outputFile_->Close();
 }
 
@@ -932,8 +1343,7 @@ void DJetAnalyzer::dumpCaloInfo(DisplacedJetEvent & djEvent) {
   // calo HT
   eventCaloHT  = djEvent.caloHT; 
   // calo MET
-  eventCaloMET = djEvent.caloMET;
-  
+  eventCaloMET = djEvent.caloMET;    
 
   const DisplacedJetCollection djetCollection = djEvent.getDisplacedJets();
   DisplacedJetCollection::const_iterator djet = djetCollection.begin();
@@ -958,6 +1368,26 @@ void DJetAnalyzer::dumpCaloInfo(DisplacedJetEvent & djEvent) {
     caloGenEta[jj]	 = djet->caloGenEta;
     caloGenPhi[jj]	 = djet->caloGenPhi;
   }
+
+  // flat ordered numbers
+  caloLeadingJetPT	      = djEvent.caloLeadingJetPT;
+  caloSubLeadingJetPT	      = djEvent.caloSubLeadingJetPT;
+  // ALL TRACKING ITERATIONS
+  caloFewestPromptTracks      = djEvent.caloFewestPromptTracks;
+  caloSubFewestPromptTracks   = djEvent.caloSubFewestPromptTracks;
+  caloMostDispTracks	      = djEvent.caloMostDispTracks;
+  caloSubMostDispTracks	      = djEvent.caloSubMostDispTracks;
+  // HLT ITERATIONS 0,1,2,4
+  caloFewestPromptTracksHLT    = djEvent.caloFewestPromptTracksHLT;
+  caloSubFewestPromptTracksHLT = djEvent.caloSubFewestPromptTracksHLT;
+  caloMostDispTracksHLT	       = djEvent.caloMostDispTracksHLT;
+  caloSubMostDispTracksHLT     = djEvent.caloSubMostDispTracksHLT;
+  // by hadronic fraction for pt > 40 GeV
+  caloLeadingHadronicFraction  = djEvent.caloLeadingHadronicFraction;
+  // vbf numbers
+  // Mqq for minimum dEta 3.0 max dEta 5 and min pt 20
+  caloLeadingMqq	       = djEvent.caloLeadingMqq;
+
 }
 
 void DJetAnalyzer::dumpSVTagInfo(DisplacedJetEvent & djEvent) {
@@ -1151,11 +1581,13 @@ DJetAnalyzer::dumpSimInfo(const edm::SimVertexContainer & simVtx) {
 }
 
 // dump all of the track info available at AOD into the branches and label with a collection ID
-void DJetAnalyzer::dumpTrackInfo(DisplacedJetEvent& djEvent, const reco::TrackCollection & tracks, const int & collectionID) {
+void DJetAnalyzer::dumpTrackInfo(DisplacedJetEvent& djEvent, const reco::TrackCollection & tracks, const int & collectionID, const edm::EventSetup& iSetup) {
   if(debug > 1 ) std::cout << "[DEBUG] Dumping Track Info for Collection " << collectionID << std::endl;
+
 
   reco::TrackCollection::const_iterator tt = tracks.begin();
   for(; tt != tracks.end(); ++tt) {
+
     if(debug > 3 ) std::cout << "[DEBUG 2] Kinematics " << collectionID << std::endl;
     // nominal kinematics
     trCollectionID[nTracks]  = collectionID; 
@@ -1174,56 +1606,108 @@ void DJetAnalyzer::dumpTrackInfo(DisplacedJetEvent& djEvent, const reco::TrackCo
     trLambdaError[nTracks]   = tt->lambdaError();
     trLambdaSig[nTracks]     = tt->lambda() / tt->lambdaError();
 
-    const reco::TrackBase::Point & zeroPoint(0,0,0);
+    //const reco::TrackBase::Point & zeroPoint(0,0,0);
 
     if(debug > 3 ) std::cout << "[DEBUG 2] impact pamameter proxies " << collectionID << std::endl;
     // impact parameter proxies
-    trDxy[nTracks]	     = tt->dxy(zeroPoint);
+    trDxy[nTracks]	     = tt->dxy();
     trDxyError[nTracks]	     = tt->dxyError();
-    trDxySig[nTracks]	     = tt->dxy(zeroPoint) / tt->dxyError();
+    trDxySig[nTracks]	     = tt->dxy() / tt->dxyError();
     trDz[nTracks]	     = tt->dz();
     trDzError[nTracks]	     = tt->dzError();
-    trDzSig[nTracks]	     = tt->dzSig();
+    trDzSig[nTracks]	     = tt->dz() / tt->dzError();
     trDsz[nTracks]	     = tt->dsz();
     trDszError[nTracks]	     = tt->dszError();
     trDszSig[nTracks]	     = tt->dsz() / tt->dszError();
 
     // reference point
+    trRefR2D[nTracks]	     = std::sqrt(tt->vx()*tt->vx() + tt->vy()*tt->vy());
+    trRefR3D[nTracks]	     = std::sqrt(tt->vx()*tt->vx() + tt->vy()*tt->vy() + tt->vz()*tt->vz());
     trRefX[nTracks]	     = tt->vx();
     trRefY[nTracks]	     = tt->vy();
     trRefZ[nTracks]	     = tt->vz();
 
+    // SET ALL OF THE INNER OUTER HIT INFORMATION TO ZERO
+    
     // inner positions
     trInnerX[nTracks]	     = 0;
     trInnerY[nTracks]	     = 0;
     trInnerZ[nTracks]	     = 0;
     trInnerEta[nTracks]	     = 0;
     trInnerPhi[nTracks]	     = 0;
-
-    if(debug > 3 ) std::cout << "[DEBUG 2] inner momentum " << collectionID << std::endl;
     // inner momentum
     trInnerPt[nTracks]	     = 0;
-    trInnerPx[nTracks]	     = 0;//tt->innerMomentum().x();
-    trInnerPy[nTracks]	     = 0;//tt->innerMomentum().y();
-    trInnerPz[nTracks]	     = 0;//tt->innerMomentum().z();
+    trInnerPx[nTracks]	     = 0;
+    trInnerPy[nTracks]	     = 0;
+    trInnerPz[nTracks]	     = 0;
     trInnerP[nTracks]	     = 0;
-
-    if(debug > 3 ) std::cout << "[DEBUG 2] outer position " << collectionID << std::endl;
     // outer position
-    trOuterPt[nTracks]	     = 0;//tt->outerPt();
+    trOuterPt[nTracks]	     = 0;
     trOuterX[nTracks]	     = 0;
     trOuterY[nTracks]	     = 0;
     trOuterZ[nTracks]	     = 0;
     trOuterEta[nTracks]	     = 0;
     trOuterPhi[nTracks]	     = 0;
-    trOuterRadius[nTracks]   = 0; //tt->outerRadius();
-
+    trOuterRadius[nTracks]   = 0; 
     // outer momentum
     trOuterPt[nTracks]	     = 0;
     trOuterPx[nTracks]	     = 0;
     trOuterPy[nTracks]	     = 0;
     trOuterPz[nTracks]	     = 0;
     trOuterP[nTracks]	     = 0;
+
+    // Get the Trajectory Information
+    const reco::Track & const_track = *tt;
+    // uses recotrack debug to approximate hit positions 
+    static GetTrackTrajInfo getTrackTrajInfo; 
+    std::vector<GetTrackTrajInfo::Result> trajInfo = getTrackTrajInfo.analyze(iSetup, const_track);
+
+    if(debug > 3 ) std::cout << "[DEBUG 2] inner hit information " << collectionID << std::endl;
+    if (trajInfo[0].valid) {
+      // inner hit is at the front
+      const TrajectoryStateOnSurface&	tsosInnerHit = trajInfo[0].detTSOS;
+      const GlobalPoint &		innerPos     = tsosInnerHit.globalPosition();
+      const GlobalVector &		innerMom     = tsosInnerHit.globalMomentum();      
+     
+      // inner positions
+      trInnerR2D[nTracks]    = std::sqrt(innerPos.x()*innerPos.x() + innerPos.y()*innerPos.y());
+      trInnerR3D[nTracks]    = std::sqrt(innerPos.x()*innerPos.x() + innerPos.y()*innerPos.y() + innerPos.z()*innerPos.z());
+      trInnerX[nTracks]	     = innerPos.x();
+      trInnerY[nTracks]	     = innerPos.y();
+      trInnerZ[nTracks]	     = innerPos.z();
+      trInnerEta[nTracks]    = innerPos.eta();
+      trInnerPhi[nTracks]    = innerPos.phi();
+      // inner momentum
+      trInnerPt[nTracks]     = innerMom.perp();
+      trInnerPx[nTracks]     = innerMom.x();
+      trInnerPy[nTracks]     = innerMom.y();
+      trInnerPz[nTracks]     = innerMom.z();
+      trInnerP[nTracks]	     = innerMom.mag();
+    }
+
+    if(debug > 3 ) std::cout << "[DEBUG 2] outer hit information " << collectionID << std::endl;
+    if (trajInfo.back().valid) {
+
+      // outer hit is at the back
+      const TrajectoryStateOnSurface&	tsosOuterHit = trajInfo.back().detTSOS;
+      const GlobalPoint &		outerPos     = tsosOuterHit.globalPosition();
+      const GlobalVector &		outerMom     = tsosOuterHit.globalMomentum();      
+
+      // outer positions
+      trOuterR2D[nTracks]    = std::sqrt(outerPos.x()*outerPos.x() + outerPos.y()*outerPos.y());
+      trOuterR3D[nTracks]    = std::sqrt(outerPos.x()*outerPos.x() + outerPos.y()*outerPos.y() + outerPos.z()*outerPos.z());
+      trOuterX[nTracks]	     = outerPos.x();
+      trOuterY[nTracks]	     = outerPos.y();
+      trOuterZ[nTracks]	     = outerPos.z();
+      trOuterEta[nTracks]    = outerPos.eta();
+      trOuterPhi[nTracks]    = outerPos.phi();
+      // outer momentum
+      trOuterPt[nTracks]     = outerMom.perp();
+      trOuterPx[nTracks]     = outerMom.x();
+      trOuterPy[nTracks]     = outerMom.y();
+      trOuterPz[nTracks]     = outerMom.z();
+      trOuterP[nTracks]	     = outerMom.mag();
+    }
 
     if(debug > 3 ) std::cout << "[DEBUG 2] track quality " << collectionID << std::endl;
     // quality
@@ -1236,6 +1720,8 @@ void DJetAnalyzer::dumpTrackInfo(DisplacedJetEvent& djEvent, const reco::TrackCo
     //    trAlgo[nTracks]	     = ;
     trAlgoInt[nTracks]	     = tt->algo();
 
+
+
     nTracks++;
   }      
 }
@@ -1245,8 +1731,23 @@ void DJetAnalyzer::dumpGenInfo(const reco::GenParticleCollection & gen) {
 
   reco::GenParticleCollection::const_iterator iterGenParticle = gen.begin();
   genPartN = 0;
+  genMom1CTau0 = -1;
+  genMom2CTau0 = -1;
+  genMom1Lxy = 0;
+  genMom2Lxy = 0;
+  genMom1Lxyz = 0;
+  genMom2Lxyz = 0;
+  genMom1Lz = 0;
+  genMom2Lz = 0;
+
   for(; iterGenParticle != gen.end(); ++iterGenParticle){    
+    if (iterGenParticle->status() != 23) continue;
+
+    const reco::Candidate & mommy = *iterGenParticle->mother();
     float vx = iterGenParticle->vx(), vy = iterGenParticle->vy(), vz = iterGenParticle->vz();
+    float mx = mommy.vx(), my = mommy.vy(), mz = mommy.vz();
+    float dx = vx - mx, dy = vy - my, dz = vz - mz; 
+
     // gen id and status
     genPartPID[genPartN]    = iterGenParticle->pdgId();
     genPartStatus[genPartN] = iterGenParticle->status();
@@ -1261,7 +1762,45 @@ void DJetAnalyzer::dumpGenInfo(const reco::GenParticleCollection & gen) {
     // vertex flight
     genPartVLxy[genPartN] = std::sqrt( vx * vx + vy * vy );
     genPartVLxyz[genPartN] = std::sqrt( vx * vx + vy * vy + vz * vz);
-    
+
+    // mother beta, gamma, ctau 
+    float   beta_mom  = mommy.p() / mommy.energy();
+    float   gamma_mom = mommy.energy() / mommy.mass();
+
+    // mother quantities related to the decay 
+    // gen id and status
+    genMomPID[genPartN]    = mommy.pdgId();
+    genMomStatus[genPartN] = mommy.status();
+
+    // gen kinematics
+    genMomPt[genPartN]	  = mommy.pt();
+    genMomEta[genPartN]	  = mommy.eta();
+    genMomPhi[genPartN]	  = mommy.phi();
+    genMomBeta[genPartN]  = beta_mom;
+    genMomGamma[genPartN] = gamma_mom;
+
+    genMomLxyz[genPartN]  = std::sqrt(dx*dx + dy*dy + dz*dz);
+    genMomLz[genPartN]    = dz;
+    genMomLxy[genPartN]   = std::sqrt(dx*dx + dy*dy);
+    genMomCTau0[genPartN] = std::sqrt(dx*dx + dy*dy + dz*dz) / (beta_mom * gamma_mom);    
+
+    // mom one found
+    if(genMom1CTau0 == -1) {
+      genMom1CTau0 = genMomCTau0[genPartN];
+      genMom1Lxy   = genMomLxy[genPartN];
+      genMom1Lxyz  = genMomLxyz[genPartN];
+      genMom1Lz	   = genMomLz[genPartN];
+      genMom1Pt    = genMomPt[genPartN];
+    }
+    // fill mom 2
+    else if(genMom2CTau0 == -1) {
+      genMom2CTau0 = genMomCTau0[genPartN];
+      genMom2Lxy   = genMomLxy[genPartN];
+      genMom2Lxyz  = genMomLxyz[genPartN];
+      genMom2Lz	   = genMomLz[genPartN];
+      genMom2Pt    = genMomPt[genPartN];
+    }
+
     genPartN++;    
   }
 }
@@ -1281,7 +1820,6 @@ void DJetAnalyzer::dumpDJTags(DisplacedJetEvent & djEvent) {
     eventCaloDHT[wp]       = djEvent.caloDHT[wp];
   } // loop: working points  
 }
-
 
 //define this as a plug-in
 DEFINE_FWK_MODULE(DJetAnalyzer);

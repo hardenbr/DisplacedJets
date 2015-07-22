@@ -57,16 +57,16 @@ class DisplacedJetEvent {
 
   // ordered quantities 
   float caloLeadingJetPT,  caloSubLeadingJetPT;
-  // by pt for inclusive requirements                                                                                                                                                             
+  // by pt for inclusive requirements
   float caloFewestPromptTracks, caloSubFewestPromptTracks;
-  float caloFewestPromptTracksHLT, caloSubFewestPromptTracksHLT;
-  // by pt for disp requirements                                                                                                                                                                  
   float caloMostDispTracks, caloSubMostDispTracks;
+  // HLT
+  float caloFewestPromptTracksHLT, caloSubFewestPromptTracksHLT;
   float caloMostDispTracksHLT, caloSubMostDispTracksHLT;
-  // by hadronic fraction for pt > 40 GeV                                                                                                                                                         
+  // by hadronic fraction for pt > 40 GeV
   float caloLeadingHadronicFraction;
   // vbf numbers
-  // Mqq for minimum dEta 3.0 max dEta 5 and min pt 20                                                                                                                                            
+  // Mqq for minimum dEta 3.0 max dEta 5 and min pt 20
   float caloLeadingMqq;
 
   // ivf related 
@@ -151,6 +151,19 @@ DisplacedJetEvent::DisplacedJetEvent(const bool& isMC, const reco::CaloJetCollec
   for(; pvIter != primaryVertices.end(); ++pvIter) { 
     pVertices.push_back(*pvIter);
   }
+
+  // Intialize the leading subleading track variables
+  caloFewestPromptTracks       = 999;
+  caloSubFewestPromptTracks    = 999;
+  caloMostDispTracks	       = -1;
+  caloSubMostDispTracks	       = -1;
+  // HLT
+  caloFewestPromptTracksHLT    = 999;
+  caloSubFewestPromptTracksHLT = 999;
+  caloMostDispTracksHLT	       = -1;
+  caloSubMostDispTracksHLT     = -1;
+  // by hadronic fraction for pt > 40 GeV                                     
+  caloLeadingHadronicFraction  = -1;
 }
 
 /* void DisplacedJetEvent::fillTriggerObjects(trigger::TriggerEvent trigEvent, std::string process) { */
@@ -177,55 +190,43 @@ DisplacedJetEvent::DisplacedJetEvent(const bool& isMC, const reco::CaloJetCollec
 // fill leading sub leading quantities for displaced jets
 void DisplacedJetEvent::fillLeadingSubleadingJets(const bool & isHLT) {
   
-  // defualt everything to -1
-  caloFewestPromptTracks      = 999;
-  caloSubFewestPromptTracks   = 999;
-  caloMostDispTracks	      = -1;
-  caloSubMostDispTracks	      = -1;
-  // HLT
-  caloFewestPromptTracksHLT      = 999;
-  caloSubFewestPromptTracksHLT   = 999;
-  caloMostDispTracksHLT	      = -1;
-  caloSubMostDispTracksHLT	      = -1;
-
-  // by hadronic fraction for pt > 40 GeV                                     
-  caloLeadingHadronicFraction = -1;
-
   // temporary storage  
   float caloFewestPromptTracks_temp = 999, caloSubFewestPromptTracks_temp = 999;
-  float caloMostDispTracks_temp = -1, caloSubMostDispTracks_temp = -1;
+  float caloMostDispTracks_temp	    = -1, caloSubMostDispTracks_temp = -1;
 
   std::vector<DisplacedJet>::iterator djetIter = djets.begin();
   for(; djetIter != djets.end(); ++djetIter) {    
-
-    int nPrompt = djetIter->getNPromptTracks(isHLT);
-    int nDisp = djetIter->getNDispTracks(isHLT);
-    float pt = djetIter->caloPt;
+    int	    nPrompt = djetIter->getNPromptTracks(isHLT);
+    int	    nDisp   = djetIter->getNDispTracks(isHLT);
+    float   pt	    = djetIter->caloPt;
 
     //Highest Hadronic Fraction 
     if (djetIter->isInclusive(true)  && pt > 40.0) {
       caloLeadingHadronicFraction = std::max(djetIter->caloHadEnergyFrac, caloLeadingHadronicFraction);
     }
 
-    //Inclusive check
+    // Inclusive check
     if (pt > 40.0 && djetIter->caloHadEnergyFrac > 0.01){
-      if (nPrompt < caloFewestPromptTracks && caloFewestPromptTracks == 999) {
-	  caloFewestPromptTracks_temp = nPrompt;
+      // first check
+      if (nPrompt < caloFewestPromptTracks_temp && caloFewestPromptTracks_temp == 999) {
+	caloFewestPromptTracks_temp = nPrompt;
       }
       // shift down the leading jet
       else if( nPrompt < caloFewestPromptTracks_temp && caloFewestPromptTracks_temp >= 0) {
 	caloSubFewestPromptTracks_temp = caloFewestPromptTracks_temp;
-	caloFewestPromptTracks_temp = nPrompt;
+	caloFewestPromptTracks_temp    = nPrompt;
       }
+      // 2nd fewest
       else if (nPrompt < caloSubFewestPromptTracks_temp) {
 	caloSubFewestPromptTracks_temp = nPrompt;
       }     
     }
 
-    //Disp Track Check
+    // Disp Track Check (for HLT level inclusive jets)
     // include an inclusive requirement using HLT iterations 0,1,2
     if (djetIter->isInclusive(true) && pt > 40 && djetIter->caloHadEnergyFrac > 0.01){
-      if (nDisp > caloMostDispTracks_temp && caloMostDispTracks_temp <= 0) {
+      // first iteration
+      if (nDisp > caloMostDispTracks_temp && caloMostDispTracks_temp < 0) {
 	caloMostDispTracks_temp = nDisp;
       }
       // shift down the leading jet
@@ -233,6 +234,7 @@ void DisplacedJetEvent::fillLeadingSubleadingJets(const bool & isHLT) {
 	caloSubMostDispTracks_temp = caloMostDispTracks_temp;
 	caloMostDispTracks_temp = nDisp;
       }
+      // 2nd highest
       else if (pt > caloSubMostDispTracks_temp) {
 	caloSubMostDispTracks_temp = nDisp;
       }     
@@ -240,16 +242,16 @@ void DisplacedJetEvent::fillLeadingSubleadingJets(const bool & isHLT) {
   }
 
   if(isHLT) {
-    caloFewestPromptTracksHLT	 = caloFewestPromptTracks ;
-    caloSubFewestPromptTracksHLT = caloSubFewestPromptTracks;
-    caloMostDispTracksHLT	 = caloMostDispTracks;
-    caloSubMostDispTracksHLT	 = caloSubMostDispTracks;
+    caloFewestPromptTracksHLT	 = caloFewestPromptTracks_temp ;
+    caloSubFewestPromptTracksHLT = caloSubFewestPromptTracks_temp;
+    caloMostDispTracksHLT	 = caloMostDispTracks_temp;
+    caloSubMostDispTracksHLT	 = caloSubMostDispTracks_temp;
   }
   else{
-    caloFewestPromptTracks	 = caloFewestPromptTracks ;
-    caloSubFewestPromptTracks = caloSubFewestPromptTracks;
-    caloMostDispTracks	 = caloMostDispTracks;
-    caloSubMostDispTracks	 = caloSubMostDispTracks;
+    caloFewestPromptTracks    = caloFewestPromptTracks_temp ;
+    caloSubFewestPromptTracks = caloSubFewestPromptTracks_temp;
+    caloMostDispTracks	      = caloMostDispTracks_temp;
+    caloSubMostDispTracks     = caloSubMostDispTracks_temp;
   }  
 }
 

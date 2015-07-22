@@ -377,30 +377,31 @@ int DisplacedJet::getNPromptTracks(const bool& isHLT) const {
     int algo  = trackAlgo[index];
     // hlt only runs iter 0,1,2 for prompt track calculations
     // algo != iteration
-    if (fabs(*ip2DIter) < 0.1 && ((algo <= 6 || !isHLT)) nPTracks++;
+    bool pass_algo = (algo <= 6 || !isHLT);
+    if (fabs(*ip2DIter) < 0.1 && pass_algo) nPTracks++;
   }  
   return  nPTracks;
 }
 
 //returns the number of tracks with ip significance >5 
 //tracks must be found in iter 0,1,2, or 4 
-int DisplacedJet::getNDispTracksHLT(const bool & isHLT) const {
+int DisplacedJet::getNDispTracks(const bool & isHLT) const {
   int	nDTracks	    = 0;
   std::vector<float>::const_iterator ip2DSigIter = ip2dsVector.begin();
   int index = 0;
   for(; ip2DSigIter != ip2dsVector.end(); ++ip2DSigIter, ++index) {
-    int index = ip2dsVector.index(*ip2DSigIter);
     int algo  = trackAlgo[index];
     // if this is for HLT then only use iter 0,1,2,4
     // algo != iteration
-    if (fabs(*ip2DSigIter) > 5.0 && ((algo != 7 && algo < 8) || !isHLT) nDTracks++;
+    bool pass_algo =  (algo != 7 && algo < 8) || !isHLT;
+    if (fabs(*ip2DSigIter) > 5.0 && pass_algo) nDTracks++;
   }
   return nDTracks;
 }
 
 // returns true if the inclusive criteria is satisfied (at most 2 prompt tracks)
 bool DisplacedJet::isInclusive(const bool & isHLT) const {
-  return isHLT ? (getNPromptTracks(true) >= 2) : (getNPromptracks(false) >= 2) ;
+  return isHLT ? (getNPromptTracks(true) >= 2) : (getNPromptTracks(false) >= 2) ;
 }
 
 bool DisplacedJet::isDispTrack(const bool & isHLT) const {
@@ -609,18 +610,13 @@ void DisplacedJet::addIPTagInfo(const reco::TrackIPTagInfo & ipTagInfo) {
     ipLogSum3D	     += (ip3d ? log(fabs(ip3d)) : 0);
     jetDistSigLogSum += fabs(jetAxisDistSig);
     jetDistLogSum    += fabs(jetAxisDist);
-    /* eipSigLogSum2D   += ip2ds  ? (pt * log(fabs(ip2ds))) : 0; */
-    /* eipSigLogSum3D   += ip3ds  ? (pt * log(fabs(ip3ds))) : 0; */
-    /* eipSigSum2D      += (pt * fabs(ip3ds)) */
-    /* eipSigSum3D      += (pt * fabs(ip3ds)) */
-
   }
 
   // loop over associated tracks
   reco::TrackRefVector selectedTracks = ipTagInfo.selectedTracks();   
   reco::TrackRefVector::const_iterator trackIter = selectedTracks.begin();
   for(; trackIter != selectedTracks.end(); ++trackIter) {    
-    trackAlgo.push_back(trackIter->algo);
+    trackAlgo.push_back((*trackIter)->algo());
   }
 
   if (debug > 2) std::cout << "[DEBUG 2] Deriving Distributional Quantities of IP Info  " << std::endl;  

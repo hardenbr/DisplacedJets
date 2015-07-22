@@ -13,6 +13,7 @@ appendBkg           = "qcd470_600"
 
 ############ FLAGS #############
 debugLevel          = 0
+reportEveryNEvents  = 1000
 isSignalMC          = False
 isMC                = False
 isData              = True
@@ -23,11 +24,11 @@ isData              = True
 gtag                = "74X_dataRun2_Prompt_v0" 
 # -------------json
 #JSON                = 'json_DCSONLY_Run2015B.txt'
-JSON                = 'Cert_246908-251252_13TeV_PromptReco_Collisions15_JSON.txt'
+JSON                = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-251642_13TeV_PromptReco_Collisions15_JSON.txt'
 #--------------trigger
 trigger_process     = "HLT"
 # run related
-nevents             = -1
+nevents             = 50000
 doedm               = False
 #--------------analysis todos
 doEventPreSelection = False
@@ -114,80 +115,13 @@ process.load('Configuration.StandardSequences.Reconstruction_cff') #new for navi
 process.load('Configuration.StandardSequences.MagneticField_AutoFromDBCurrent_cff') #new for navigation
 #process.load('Configuration.StandardSequences.MagneticField_38T_PostLS1_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_condDBv2_cff')
+
 process.GlobalTag.globaltag = gtag
-
-# process.GlobalTag = cms.ESSource( "PoolDBESSource",
-#     globaltag = cms.string( gtag ),
-#     RefreshEachRun = cms.untracked.bool( True ),
-#     RefreshOpenIOVs = cms.untracked.bool( False ),
-#     toGet = cms.VPSet(
-#     ),
-#     DBParameters = cms.PSet(
-#       authenticationPath = cms.untracked.string( "." ),
-#       connectionRetrialTimeOut = cms.untracked.int32( 60 ),
-#       idleConnectionCleanupPeriod = cms.untracked.int32( 10 ),
-#       messageLevel = cms.untracked.int32( 0 ),
-#       enablePoolAutomaticCleanUp = cms.untracked.bool( False ),
-#       enableConnectionSharing = cms.untracked.bool( True ),
-#       enableReadOnlySessionOnUpdateConnection = cms.untracked.bool( False ),
-#       connectionTimeOut = cms.untracked.int32( 0 ),
-#       connectionRetrialPeriod = cms.untracked.int32( 10 )
-#     ),
-#     RefreshAlways = cms.untracked.bool( False ),
-#     connect = cms.string( "frontier://(proxyurl=http://localhost:3128)(serverurl=http://localhost:8000/FrontierOnProd)(serverurl=http://localhost:8000/FrontierOnProd)(retrieve-ziplevel=0)/CMS_CONDITIONS" ),
-#     ReconnectEachRun = cms.untracked.bool( True ),
-#     BlobStreamerName = cms.untracked.string( "TBufferBlobStreamingService" ),
-#     DumpStat = cms.untracked.bool( False )
-# )
-
-# process.GlobalTag = cms.ESSource( "PoolDBESSource",
-#     globaltag = cms.string( gtag ), 
-#     RefreshEachRun = cms.untracked.bool( True ),
-#     RefreshOpenIOVs = cms.untracked.bool( False ),
-#     toGet = cms.VPSet( 
-#       cms.PSet(  record = cms.string( "JetCorrectionsRecord" ),
-#         tag = cms.string( "JetCorrectorParametersCollection_HLT_V1_AK4Calo" ),
-#         connect = cms.untracked.string( "frontier://FrontierPrep/CMS_COND_PHYSICSTOOLS" ),
-#         label = cms.untracked.string( "AK4CaloHLT" )
-#       ),
-#       cms.PSet(  record = cms.string( "JetCorrectionsRecord" ),
-#         tag = cms.string( "JetCorrectorParametersCollection_HLT_trk1B_V1_AK4PF" ),
-#         connect = cms.untracked.string( "frontier://FrontierPrep/CMS_COND_PHYSICSTOOLS" ),
-#         label = cms.untracked.string( "AK4PFHLT" )
-#       )
-#     ),
-#     DBParameters = cms.PSet( 
-#       authenticationPath = cms.untracked.string( "." ),
-#       connectionRetrialTimeOut = cms.untracked.int32( 60 ),
-#       idleConnectionCleanupPeriod = cms.untracked.int32( 10 ),
-#       messageLevel = cms.untracked.int32( 0 ),
-#       enablePoolAutomaticCleanUp = cms.untracked.bool( False ),
-#       enableConnectionSharing = cms.untracked.bool( True ),
-#       enableReadOnlySessionOnUpdateConnection = cms.untracked.bool( False ),
-#       connectionTimeOut = cms.untracked.int32( 0 ),
-#       connectionRetrialPeriod = cms.untracked.int32( 10 )
-#     ),
-#     RefreshAlways = cms.untracked.bool( False ),
-#     connect = cms.string( "frontier://(proxyurl=http://localhost:3128)(serverurl=http://localhost:8000/FrontierOnProd)(serverurl=http://localhost:8000/FrontierOnProd)(retrieve-ziplevel=0)/CMS_CONDITIONS" ),
-#     ReconnectEachRun = cms.untracked.bool( True ),
-#     BlobStreamerName = cms.untracked.string( "TBufferBlobStreamingService" )
-# )
-
-# Deliver the missing payloads fro the globaltag (TO BE REMOVED)
-# if 'GlobalTag' in process.__dict__:
-#     from Configuration.AlCa.GlobalTag_condDBv2 import GlobalTag as customiseGlobalTag
-#     process.GlobalTag           = customiseGlobalTag(process.GlobalTag, globaltag = gtag)
-#     process.GlobalTag.connect   = 'frontier://FrontierProd/CMS_CONDITIONS'
-#     process.GlobalTag.pfnPrefix = cms.untracked.string('frontier://FrontierProd/')
-#     for pset in process.GlobalTag.toGet.value():
-#         pset.connect = pset.connect.value().replace('frontier://FrontierProd/', 'frontier://FrontierProd/')
-#     # fix for multi-run processing
-#     process.GlobalTag.RefreshEachRun = cms.untracked.bool( False )
-#     process.GlobalTag.ReconnectEachRun = cms.untracked.bool( False )
 
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(nevents))
 
 process.source = cms.Source("PoolSource", fileNames = myfilelist )
+
 # add a JSON for data
 import FWCore.PythonUtilities.LumiList as LumiList
 if isData:
@@ -196,25 +130,25 @@ if isData:
 ################################################################################################
 
 # add the jet corrections
-process.hltAK4CaloFastJetCorrector = cms.EDProducer( "L1FastjetCorrectorProducer",
-    srcRho = cms.InputTag( "fixedGridRhoFastjetAllCalo" ),
-    algorithm = cms.string( "AK4CaloHLT" ),
-    level = cms.string( "L1FastJet" )
+process.hltAK4CaloFastJetCorrector  = cms.EDProducer( "L1FastjetCorrectorProducer",
+    srcRho                          = cms.InputTag( "fixedGridRhoFastjetAllCalo" ),
+    algorithm                       = cms.string( "AK4CaloHLT" ),
+    level                           = cms.string( "L1FastJet" )
 )
 process.hltAK4CaloRelativeCorrector = cms.EDProducer( "LXXXCorrectorProducer",
-    algorithm = cms.string( "AK4CaloHLT" ),
-    level = cms.string( "L2Relative" )
+    algorithm                       = cms.string( "AK4CaloHLT" ),
+    level                           = cms.string( "L2Relative" )
 )
 process.hltAK4CaloAbsoluteCorrector = cms.EDProducer( "LXXXCorrectorProducer",
-    algorithm = cms.string( "AK4CaloHLT" ),
-    level = cms.string( "L3Absolute" )
+    algorithm                       = cms.string( "AK4CaloHLT" ),
+    level                           = cms.string( "L3Absolute" )
 )
-process.hltAK4CaloCorrector = cms.EDProducer( "ChainedJetCorrectorProducer",
-    correctors = cms.VInputTag( 'hltAK4CaloFastJetCorrector','hltAK4CaloRelativeCorrector','hltAK4CaloAbsoluteCorrector' )
+process.hltAK4CaloCorrector         = cms.EDProducer( "ChainedJetCorrectorProducer",
+    correctors                      = cms.VInputTag( 'hltAK4CaloFastJetCorrector','hltAK4CaloRelativeCorrector','hltAK4CaloAbsoluteCorrector' )
 )
-process.ak4CaloJetsCorrected = cms.EDProducer( "CorrectedCaloJetProducer",
-    src = cms.InputTag( "ak4CaloJets" ),
-    correctors = cms.VInputTag( 'hltAK4CaloCorrector' )
+process.ak4CaloJetsCorrected        = cms.EDProducer( "CorrectedCaloJetProducer",
+    src                             = cms.InputTag( "ak4CaloJets" ),
+    correctors                      = cms.VInputTag( 'hltAK4CaloCorrector' )
 )
 
 process.correctJets = cms.Sequence( process.hltAK4CaloFastJetCorrector + process.hltAK4CaloRelativeCorrector + process.hltAK4CaloAbsoluteCorrector + process.hltAK4CaloCorrector + process.ak4CaloJetsCorrected)
@@ -236,8 +170,7 @@ elif not isSignalMC and isMC:
    process.analyzerCALO.outputFileName = cms.untracked.string(outputfile_string)
 else:
    process.analyzerVTX.outputFileName  = cms.untracked.string('dataVTX%s.root' % appendData)
-   process.analyzerCALO.outputFileName = cms.untracked.string('dataCALO%s.root' % appendData)
-   
+   process.analyzerCALO.outputFileName = cms.untracked.string('dataCALO%s.root' % appendData)   
 
 #tree names
 process.analyzerCALO.jetTreeName    = cms.untracked.string('jets')
@@ -387,128 +320,9 @@ process.triggerSelection = cms.EDFilter( "TriggerResultsFilter",
     throw = cms.bool( True )
 )
 
-# from PhysicsTools.PatAlgos.tools.jetTools import addJetCollection
-
-# # add the pat jets                                                                                                                                                          
-# addJetCollection(
-#    process,
-#    labelName = 'AK4Calo',
-#    jetSource = cms.InputTag('ak4CaloJets'),
-#    jetCorrections = ('AK4Calo', cms.vstring(['L1FastJet', 'L2Relative', 'L3Absolute']), 'Type-1'), 
-#    btagDiscriminators = ['None'] 
-#    )
-
-# #add the pat related sequences
-# process.p *= process.makePatMETs
-
-# process.MessageLogger = cms.Service( "MessageLogger",
-#     suppressInfo = cms.untracked.vstring(  ),
-#     debugs = cms.untracked.PSet( 
-#       threshold = cms.untracked.string( "INFO" ),
-#       placeholder = cms.untracked.bool( True ),
-#       suppressInfo = cms.untracked.vstring(  ),
-#       suppressWarning = cms.untracked.vstring(  ),
-#       suppressDebug = cms.untracked.vstring(  ),
-#       suppressError = cms.untracked.vstring(  )
-#     ),
-#     suppressDebug = cms.untracked.vstring(  ),
-#     cout = cms.untracked.PSet(  placeholder = cms.untracked.bool( True ) ),
-#     cerr_stats = cms.untracked.PSet( 
-#       threshold = cms.untracked.string( "WARNING" ),
-#       output = cms.untracked.string( "cerr" ),
-#       optionalPSet = cms.untracked.bool( True )
-#     ),
-#     warnings = cms.untracked.PSet( 
-#       threshold = cms.untracked.string( "INFO" ),
-#       placeholder = cms.untracked.bool( True ),
-#       suppressInfo = cms.untracked.vstring(  ),
-#       suppressWarning = cms.untracked.vstring(  ),
-#       suppressDebug = cms.untracked.vstring(  ),
-#       suppressError = cms.untracked.vstring(  )
-#     ),
-#     statistics = cms.untracked.vstring( 'cerr' ),
-#     cerr = cms.untracked.PSet( 
-#       INFO = cms.untracked.PSet(  limit = cms.untracked.int32( 0 ) ),
-#       noTimeStamps = cms.untracked.bool( False ),
-#       FwkReport = cms.untracked.PSet( 
-#         reportEvery = cms.untracked.int32( 1 ),
-#         limit = cms.untracked.int32( 0 )
-#       ),
-#       default = cms.untracked.PSet(  limit = cms.untracked.int32( 10000000 ) ),
-#       Root_NoDictionary = cms.untracked.PSet(  limit = cms.untracked.int32( 0 ) ),
-#       FwkJob = cms.untracked.PSet(  limit = cms.untracked.int32( 0 ) ),
-#       FwkSummary = cms.untracked.PSet( 
-#         reportEvery = cms.untracked.int32( 1 ),
-#         limit = cms.untracked.int32( 10000000 )
-#       ),
-#       threshold = cms.untracked.string( "INFO" ),
-#       suppressInfo = cms.untracked.vstring(  ),
-#       suppressWarning = cms.untracked.vstring(  ),
-#       suppressDebug = cms.untracked.vstring(  ),
-#       suppressError = cms.untracked.vstring(  )
-#     ),
-#     FrameworkJobReport = cms.untracked.PSet( 
-#       default = cms.untracked.PSet(  limit = cms.untracked.int32( 0 ) ),
-#       FwkJob = cms.untracked.PSet(  limit = cms.untracked.int32( 10000000 ) )
-#     ),
-#     suppressWarning = cms.untracked.vstring( 'hltOnlineBeamSpot',
-#       'hltCtf3HitL1SeededWithMaterialTracks',
-#       'hltL3MuonsOIState',
-#       'hltPixelTracksForHighMult',
-#       'hltHITPixelTracksHE',
-#       'hltHITPixelTracksHB',
-#       'hltCtfL1SeededWithMaterialTracks',
-#       'hltRegionalTracksForL3MuonIsolation',
-#       'hltSiPixelClusters',
-#       'hltActivityStartUpElectronPixelSeeds',
-#       'hltLightPFTracks',
-#       'hltPixelVertices3DbbPhi',
-#       'hltL3MuonsIOHit',
-#       'hltPixelTracks',
-#       'hltSiPixelDigis',
-#       'hltL3MuonsOIHit',
-#       'hltL1SeededElectronGsfTracks',
-#       'hltL1SeededStartUpElectronPixelSeeds',
-#       'hltBLifetimeRegionalCtfWithMaterialTracksbbPhiL1FastJetFastPV',
-#       'hltCtfActivityWithMaterialTracks' ),
-#     errors = cms.untracked.PSet( 
-#       threshold = cms.untracked.string( "INFO" ),
-#       placeholder = cms.untracked.bool( True ),
-#       suppressInfo = cms.untracked.vstring(  ),
-#       suppressWarning = cms.untracked.vstring(  ),
-#       suppressDebug = cms.untracked.vstring(  ),
-#       suppressError = cms.untracked.vstring(  )
-#     ),
-#     fwkJobReports = cms.untracked.vstring( 'FrameworkJobReport' ),
-#     debugModules = cms.untracked.vstring(  ),
-#     infos = cms.untracked.PSet( 
-#       threshold = cms.untracked.string( "INFO" ),
-#       Root_NoDictionary = cms.untracked.PSet(  limit = cms.untracked.int32( 0 ) ),
-#       placeholder = cms.untracked.bool( True ),
-#       suppressInfo = cms.untracked.vstring(  ),
-#       suppressWarning = cms.untracked.vstring(  ),
-#       suppressDebug = cms.untracked.vstring(  ),
-#       suppressError = cms.untracked.vstring(  )
-#     ),
-#     categories = cms.untracked.vstring( 'FwkJob',
-#       'FwkReport',
-#       'FwkSummary',
-#       'Root_NoDictionary' ),
-#     destinations = cms.untracked.vstring( 'warnings',
-#       'errors',
-#       'infos',
-#       'debugs',
-#       'cout',
-#       'cerr' ),
-#     threshold = cms.untracked.string( "INFO" ),
-#     suppressError = cms.untracked.vstring( 'hltOnlineBeamSpot',
-#       'hltL3MuonCandidates',
-#       'hltL3TkTracksFromL2OIState',
-#       'hltPFJetCtfWithMaterialTracks',
-#       'hltL3TkTracksFromL2IOHit',
-#       'hltL3TkTracksFromL2OIHit' )
-# )
-
+# only report every 1000 events
+process.load("FWCore.MessageLogger.MessageLogger_cfi")
+process.MessageLogger.cerr.FwkReport.reportEvery = reportEveryNEvents
 
 if doApplyTrigger: #apply the triggers and run dj tagging
    process.p *= process.triggerSelection *  process.correctJets * process.djtagging

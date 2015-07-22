@@ -194,9 +194,6 @@ void DJetAnalyzer::fillTriggerInfo(const edm::Event & iEvent, const edm::Trigger
     const std::string &name = trigNames.triggerName(i);
     bool fired = trigResults.accept(i);
 
-
-    //if(fired) std::cout << name << " " << fired << std::endl;
-
     // specific triggers
     std::size_t searchHT350DispTrack40 = name.find("HT350_DisplacedDijet40_DisplacedTrack");
     std::size_t searchHT350DispTrack80 = name.find("HT350_DisplacedDijet80_DisplacedTrack");
@@ -259,78 +256,7 @@ void DJetAnalyzer::fillTriggerInfo(const edm::Event & iEvent, const edm::Trigger
     passBigOR             = passBigOR || ht500_40 || ht350_40 || pfht800;
     passPFMET170          = passPFMET170 || pfmet170;
     passPFMET170NC        = passPFMET170NC || pfmet170nc;
-  }
-
-    // record the trigger results for important triggers
-    // passHT200	       = trigResults.accept(trigNames.triggerIndex("HLT_PFHT200_v"));
-    // passHT250	       = trigResults.accept(trigNames.triggerIndex("HLT_PFHT250_v"));
-    // passHT300	       = trigResults.accept(trigNames.triggerIndex("HLT_PFHT300_v"));
-    // passHTControl	       = passHT200 || passHT250 || passHT300;
-    // passHT350	       = trigResults.accept(trigNames.triggerIndex("HLT_PFHT350_v"));
-    // passHT400	       = trigResults.accept(trigNames.triggerIndex("HLT_PFHT400_v"));
-    // passHT800	       = trigResults.accept(trigNames.triggerIndex("HLT_PFHT800_v"));
-    // passDisplaced350_40  = trigResults.accept(trigNames.triggerIndex("HLT_HT350_DisplacedDijet40_DisplacedTrack_v"));
-    // passDisplaced500_40  = trigResults.accept(trigNames.triggerIndex("HLT_HT500_DisplacedDijet40_Inclusive_v"));
-    // passDisplaced550_40  = trigResults.accept(trigNames.triggerIndex("HLT_HT550_DisplacedDijet40_Inclusive_v"));
-    // passDisplacedOR5e33  = passDisplaced350_40 || passDisplaced500_40;
-    // passVBFHadronic      = trigResults.accept(trigNames.triggerIndex("HLT_VBF_DisplacedJet40_Hadronic_v"));
-    // passVBFDispTrack     = trigResults.accept(trigNames.triggerIndex("HLT_VBF_DisplacedJet40_DisplacedTrack_v"));
-    // passDisplacedOR14e34 = 0;
-    // passBigOR            = passDisplaced350_40 || passDisplaced500_40 || passHT800;
-  
-  // loop over all the triggers in the result and keep the result
-  // std::vector<std::string>::const_iterator nameIter = trigByName.triggerNames().begin();
-  // for(; nameIter != trigByName.triggerNames().end(); ++nameIter) {
-  //   const std::string & name  = *nameIter;
-  //   bool		fired = trigByName.accept(name);
-
-    //std::cout << "trigger " << *nameIter << " fired? " << fired << std::endl;
-
-    // look for only triggers applicable to displaced jets
-    // std::size_t searchHT	       = name.find("HT");
-    // std::size_t searchDisplaced	       = name.find("Displaced");
-    // std::size_t searchVBF	       = name.find("VBF");
-    // std::size_t searchEle	       = name.find("Ele");
-    // std::size_t searchMu	       = name.find("Mu");
-    // std::size_t searchPhoton	       = name.find("Photon");
-    // std::size_t searchForMC	       = name.find("ForMC");
-    // std::size_t searchTriple	       = name.find("Triple");
-
-    // include HT, VBF, and Displaced paths
-    // bool    foundHT	   = searchHT != std::string::npos && fired;
-    // bool    foundDisplaced = searchDisplaced != std::string::npos && fired;
-    // bool    foundVBF	   = searchVBF != std::string::npos && fired;
-    // bool    foundTriple	   = searchTriple != std::string::npos && fired;
-
-    // dont include lepton paths
-    // bool    foundEle	   = searchEle != std::string::npos;
-    // bool    foundMu	   = searchMu  != std::string::npos;
-    // bool    foundPhoton	   = searchPhoton  != std::string::npos;
-    // // dont include MC only paths
-    // bool    foundMC	   = searchForMC  != std::string::npos;        
-    // bool    noVeto	   = !foundEle && !foundMu && !foundMC && !foundPhoton;    
-
-    // fill the full trigger list
-    //if((foundTriple || foundHT || foundDisplaced || foundVBF) && noVeto) {
-
-
-    // // fill the array
-    // const std::string & indexString = std::to_string(nTrig);
-    // const std::string & sumString   = indexString + *nameIter;
-    // triggerNames.push_back(sumString);
-    // triggerPass[nTrig]	      = fired;
-    // nTrig++;
-
-
-
-    //    if (debug > 5) std::cout << " passDisplaced after OR" << passDisplacedOR5e33 << std::endl;
-    //}
-
-  // std::cout << "---------------------- " << std::endl;
-  // std::cout << "passHT200 " << passHT200 << std::endl;
-  // std::cout << "passHT300 " << passHT300 << std::endl;
-  // std::cout << "passHT800 " << passHT800 << std::endl;
-
+  } // loop over the triggerNames
 }
 
 void DJetAnalyzer::fillHandles(const edm::Event & iEvent ) {
@@ -388,7 +314,7 @@ void  DJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   const edm::SimVertexContainer &		    simVtxCollection = *(simVertices.product()); 
   const reco::TrackCollection &                     generalTracks    = *(gTracks.product());
 
-  if(debug > 0) std::cout << "[----------------- HANLDES RETRIEVED -------------------] " <<std::endl;
+  if(debug > 0) std::cout << "[----------------- HANDLES RETRIEVED -------------------] " <<std::endl;
 
   // build the displaced event from the calo jet collection and kinematic cuts
   DisplacedJetEvent djEvent(isMC_, caloJets, pvCollection, cut_jetPt, cut_jetEta, debug);
@@ -443,7 +369,7 @@ void  DJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 
   // fill the leading and subleading jets (pt and hadronic fraction)
   // inclusive requirement and displaced track requirement
-  djEvent.fillLeadingSubleadingJets(false); // count not HLT
+  djEvent.fillLeadingSubleadingJets(false); // count all track iterations (not HLT)
   djEvent.fillLeadingSubleadingJets(true); // count for HLT (divisioned by tracking iteration)
     
   // dump the displaced jet info into the corresponding branches by event
@@ -1370,13 +1296,13 @@ void DJetAnalyzer::dumpCaloInfo(DisplacedJetEvent & djEvent) {
   }
 
   // flat ordered numbers
-  caloLeadingJetPT	      = djEvent.caloLeadingJetPT;
-  caloSubLeadingJetPT	      = djEvent.caloSubLeadingJetPT;
+  caloLeadingJetPT	       = djEvent.caloLeadingJetPT;
+  caloSubLeadingJetPT	       = djEvent.caloSubLeadingJetPT;
   // ALL TRACKING ITERATIONS
-  caloFewestPromptTracks      = djEvent.caloFewestPromptTracks;
-  caloSubFewestPromptTracks   = djEvent.caloSubFewestPromptTracks;
-  caloMostDispTracks	      = djEvent.caloMostDispTracks;
-  caloSubMostDispTracks	      = djEvent.caloSubMostDispTracks;
+  caloFewestPromptTracks       = djEvent.caloFewestPromptTracks;
+  caloSubFewestPromptTracks    = djEvent.caloSubFewestPromptTracks;
+  caloMostDispTracks	       = djEvent.caloMostDispTracks;
+  caloSubMostDispTracks	       = djEvent.caloSubMostDispTracks;
   // HLT ITERATIONS 0,1,2,4
   caloFewestPromptTracksHLT    = djEvent.caloFewestPromptTracksHLT;
   caloSubFewestPromptTracksHLT = djEvent.caloSubFewestPromptTracksHLT;

@@ -195,25 +195,27 @@ void DJetAnalyzer::fillTriggerInfo(const edm::Event & iEvent, const edm::Trigger
     bool fired = trigResults.accept(i);
 
     // specific triggers
-    std::size_t searchHT350DispTrack40 = name.find("HT350_DisplacedDijet40_DisplacedTrack");
-    std::size_t searchHT350DispTrack80 = name.find("HT350_DisplacedDijet80_DisplacedTrack");
-    std::size_t searchHT500Inclusive40 = name.find("HT500_DisplacedDijet40_Inclusive");
-    std::size_t searchHT550Inclusive40 = name.find("HT550_DisplacedDijet40_Inclusive");
-    std::size_t searchHT650Inclusive80 = name.find("HT650_DisplacedDijet80_Inclusive");
-    std::size_t searchVBFHadronic      = name.find("VBF_DisplacedJet40_Hadronic");
-    std::size_t searchVBFDispTrack     = name.find("VBF_DisplacedJet40_DisplacedTrack");
+    std::size_t searchHT350DispTrack40 = name.find("HLT_HT350_DisplacedDijet40_DisplacedTrack_v");
+    std::size_t searchHT350DispTrack80 = name.find("HLT_HT350_DisplacedDijet80_DisplacedTrack_v");
+    std::size_t searchHT500Inclusive40 = name.find("HLT_HT500_DisplacedDijet40_Inclusive_v");
+    std::size_t searchHT550Inclusive40 = name.find("HLT_HT550_DisplacedDijet40_Inclusive_v");
+    std::size_t searchHT650Inclusive80 = name.find("HLT_HT650_DisplacedDijet80_Inclusive_v");
+    std::size_t searchVBFHadronic      = name.find("HLT_VBF_DisplacedJet40_Hadronic_v");
+    std::size_t searchVBFDispTrack     = name.find("HLT_VBF_DisplacedJet40_DisplacedTrack_v");
     // pfht
-    std::size_t searchPFHT800          = name.find("PFHT800");
-    std::size_t searchPFHT200          = name.find("PFHT200");
-    std::size_t searchPFHT250          = name.find("PFHT250");
-    std::size_t searchPFHT300          = name.find("PFHT300");
-    std::size_t searchPFHT350          = name.find("PFHT350");
-    std::size_t searchPFHT400          = name.find("PFHT400");
+    std::size_t searchPFHT800          = name.find("HLT_PFHT800_v");
+    std::size_t searchPFHT200          = name.find("HLT_PFHT200_v");
+    std::size_t searchPFHT250          = name.find("HLT_PFHT250_v");
+    std::size_t searchPFHT300          = name.find("HLT_PFHT300_v");
+    std::size_t searchPFHT350          = name.find("HLT_PFHT350_v");
+    std::size_t searchPFHT400          = name.find("HLT_PFHT400_v");
     // vbf
-    std::size_t searchVBFTriple        = name.find("L1_TripleJet_VBF");
+    std::size_t searchVBFTriple        = name.find("HLT_L1_TripleJet_VBF_v");
     // met triggers
-    std::size_t searchPFMET170        = name.find("PFMET170_v");
-    std::size_t searchPFMET170NC        = name.find("PFMET170_NoiseCleaned");
+    std::size_t searchPFMET170	       = name.find("HLT_PFMET170_v");
+    std::size_t searchPFMET170NC       = name.find("HLT_PFMET170_NoiseCleaned_v");
+    // muon
+    std::size_t searchMu20	       = name.find("HLT_Mu20_v");
 
     // build important bits for the tree
     // control
@@ -236,26 +238,28 @@ void DJetAnalyzer::fillTriggerInfo(const edm::Event & iEvent, const edm::Trigger
     // pure pfmet
     bool    pfmet170       = searchPFMET170 != std::string::npos && fired;
     bool    pfmet170nc     = searchPFMET170NC != std::string::npos && fired;
+    bool    mu20           = searchMu20 != std::string::npos && fired;
 
     // record the trigger results for important triggers
-    passHTControl	  = ((passHTControl) || pfht200 || pfht250 || pfht300 || pfht350 || pfht400) ;
-    passHT800		  = (passHT800) || pfht800;
-    passHT200		  = (passHT200) || pfht200;
-    passHT250		  = (passHT250) || pfht250;
-    passHT300		  = (passHT300) || pfht300;
-    passHT350		  = (passHT350) || pfht350;
-    passHT400		  = (passHT400) || pfht400;
-    passDisplacedOR5e33	  = (passDisplacedOR5e33) || ht350_40 || ht500_40;
-    passDisplacedOR14e34  = (passDisplacedOR14e34) || ht350_80 || ht650_80;
-    passDisplaced350_40   = passDisplaced350_40 || ht350_40; 
-    passDisplaced500_40   = passDisplaced500_40 || ht500_40;
-    passDisplaced550_40   = passDisplaced550_40 || ht550_40;
-    passVBFHadronic       = passVBFHadronic || vbfHadronic;
-    passVBFDispTrack      = passVBFDispTrack || vbfDispTrack;
-    passVBFTriple         = passVBFTriple || vbfTriple;
-    passBigOR             = passBigOR || ht500_40 || ht350_40 || pfht800;
-    passPFMET170          = passPFMET170 || pfmet170;
-    passPFMET170NC        = passPFMET170NC || pfmet170nc;
+    passHTControl	 = ((passHTControl) || pfht200 || pfht250 || pfht300 || pfht350 || pfht400) ;
+    passHT800		 = (passHT800) || pfht800;
+    passHT200		 = (passHT200) || pfht200;
+    passHT250		 = (passHT250) || pfht250;
+    passHT300		 = (passHT300) || pfht300;
+    passHT350		 = (passHT350) || pfht350;
+    passHT400		 = (passHT400) || pfht400;
+    passDisplacedOR5e33	 = (passDisplacedOR5e33) || ht350_40 || ht500_40;
+    passDisplacedOR14e34 = (passDisplacedOR14e34) || ht350_80 || ht650_80;
+    passDisplaced350_40  = passDisplaced350_40 || ht350_40; 
+    passDisplaced500_40  = passDisplaced500_40 || ht500_40;
+    passDisplaced550_40  = passDisplaced550_40 || ht550_40;
+    passVBFHadronic      = passVBFHadronic || vbfHadronic;
+    passVBFDispTrack     = passVBFDispTrack || vbfDispTrack;
+    passVBFTriple        = passVBFTriple || vbfTriple;
+    passBigOR            = passBigOR || ht500_40 || ht350_40 || pfht800;
+    passPFMET170         = passPFMET170 || pfmet170;
+    passPFMET170NC       = passPFMET170NC || pfmet170nc;
+    passMu20		 = passMu20 || mu20;
   } // loop over the triggerNames
 }
 
@@ -383,8 +387,7 @@ void  DJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   if(isMC_ && doGenMatch_) dumpGenInfo(genCollection);
 
   // dump the track information
-  nTracks = 0; 
-  
+  nTracks = 0;   
   if(dumpGeneralTracks_) dumpTrackInfo(djEvent, generalTracks, 0, iSetup);
 
   // dump the vertex info in the event
@@ -402,8 +405,7 @@ void  DJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   if(writeGenTree_)genTree_->Fill();
 }
 
-void 
-DJetAnalyzer::beginJob()
+void DJetAnalyzer::beginJob()
 {
 
   if(debug > 1) std::cout << "[DEBUG 1] Setting Up Output File And Tree" << std::endl;
@@ -491,6 +493,7 @@ DJetAnalyzer::beginJob()
   eventTree_->Branch("passVBFTriple", &passVBFTriple, "passVBFTriple/I");
   eventTree_->Branch("passPFMET170", &passPFMET170, "passPFMET170/I");
   eventTree_->Branch("passPFMET170NC", &passPFMET170NC, "passPFMET170NC/I");
+  eventTree_->Branch("passMu20", &passMu20, "passMu20/I");
 
   // local event book keeping 
   eventTree_->Branch("evNum", &evNum, "evNum/I");
@@ -577,15 +580,24 @@ DJetAnalyzer::beginJob()
   jetTree_->Branch("nTrig", &nTrig, "nTrig/I");
   //jetTree_->Branch("triggerNames", &triggerNames);
   //jetTree_->Branch("triggerPass", &triggerPass, "triggerPass[nTrig]/I");
-  jetTree_->Branch("passDisplacedOR5e33", &passDisplacedOR5e33, "passDisplacedOR5e33/O");
-  jetTree_->Branch("passDisplacedOR14e34", &passDisplacedOR14e34, "passDisplacedOR14e34/O");
-  jetTree_->Branch("passHTControl", &passHTControl, "passHTControl/O");
-  jetTree_->Branch("passDisplaced350_40", &passDisplaced350_40, "passDisplaced350_40/O");
-  jetTree_->Branch("passDisplaced500_40", &passDisplaced500_40, "passDisplaced500_40/O");
-  jetTree_->Branch("passBigOR", &passBigOR, "passBigOR/O");
-  jetTree_->Branch("passHT800", &passHT800, "passHT800/O");
-  jetTree_->Branch("passVBFHadronic", &passVBFHadronic, "passVBFHadronic/O");
-  jetTree_->Branch("passVBFDispTrack", &passVBFDispTrack, "passVBFDispTrack/O");
+  jetTree_->Branch("passDisplacedOR5e33", &passDisplacedOR5e33, "passDisplacedOR5e33/I");
+  jetTree_->Branch("passDisplacedOR14e34", &passDisplacedOR14e34, "passDisplacedOR14e34/I");
+  jetTree_->Branch("passHTControl", &passHTControl, "passHTControl/I");
+  jetTree_->Branch("passHT200", &passHT200, "passHT200/I");
+  jetTree_->Branch("passHT250", &passHT250, "passHT250/I");
+  jetTree_->Branch("passHT300", &passHT300, "passHT300/I");
+  jetTree_->Branch("passHT400", &passHT400, "passHT400/I");
+  jetTree_->Branch("passDisplaced350_40", &passDisplaced350_40, "passDisplaced350_40/I");
+  jetTree_->Branch("passDisplaced500_40", &passDisplaced500_40, "passDisplaced500_40/I");
+  jetTree_->Branch("passDisplaced550_40", &passDisplaced550_40, "passDisplaced550_40/I");
+  jetTree_->Branch("passBigOR", &passBigOR, "passBigOR/I");
+  jetTree_->Branch("passHT800", &passHT800, "passHT800/I");
+  jetTree_->Branch("passVBFHadronic", &passVBFHadronic, "passVBFHadronic/I");
+  jetTree_->Branch("passVBFDispTrack", &passVBFDispTrack, "passVBFDispTrack/I");
+  jetTree_->Branch("passVBFTriple", &passVBFTriple, "passVBFTriple/I");
+  jetTree_->Branch("passPFMET170", &passPFMET170, "passPFMET170/I");
+  jetTree_->Branch("passPFMET170NC", &passPFMET170NC, "passPFMET170NC/I");
+  jetTree_->Branch("passMu20", &passMu20, "passMu20/I");
 
   // branch indices must be defined first
   jetTree_->Branch("nCaloJets", &nCaloJets, "nCaloJets/I");
@@ -912,6 +924,24 @@ DJetAnalyzer::beginJob()
   vertexTree_->Branch("lumi", &lumi, "lumi/I");
   vertexTree_->Branch("event", &event, "event/I");
 
+  vertexTree_->Branch("passHTControl", &passHTControl, "passHTControl/I");
+  vertexTree_->Branch("passHT200", &passHT200, "passHT200/I");
+  vertexTree_->Branch("passHT250", &passHT250, "passHT250/I");
+  vertexTree_->Branch("passHT300", &passHT300, "passHT300/I");
+  vertexTree_->Branch("passHT400", &passHT400, "passHT400/I");
+  vertexTree_->Branch("passDisplaced350_40", &passDisplaced350_40, "passDisplaced350_40/I");
+  vertexTree_->Branch("passDisplaced500_40", &passDisplaced500_40, "passDisplaced500_40/I");
+  vertexTree_->Branch("passDisplaced550_40", &passDisplaced550_40, "passDisplaced550_40/I");
+  vertexTree_->Branch("passBigOR", &passBigOR, "passBigOR/I");
+  vertexTree_->Branch("passHT800", &passHT800, "passHT800/I");
+  vertexTree_->Branch("passVBFHadronic", &passVBFHadronic, "passVBFHadronic/I");
+  vertexTree_->Branch("passVBFDispTrack", &passVBFDispTrack, "passVBFDispTrack/I");
+  vertexTree_->Branch("passVBFTriple", &passVBFTriple, "passVBFTriple/I");
+  vertexTree_->Branch("passPFMET170", &passPFMET170, "passPFMET170/I");
+  vertexTree_->Branch("passPFMET170NC", &passPFMET170NC, "passPFMET170NC/I");
+  vertexTree_->Branch("passMu20", &passMu20, "passMu20/I");
+
+
   vertexTree_->Branch("genPartN", &genPartN, "genPartN/I");
   vertexTree_->Branch("genMomStatus", &genMomStatus, "genMomStatus[genPartN]/I");
   vertexTree_->Branch("genMomPt", &genMomPt, "genMomPt[genPartN]/F");
@@ -923,7 +953,6 @@ DJetAnalyzer::beginJob()
   vertexTree_->Branch("genMomLz", &genMomLz, "genMomLz[genPartN]/F");
   vertexTree_->Branch("genMomLxyz", &genMomLxyz, "genMomLxyz[genPartN]/F");
   vertexTree_->Branch("genMomCTau0", &genMomCTau0, "genMomCTau0[genPartN]/F");
-
 
   // primary vertices
   vertexTree_->Branch("pvN", &pvN, "pvN/I");
@@ -1108,6 +1137,25 @@ DJetAnalyzer::beginJob()
   trackTree_->Branch("run",  &run,  "run/I");
   trackTree_->Branch("lumi",  &lumi,  "lumi/I");
   trackTree_->Branch("event",  &event,  "event/I");
+
+
+  trackTree_->Branch("passHTControl", &passHTControl, "passHTControl/I");
+  trackTree_->Branch("passHT200", &passHT200, "passHT200/I");
+  trackTree_->Branch("passHT250", &passHT250, "passHT250/I");
+  trackTree_->Branch("passHT300", &passHT300, "passHT300/I");
+  trackTree_->Branch("passHT400", &passHT400, "passHT400/I");
+  trackTree_->Branch("passDisplaced350_40", &passDisplaced350_40, "passDisplaced350_40/I");
+  trackTree_->Branch("passDisplaced500_40", &passDisplaced500_40, "passDisplaced500_40/I");
+  trackTree_->Branch("passDisplaced550_40", &passDisplaced550_40, "passDisplaced550_40/I");
+  trackTree_->Branch("passBigOR", &passBigOR, "passBigOR/I");
+  trackTree_->Branch("passHT800", &passHT800, "passHT800/I");
+  trackTree_->Branch("passVBFHadronic", &passVBFHadronic, "passVBFHadronic/I");
+  trackTree_->Branch("passVBFDispTrack", &passVBFDispTrack, "passVBFDispTrack/I");
+  trackTree_->Branch("passVBFTriple", &passVBFTriple, "passVBFTriple/I");
+  trackTree_->Branch("passPFMET170", &passPFMET170, "passPFMET170/I");
+  trackTree_->Branch("passPFMET170NC", &passPFMET170NC, "passPFMET170NC/I");
+  trackTree_->Branch("passMu20", &passMu20, "passMu20/I");
+
 
   trackTree_->Branch("nTracks", &nTracks, "nTracks/I");
   trackTree_->Branch("trCharge", &trCharge, "trCharge[nTracks]/F");

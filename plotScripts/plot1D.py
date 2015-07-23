@@ -108,10 +108,11 @@ else:
     varbins = makebins(options.xmin, options.xmax, .1, .3)
 
 class sample:
-    def __init__(self, file_name, tree_name, isSignal, xsec, fillColor, fillStyle, lineStyle, lineWidth, stack, label):
+    def __init__(self, file_name, cut, tree_name, isSignal, isData, xsec, fillColor, fillStyle, lineStyle, lineWidth, stack, label):
 
         # set configuration
         self.file_name = file_name 
+        self.cut = cut
         self.tree_name = options.tree 
         self.xsec = xsec 
         self.fillColor = fillColor
@@ -122,7 +123,8 @@ class sample:
         self.label = label
         self.hist_name = file_name.split(".")[0] + "_" + tree_name
         self.isSignal = int(isSignal)
-        
+        self.isData =  int(isData)
+
         #build the corresponding histogram
         self.hist = None
         if not options.var_bin:
@@ -150,7 +152,7 @@ stacks = {}
 
 #ignore the first line for labels
 for line in lines[1:]:
-    (file_name, tree_name, isSignal, xSec, fillColor, fillStyle, lineStyle, lineWidth, stack, label) = line.split("|")
+    (file_name, cut, tree_name, isSignal, isData,  xSec, fillColor, fillStyle, lineStyle, lineWidth, stack, label) = line.split("|")
     samples[file_name] = sample(*line.split("|"))
 
     #check if the stack already exists
@@ -183,6 +185,7 @@ for key in stacks.keys():
             print samp.file_name, isSignal
             thisCut = "(" + options.cut + ") && ( jetSvGenVertexMatched > 0 )" 
 
+        thisCut = thisCut + "&& (%s)" % samp.cut 
 
         print "Sample: ", samp.file_name,  "Cut: ", thisCut
 
@@ -191,11 +194,19 @@ for key in stacks.keys():
         print draw_string
         nevents = thisTree.Draw(draw_string , thisCut)
         #nevents = thisTree.GetEntries(thisCut)
-        #samp.hist.Sumw2()
-        samp.hist.Scale( float(options.lumi) * float(samp.xsec) / float(nevents))
+
+        if samp.isData:
+            print "KEEPING ERRORS FOR: ", samp.hist
+            samp.hist.Sumw2()
+            samp.hist.SetMarkerStyle(8)
+        else:
+            samp.hist.SetMarkerStyle(4)
+
+        if samp.hist.Integral() > 0:
+            samp.hist.Scale( float(options.lumi) * float(samp.xsec) / float(samp.hist.Integral()))
         samp.hist.GetXaxis().SetTitle(options.xlabel)
         samp.hist.GetYaxis().SetTitle(options.ylabel)
-        samp.hist.SetMarkerStyle(4)
+
         eval("samp.hist.SetMarkerColor(rt.%s)" % samp.fillColor)
 
 output.cd()
@@ -226,7 +237,9 @@ for key in stacks.keys():
 
 
 print "length of draw_rest", len(draw_rest)
-draw_first.Draw("")
+
+print draw_first
+draw_first.Draw()
 
 for ii in draw_rest: ii.Draw("same")
 

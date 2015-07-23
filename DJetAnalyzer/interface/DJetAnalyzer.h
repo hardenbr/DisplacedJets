@@ -682,6 +682,7 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   Int_t         passHT800;
   Int_t         passPFMET170;
   Int_t         passPFMET170NC;
+  Int_t         passMu20;
 
   ///////////////////HANDLES////////////////////
   // tracks

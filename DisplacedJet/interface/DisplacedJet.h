@@ -401,7 +401,7 @@ int DisplacedJet::getNDispTracks(const bool & isHLT) const {
 
 // returns true if the inclusive criteria is satisfied (at most 2 prompt tracks)
 bool DisplacedJet::isInclusive(const bool & isHLT) const {
-  return isHLT ? (getNPromptTracks(true) >= 2) : (getNPromptTracks(false) >= 2) ;
+  return isHLT ? (getNPromptTracks(true) <= 2) : (getNPromptTracks(false) <= 2) ;
 }
 
 bool DisplacedJet::isDispTrack(const bool & isHLT) const {

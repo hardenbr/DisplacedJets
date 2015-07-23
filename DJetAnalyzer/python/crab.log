@@ -618,3 +618,22 @@ Traceback (most recent call last):
   File "/cvmfs/cms.cern.ch/crab3/slc6_amd64_gcc481/cms/crabclient/3.3.1507-comp/lib/python2.6/site-packages/CRABClient/ClientUtilities.py", line 439, in loadCache
     raise CachefileNotFoundException(msg)
 CachefileNotFoundException: Cannot find .requestcache file in CRAB project directory /afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDIES/CMSSW_7_4_6_patch2/src/DisplacedJets/DJetAnalyzer/python/CRAB3_DATA_4LUMIS_v3
+DEBUG 2015-07-22 09:03:04,222: 	 Executing command: 'submit'
+DEBUG 2015-07-22 09:03:04,232: 	 Found CRAB cache file /afs/cern.ch/user/h/hardenbr/.crab3
+DEBUG 2015-07-22 09:03:04,246: 	 Checking credentials
+DEBUG 2015-07-22 09:03:04,248: 	 Found proxy file /tmp/x509up_u56682
+DEBUG 2015-07-22 09:03:04,248: 	 Getting proxy life time left
+DEBUG 2015-07-22 09:03:04,754: 	 Executing : 
+ command : voms-proxy-info -file /tmp/x509up_u56682 -timeleft
+ output : 43162
+
+ error: 
+ retcode : 0
+DEBUG 2015-07-22 09:03:05,159: 	 Executing : 
+ command : voms-proxy-info -file /tmp/x509up_u56682 -actimeleft
+ output : 43160
+
+ error: 
+ retcode : 0
+DEBUG 2015-07-22 09:03:05,159: 	 Proxy valid for 11:59:22 hours
+DEBUG 2015-07-22 09:03:05,160: 	 Will use CRAB Analysis plugin (i.e. will run an analysis job type).

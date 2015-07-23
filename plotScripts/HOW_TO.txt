@@ -1,48 +1,50 @@
 # event quantities
 python plot1D.py -f test.list -v "eventCaloDHT[2]/eventCaloHT" -c "1" -t jets --xmin 0 --xmax 1.001 --nbins 100 --xlabel "Displaced H_{T} Fraction" -o test.root
 python plot1D.py -f test.list -v "eventCaloDHT[2]" -c "1" -t jets --xmin 0 --xmax 1.001 --nbins 100 --xlabel "Displaced H_{T} [GeV]" -o test.root
+python plot1D.py -f test.list -v "eventCaloHT" -c "1" -t jets --xmin 0 --xmax 1200 --nbins 100 --xlabel "Calo H_{T} [GeV] " -o test.root
+
 
 # sum quantities
 
-python plot1D.py -f calolist.py -v "jetIPSigLogSum2D" -c "1" -t jets --xmin -20 --xmax 60 --nbins 100 --xlabel "Jet Sum over Log(IP_{sig})" -o test.root --genmatch 
-python plot1D.py -f calolist.py -v "jetDistLogSum" -c "1" -t jets --xmin 0 --xmax 200 --nbins 50 --xlabel "Jet Sum over Log(Dist)" -o test.root --genmatch 
-python plot1D.py -f calolist.py -v "jetIPSigLogSum3D" -c "1" -t jets --xmin -100 --xmax 200 --nbins 50 --xlabel "Jet Sum over Log(IP_{sig})" -o test.root --genmatch 
+python plot1D.py -f test.list -v "jetIPSigLogSum2D" -c "1" -t jets --xmin -20 --xmax 60 --nbins 100 --xlabel "Jet Sum over Log(IP_{sig})" -o test.root --genmatch 
+python plot1D.py -f test.list -v "jetDistLogSum" -c "1" -t jets --xmin 0 --xmax 200 --nbins 50 --xlabel "Jet Sum over Log(Dist)" -o test.root --genmatch 
+python plot1D.py -f test.list -v "jetIPSigLogSum3D" -c "1" -t jets --xmin -100 --xmax 200 --nbins 50 --xlabel "Jet Sum over Log(IP_{sig})" -o test.root --genmatch 
 
 # median
-python plot1D.py -f calolist.py -v "jetMedianIPSig2D" -c "1" -t jets --xmin 0 --xmax 1 --nbins 50  --xlabel "Jet Median 2D IP_{sig}" -o test.root --genmatch 
-python plot1D.py -f calolist.py -v "jetMedianIPLogSig2D" -c "1" -t jets --xmin -10 --xmax 10 --nbins 40 --xlabel "Jet Median IP Log Sig 2D" -o test.root --genmatch 
+python plot1D.py -f test.list -v "jetMedianIPSig2D" -c "1" -t jets --xmin 0 --xmax 1 --nbins 50  --xlabel "Jet Median 2D IP_{sig}" -o test.root --genmatch 
+python plot1D.py -f test.list -v "jetMedianIPLogSig2D" -c "1" -t jets --xmin -10 --xmax 10 --nbins 40 --xlabel "Jet Median IP Log Sig 2D" -o test.root --genmatch 
 
 #variance
-python plot1D.py -f calolist.py -v "jetVarianceIPSig2D" -c "1" -t jets --xmin 0 --xmax 1000 --nbins 100 --xlabel "IP_{sig} Variance" -o test.root --genmatch 
-python plot1D.py -f calolist.py -v "jetVarianceJetDist" -c "1" -t jets --xmin 0 --xmax 1000 --nbins 100 --xlabel "Track Jet Distance Variance" -o test.root --genmatch 
-python plot1D.py -f calolist.py -v "jetVarianceIP2D" -c "1" -t jets --xmin 0 --xmax 1000 --nbins 100 --xlabel "IP2D Variance" -o test.root --genmatch
-python plot1D.py -f calolist.py -v "jetVarianceIPLogSig2D" -c "1" -t jets --xmin -100 --xmax 100 --nbins 100 --xlabel "IP Log Sig 2D Variance" -o test.root --genmatch 
+python plot1D.py -f test.list -v "jetVarianceIPSig2D" -c "1" -t jets --xmin 0 --xmax 1000 --nbins 100 --xlabel "IP_{sig} Variance" -o test.root --genmatch 
+python plot1D.py -f test.list -v "jetVarianceJetDist" -c "1" -t jets --xmin 0 --xmax 1000 --nbins 100 --xlabel "Track Jet Distance Variance" -o test.root --genmatch 
+python plot1D.py -f test.list -v "jetVarianceIP2D" -c "1" -t jets --xmin 0 --xmax 1000 --nbins 100 --xlabel "IP2D Variance" -o test.root --genmatch
+python plot1D.py -f test.list -v "jetVarianceIPLogSig2D" -c "1" -t jets --xmin -100 --xmax 100 --nbins 100 --xlabel "IP Log Sig 2D Variance" -o test.root --genmatch 
 
 ### mean 
-python plot1D.py -f calolist.py -v "jetMeanIPSig2D" -c "1" -t jets --xmin 0 --xmax 1000 --nbins 100 --xlabel "IP_{sig} Mean" -o test.root --genmatch 
-python plot1D.py -f calolist.py -v "jetMeanJetDist" -c "1" -t jets --xmin 0 --xmax 1000 --nbins 100 --xlabel "Jet Track Distance Mean" -o test.root --genmatch 
-python plot1D.py -f calolist.py -v "jetMeanIPLogSig2D" -c "1" -t jets --xmin -10 --xmax 10 --nbins 40 --xlabel "Jet Mean IP Log Sig 2D" -o test.root --genmatch 
+python plot1D.py -f test.list -v "jetMeanIPSig2D" -c "1" -t jets --xmin 0 --xmax 1000 --nbins 100 --xlabel "IP_{sig} Mean" -o test.root --genmatch 
+python plot1D.py -f test.list -v "jetMeanJetDist" -c "1" -t jets --xmin 0 --xmax 1000 --nbins 100 --xlabel "Jet Track Distance Mean" -o test.root --genmatch 
+python plot1D.py -f test.list -v "jetMeanIPLogSig2D" -c "1" -t jets --xmin -10 --xmax 10 --nbins 40 --xlabel "Jet Mean IP Log Sig 2D" -o test.root --genmatch 
 
 ### secondary vertex
-python plot1D.py -f calolist.py -v "jetSvMass" -c "1" -t jets --xmin 0 --xmax 20 --nbins 100 --xlabel "SV Mass " -o test.root --genmatch 
-python plot1D.py -f calolist.py -v "jetSvNTrack" -c "1" -t jets --xmin -.5 --xmax 19.5 --nbins 20 --xlabel "SV Track Multiplicity" -o test.root --genmatch 
-python plot1D.py -f calolist.py -v "jetSvLxySig" -c "1" -t jets --xmin 0 --xmax 200 --nbins 100 --xlabel "SV L_{xy} Significance" -o test.root --genmatch 
-python plot1D.py -f calolist.py -v "jetSvLxy" -c "1" -t jets --xmin 0 --xmax 20 --nbins 100 --xlabel "SV L_{xy}" -o test.root --genmatch 
-python plot1D.py -f calolist.py -v "jetNSv" -c "1" -t jets --xmin -.5 --xmax 9.5 --nbins 10 --xlabel "N Reco SV" -o test.root --genmatch 
+python plot1D.py -f test.list -v "jetSvMass" -c "1" -t jets --xmin 0 --xmax 20 --nbins 100 --xlabel "SV Mass " -o test.root --genmatch 
+python plot1D.py -f test.list -v "jetSvNTrack" -c "1" -t jets --xmin -.5 --xmax 19.5 --nbins 20 --xlabel "SV Track Multiplicity" -o test.root --genmatch 
+python plot1D.py -f test.list -v "jetSvLxySig" -c "1" -t jets --xmin 0 --xmax 200 --nbins 100 --xlabel "SV L_{xy} Significance" -o test.root --genmatch 
+python plot1D.py -f test.list -v "jetSvLxy" -c "1" -t jets --xmin 0 --xmax 20 --nbins 100 --xlabel "SV L_{xy}" -o test.root --genmatch 
+python plot1D.py -f test.list -v "jetNSv" -c "1" -t jets --xmin -.5 --xmax 9.5 --nbins 10 --xlabel "N Reco SV" -o test.root --genmatch 
 
 ### IVF MATCHED VERTEX
-python plot1D.py -f calolist.py -v "jetIVFMass" -c "1" -t jets --xmin 0 --xmax 20 --nbins 100 --xlabel "IVF Mass " -o test.root 
-python plot1D.py -f calolist.py -v "jetIVFNTrack" -c "1" -t jets --xmin -.5 --xmax 19.5 --nbins 20 --xlabel "IVF Track Multiplicity" -o test.root
-python plot1D.py -f calolist.py -v "jetIVFLxySig" -c "1" -t jets --xmin 0 --xmax 200 --nbins 100 --xlabel "IVF L_{xy} Significance" -o test.root
-python plot1D.py -f calolist.py -v "jetIVFLxy" -c "1" -t jets --xmin 0 --xmax 20 --nbins 100 --xlabel "IVF L_{xy}" -o test.root
-python plot1D.py -f calolist.py -v "jetIVFMatchingScore" -c "1" -t jets --xmin 0 --xmax 20 --nbins 100 --xlabel "IVF Matching Score" -o test.root 
+python plot1D.py -f test.list -v "jetIVFMass" -c "1" -t jets --xmin 0 --xmax 20 --nbins 100 --xlabel "IVF Mass " -o test.root 
+python plot1D.py -f test.list -v "jetIVFNTrack" -c "1" -t jets --xmin -.5 --xmax 19.5 --nbins 20 --xlabel "IVF Track Multiplicity" -o test.root
+python plot1D.py -f test.list -v "jetIVFLxySig" -c "1" -t jets --xmin 0 --xmax 200 --nbins 100 --xlabel "IVF L_{xy} Significance" -o test.root
+python plot1D.py -f test.list -v "jetIVFLxy" -c "1" -t jets --xmin 0 --xmax 20 --nbins 100 --xlabel "IVF L_{xy}" -o test.root
+python plot1D.py -f test.list -v "jetIVFMatchingScore" -c "1" -t jets --xmin 0 --xmax 20 --nbins 100 --xlabel "IVF Matching Score" -o test.root 
 
 ## calo jet information
-python plot1D.py -f calolist.py -v "caloJetHfrac" -c "1" -t jets --xmin 0 --xmax 1 --nbins 100 --xlabel "Hadronic Energy Fraction" -o test.root --genmatch 
-python plot1D.py -f calolist.py -v "caloJetPt" -c "1" -t jets --xmin 40 --xmax 700 --nbins 100 --xlabel "Calo Jet p_{t} [GeV]" -o test.root --genmatch 
-python plot1D.py -f calolist.py -v "caloJetEta" -c "1" -t jets --xmin -3 --xmax 3 --nbins 100 --xlabel "Calo Jet #eta" -o test.root --genmatch 
-python plot1D.py -f calolist.py -v "caloJetPhi" -c "1" -t jets --xmin -3 --xmax 3 --nbins 100 --xlabel "Calo Jet #phi" -o test.root --genmatch 
-python plot1D.py -f calolist.py -v "caloJetTowerArea" -c "1" -t jets --xmin 0 --xmax 1 --nbins 100 --xlabel "Tower Area" -o test.root --genmatch 
+python plot1D.py -f test.list -v "caloJetHfrac" -c "1" -t jets --xmin 0 --xmax 1 --nbins 100 --xlabel "Hadronic Energy Fraction" -o test.root --genmatch 
+python plot1D.py -f test.list -v "caloJetPt" -c "1" -t jets --xmin 40 --xmax 700 --nbins 100 --xlabel "Calo Jet p_{t} [GeV]" -o test.root --genmatch 
+python plot1D.py -f test.list -v "caloJetEta" -c "1" -t jets --xmin -3 --xmax 3 --nbins 100 --xlabel "Calo Jet #eta" -o test.root --genmatch 
+python plot1D.py -f test.list -v "caloJetPhi" -c "1" -t jets --xmin -3 --xmax 3 --nbins 100 --xlabel "Calo Jet #phi" -o test.root --genmatch 
+python plot1D.py -f test.list -v "caloJetTowerArea" -c "1" -t jets --xmin 0 --xmax 1 --nbins 100 --xlabel "Tower Area" -o test.root --genmatch 
 
 #signal 2d
 python plot2D.py -f sig2D.list -v "jetSvNTrack:jetMedianIPSig2D" -c "1" -t jets --xmin 0 --xmax 5 --nxbins 25  --xlabel "Jet Median 2D IP Sig." --ymin 0.5 --ymax 15.5 --nybins 15 --ylabel "N SV Tracks" -o test.root --genmatch
@@ -176,3 +178,38 @@ python plot1D.py -f xx4j.list --ylabel "N Tracks" -v "genMomBeta" -c "1" -t genp
 python plot1D.py -f xx4j.list --ylabel "N Tracks" -v "genMomLxyz" -c "1" -t genp --xmin 0 --xmax 100 --nbins 100 --xlabel "Lxyz" -o test.root
 python plot1D.py -f xx4j.list --ylabel "N Tracks" -v "genMomLxy" -c "1" -t genp --xmin 0 --xmax 100 --nbins 100 --xlabel "Lxy" -o test.root
 python plot1D.py -f xx4j.list --ylabel "N Tracks" -v "genMomLz" -c "1" -t genp --xmin 0 --xmax 100 --nbins 100 --xlabel "Lz" -o test.root
+
+
+
+########## N TRACK DISTRIBUTIONS
+
+## ALL TRACKS
+python plot1D.py -f test.list --ylabel "N Events" -v "caloMostDispTrack" -c "1" -t eventInfo --xmin 0 --xmax 25 --nbins 25 --xlabel "Most Disp Tracks" -o test.root
+python plot1D.py -f test.list --ylabel "N Events" -v "caloSubMostDispTrack" -c "1" -t eventInfo --xmin 0 --xmax 25 --nbins 25 --xlabel "Most Sub Disp Tracks" -o test.root
+python plot1D.py -f test.list --ylabel "N Events" -v "caloFewestPromptTracks" -c "1" -t eventInfo --xmin 0 --xmax 25 --nbins 25 --xlabel "Fewest Prompt Tracks" -o test.root
+python plot1D.py -f test.list --ylabel "N Events" -v "caloSubFewestPromptTracks" -c "1" -t eventInfo --xmin 0 --xmax 25 --nbins 25 --xlabel "Sub Fewest Prompt Tracks" -o test.root
+
+##HLT
+python plot1D.py -f test.list --ylabel "N Events" -v "caloMostDispTrackHLT" -c "1" -t eventInfo --xmin 0 --xmax 25 --nbins 25 --xlabel "Most Disp Tracks HLT" -o test.root
+python plot1D.py -f test.list --ylabel "N Events" -v "caloSubMostDispTrackHLT" -c "1" -t eventInfo --xmin 0 --xmax 25 --nbins 25 --xlabel "Most Sub Disp Tracks HLT" -o test.root
+python plot1D.py -f test.list --ylabel "N Events" -v "caloFewestPromptTracksHLT" -c "1" -t eventInfo --xmin 0 --xmax 25 --nbins 25 --xlabel "Fewest Prompt Tracks HLT" -o test.root
+python plot1D.py -f test.list --ylabel "N Events" -v "caloSubFewestPromptTracksHLT" -c "1" -t eventInfo --xmin 0 --xmax 25 --nbins 25 --xlabel "Sub Fewest Prompt Tracks HLT" -o test.root
+
+python plot1D.py -f test.list --ylabel "N Events" -v "log(1-caloLeadingHadronicFraction)" -c "1" -t eventInfo --xmin 0 --xmax 1 --nbins 30 --xlabel "Leading Hadronic Fraction Jet" -o test.root
+
+
+
+
+
+ caloLeadingJetPT = 263.302
+ caloSubLeadingJetPT = 156.289
+ caloFewestPromptTracks = 8
+ caloSubFewestPromptTracks = 8
+ caloMostDispTrack = 6
+ caloSubMostDispTrack = 1
+ caloFewestPromptTracksHLT = 6
+ caloSubFewestPromptTracksHLT = 7
+ caloMostDispTrackHLT = 1
+ caloSubMostDispTrackHLT = 0
+ caloLeadingHadronicFraction = 0.295533
+ caloLeadingMqq  = -4.96995e-25

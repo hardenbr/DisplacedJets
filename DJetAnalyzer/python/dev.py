@@ -1,48 +1,46 @@
 import FWCore.ParameterSet.Config as cms
 
-base = '/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDIES/CMSSW_7_4_6_patch2/src/DisplacedJets/'
+#output directories
+base                = '/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDIES/CMSSW_7_4_6_patch2/src/DisplacedJets/'
+outputDir           = "~/work/"
 
 # output options (to be appended to the file name outputted)
-#appendSignal       = "XX4J300mm"
-appendSignal        = "gun30mm"
-#appendSignal       = "600_30mm"
-#appendSignal       = "dsusy500_10mm"
-#appendSignal       = "emerge"
-appendData          = ""
+appendSignal        = "gun0mmbbar"
+appendData          = "singlemu"
 appendBkg           = "qcd470_600"
-
 ############ FLAGS #############
 debugLevel          = 0
-reportEveryNEvents  = 1000
+reportEveryNEvents  = 10
 isSignalMC          = False
 isMC                = False
-isData              = True
+isData              = not isMC
 #-------------- globaltags
 #gtag               = "FALL1374_25V4"
 #gtag               = "PHYS14_25_V1"
 #gtag               = "MCRUN2_74_V9" #guns
 gtag                = "74X_dataRun2_Prompt_v0" 
 # -------------json
-#JSON                = 'json_DCSONLY_Run2015B.txt'
+#JSON               = 'json_DCSONLY_Run2015B.txt'
 JSON                = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-251642_13TeV_PromptReco_Collisions15_JSON.txt'
 #--------------trigger
 trigger_process     = "HLT"
 # run related
-nevents             = 50000
+nevents             = 5000
 doedm               = False
 #--------------analysis todos
 doEventPreSelection = False
 doJetPreSelection   = False
-doApplyTrigger      = True
-dumpGeneralTracks   = False
+doApplySingleMu     = False
+doApplyTrigger      = False
+dumpGeneralTracks   = True
 # trees to write
-writeTrackTree      = False
+writeTrackTree      = True
 writeEventTree      = True
-writeJetTree        = False
-writeVertexTree     = False
-writeGenTree        = False
+writeJetTree        = True
+writeVertexTree     = True
+writeGenTree        = isSignalMC 
 #----------- matching
-doGenMatch          = False
+doGenMatch          = True 
 doSimVtxMatch       = False
 #----------- analysis cuts
 cut_jetPt           = 40
@@ -72,11 +70,13 @@ input_file_list     = None
 #input_file_list = 'SignalMCLists/DIJET_GUN/dijet_gun_m300_ctau300mm.list'
 #input_file_list = 'SignalMCLists/DIJET_GUN/dijet_gun_m300_ctau10mm.list'
 #input_file_list = 'SignalMCLists/DIJET_GUN/dijet_gun_m300_flat_1mm_1000mm.list'
+#input_file_list = 'SignalMCLists/DIJET_GUN/dijet_gun_m300_ctau0mm_bbar.list'
 
 #data samples
 #input_file_list = 'DataSampleLists/PD_DisplacedJet_Jul17AOD.txt'
-input_file_list   = 'DataSampleLists/PD_JetHT_Jul17AOD.txt'
-#input_file_list   = 'DataSampleLists/PD_HTMHT_Jul17AOD.txt'
+#input_file_list = 'DataSampleLists/PD_JetHT_Jul17AOD.txt'
+#input_file_list = 'DataSampleLists/PD_HTMHT_Jul17AOD.txt'
+input_file_list  = 'DataSampleLists/PD_SingleMuon_Jul23AOD.txt'
 
 # parse the input files to the file list
 myfilelist = cms.untracked.vstring()
@@ -102,24 +102,22 @@ if not isSignalMC and input_file_list == None:
 process = cms.Process("ANA")
 
 process.load("FWCore.MessageService.MessageLogger_cfi")
-
 #standard sequences (from 740x driver command)
 process.load('Configuration.StandardSequences.Services_cff')
 #process.load('SimGeneral.HepPDTESSource.pythiapdt_cfi')
-process.load('FWCore.MessageService.MessageLogger_cfi')
+process.load("FWCore.MessageLogger.MessageLogger_cfi")
+process.MessageLogger.cerr.FwkReport.reportEvery = reportEveryNEvents
 process.load('Configuration.EventContent.EventContent_cff')
-#process.load('SimGeneral.MixingModule.mixNoPU_cfi')
 process.load('Configuration.StandardSequences.GeometryRecoDB_cff')
 process.load('Configuration.StandardSequences.Reconstruction_cff') #new for navigation
 #process.load('Configuration.StandardSequences.GeometryExtended_cff') #new for navigation
 process.load('Configuration.StandardSequences.MagneticField_AutoFromDBCurrent_cff') #new for navigation
 #process.load('Configuration.StandardSequences.MagneticField_38T_PostLS1_cff')
+#global tag
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_condDBv2_cff')
-
 process.GlobalTag.globaltag = gtag
 
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(nevents))
-
 process.source = cms.Source("PoolSource", fileNames = myfilelist )
 
 # add a JSON for data
@@ -131,7 +129,7 @@ if isData:
 
 # add the jet corrections
 process.hltAK4CaloFastJetCorrector  = cms.EDProducer( "L1FastjetCorrectorProducer",
-    srcRho                          = cms.InputTag( "fixedGridRhoFastjetAllCalo" ),
+    srcRho                          = cms.InputTag( "fixedGridRhoFastjetAllCalo" ), #modified by me
     algorithm                       = cms.string( "AK4CaloHLT" ),
     level                           = cms.string( "L1FastJet" )
 )
@@ -163,14 +161,15 @@ process.analyzerCALO.debugLevel = cms.untracked.int32(debugLevel)
 #output configuration
 if isSignalMC:
     process.analyzerVTX.outputFileName = cms.untracked.string('signalVTX%s.root' % appendSignal)
-    process.analyzerCALO.outputFileName = cms.untracked.string('signalCALO%s.root' % appendSignal)
+    process.analyzerCALO.outputFileName = cms.untracked.string('%ssignal%s.root' % (outputDir, appendSignal))
 elif not isSignalMC and isMC:
 #    process.analyzerVTX.outputFileName = cms.untracked.string('qcdVTX%s.root' % appendBkg)
 #    process.analyzerCALO.outputFileName = cms.untracked.string('qcdCALO%s.root' % appendBkg)
    process.analyzerCALO.outputFileName = cms.untracked.string(outputfile_string)
 else:
    process.analyzerVTX.outputFileName  = cms.untracked.string('dataVTX%s.root' % appendData)
-   process.analyzerCALO.outputFileName = cms.untracked.string('dataCALO%s.root' % appendData)   
+   process.analyzerCALO.outputFileName = cms.untracked.string('%sdata%s.root' % (outputDir, appendData))   
+
 
 #tree names
 process.analyzerCALO.jetTreeName    = cms.untracked.string('jets')
@@ -210,8 +209,8 @@ process.analyzerCALO.doSimMatch = cms.untracked.bool(doSimVtxMatch)
 #trigger
 process.analyzerVTX.triggerResultPath  = cms.untracked.string(trigger_process)
 process.analyzerCALO.triggerResultPath = cms.untracked.string(trigger_process)
-process.analyzerVTX.triggerResults     = cms.untracked.InputTag('TriggerResults', '', 'HLT')
-process.analyzerCALO.triggerResults    = cms.untracked.InputTag('TriggerResults', '', 'HLT')
+process.analyzerVTX.triggerResults     = cms.untracked.InputTag('TriggerResults', '', '')
+process.analyzerCALO.triggerResults    = cms.untracked.InputTag('TriggerResults', '', '')
 
 # collection tags
 process.analyzerVTX.generalTracks      = cms.untracked.InputTag('generalTracks', '', '')
@@ -225,24 +224,21 @@ process.analyzerCALO.genParticles      = cms.untracked.InputTag('genParticles', 
 process.analyzerCALO.shortTagThreshold  = cms.untracked.double(shortTagThreshold)
 process.analyzerCALO.mediumTagThreshold = cms.untracked.double(mediumTagThreshold)
 process.analyzerCALO.longTagThreshold   = cms.untracked.double(longTagThreshold)
-process.analyzerCALO.dHTWorkingPoint   = cms.untracked.int32(dHTWorkingPoint)
+process.analyzerCALO.dHTWorkingPoint    = cms.untracked.int32(dHTWorkingPoint)
 
 # vertex matched ip info
-process.analyzerVTX.secondaryVertexTagInfo   = cms.untracked.InputTag('displacedSecondaryVertexTagInfosNoPV', '', 'ANA')
-process.analyzerVTX.lifetimeIPTagInfo        = cms.untracked.InputTag('displacedLifetimeTagInfos', '', 'ANA')
-
+process.analyzerVTX.secondaryVertexTagInfo    = cms.untracked.InputTag('displacedSecondaryVertexTagInfosNoPV', '', 'ANA')
+process.analyzerVTX.lifetimeIPTagInfo         = cms.untracked.InputTag('displacedLifetimeTagInfos', '', 'ANA')
 # calo matched ip and sv info
 process.analyzerCALO.secondaryVertexTagInfo   = cms.untracked.InputTag('displacedSecondaryVertexTagInfosNoPV', '', 'ANA')
-process.analyzerCALO.lifetimeIPTagInfo        = cms.untracked.InputTag('displacedLifetimeTagInfos', '', 'ANA') #change to caloface later
-
+process.analyzerCALO.lifetimeIPTagInfo        = cms.untracked.InputTag('displacedLifetimeTagInfos', '', 'ANA') #change to final associaton later
 ##reconstructed vertex information
-process.analyzerCALO.secondaryVertex          = cms.untracked.InputTag('displacedTagsToVerticesCaloFace', '', 'ANA')
+process.analyzerCALO.secondaryVertex          = cms.untracked.InputTag('displacedTagsToVertices', '', 'ANA') 
 process.analyzerCALO.inclusiveVertexCand      = cms.untracked.InputTag('displacedInclusiveVertexFinder', '', 'ANA')
 process.analyzerCALO.inclusiveVertexSecondary = cms.untracked.InputTag('displacedInclusiveSecondaryVertices', '', 'ANA')
-
-process.analyzerVTX.secondaryVertex          = cms.untracked.InputTag('displacedTagsToVertices', '', 'ANA')
-process.analyzerVTX.inclusiveVertexCand      = cms.untracked.InputTag('displacedInclusiveVertexFinder', '', 'ANA')
-process.analyzerVTX.inclusiveVertexSecondary = cms.untracked.InputTag('displacedInclusiveSecondaryVertices', '', 'ANA')
+process.analyzerVTX.secondaryVertex           = cms.untracked.InputTag('displacedTagsToVertices', '', 'ANA')
+process.analyzerVTX.inclusiveVertexCand       = cms.untracked.InputTag('displacedInclusiveVertexFinder', '', 'ANA')
+process.analyzerVTX.inclusiveVertexSecondary  = cms.untracked.InputTag('displacedInclusiveSecondaryVertices', '', 'ANA')
 
 # primary vertex
 process.analyzerCALO.offlinePrimaryVertices = cms.untracked.InputTag('offlinePrimaryVerticesWithBS')
@@ -310,9 +306,12 @@ process.triggerSelection = cms.EDFilter( "TriggerResultsFilter",
       'HLT_PFHT350_v*',
       'HLT_PFHT400_v*',
       'HLT_PFHT800_v*',
-      'HLT_L1_TripleJet_VBF_v*'                                                                  
+      'HLT_L1_TripleJet_VBF_v*',                                                                  
+      'HLT_Mu20_v*',                                                                  
+      'HLT_PFMET170_v*',                                                                  
+      'HLT_PFMET170_NoiseCleaned_v*'                                                                  
       ),
-    hltResults = cms.InputTag( "TriggerResults", "", "HLT" ),
+    hltResults = cms.InputTag( "TriggerResults", "", "" ),
     l1tResults = cms.InputTag( "" ),
     l1tIgnoreMask = cms.bool( False ),
     l1techIgnorePrescales = cms.bool( False ),
@@ -320,12 +319,67 @@ process.triggerSelection = cms.EDFilter( "TriggerResultsFilter",
     throw = cms.bool( True )
 )
 
-# only report every 1000 events
-process.load("FWCore.MessageLogger.MessageLogger_cfi")
-process.MessageLogger.cerr.FwkReport.reportEvery = reportEveryNEvents
+
+process.mcTriggerSelection = cms.EDFilter( "TriggerResultsFilter",
+    triggerConditions = cms.vstring(
+      'HLT_HT350_DisplacedDijet40_DisplacedTrack_v*',
+      'HLT_HT350_DisplacedDijet80_DisplacedTrack_v*',
+      'HLT_HT500_DisplacedDijet40_Inclusive_v*',
+      'HLT_HT550_DisplacedDijet40_Inclusive_v*',
+      'HLT_HT650_DisplacedDijet80_Inclusive_v*',
+      'HLT_HT750_DisplacedDijet80_Inclusive_v*',
+      'HLT_VBF_DisplacedJet40_Hadronic_v*',
+      'HLT_VBF_DisplacedJet40_DisplacedTrack_v*',
+      'HLT_VBF_DisplacedJet40_DisplacedTrack_v*',                                                  
+      'HLT_VBF_DisplacedJet40_Hadronic_v*',                                                        
+      'HLT_VBF_DisplacedJet40_TightID_DisplacedTrack_v*',                                          
+      'HLT_VBF_DisplacedJet40_TightID_Hadronic_v*',                                                
+      'HLT_L1_TripleJet_VBF_v*',                                                                  
+      'HLT_Mu20_v*',                                                                  
+      'HLT_PFMET170_v*',                                                                  
+      'HLT_PFMET170_NoiseCleaned_v*'                                                                  
+#      'HLT_VBF_DisplacedJet40_VTightID_DisplacedTrack_v*',                                         
+#      'HLT_VBF_DisplacedJet40_VTightID_Hadronic_v*',                                               
+#      'HLT_VBF_DisplacedJet40_VVTightID_DisplacedTrack_v*',                                        
+#      'HLT_VBF_DisplacedJet40_VVTightID_Hadronic_v*',   
+#      'HLT_PFHT200_v*',
+#      'HLT_PFHT250_v*',
+#      'HLT_PFHT300_v*',
+#      'HLT_PFHT350_v*',
+#      'HLT_PFHT400_v*',
+#      'HLT_PFHT800_v*',
+#      'HLT_L1_TripleJet_VBF_v*'                                                                  
+      ),
+    hltResults = cms.InputTag( "TriggerResults", "", "" ),
+    l1tResults = cms.InputTag( "" ),
+    l1tIgnoreMask = cms.bool( False ),
+    l1techIgnorePrescales = cms.bool( False ),
+    daqPartitions = cms.uint32( 1 ),
+    throw = cms.bool( True )
+)
+
+
+# trigger bits to keep
+process.singleMuTrigger = cms.EDFilter( "TriggerResultsFilter",
+    triggerConditions = cms.vstring(
+      'HLT_Mu20_v*'                                                                 
+      ),
+    hltResults = cms.InputTag( "TriggerResults", "", "" ),
+    l1tResults = cms.InputTag( "" ),
+    l1tIgnoreMask = cms.bool( False ),
+    l1techIgnorePrescales = cms.bool( False ),
+    daqPartitions = cms.uint32( 1 ),
+    throw = cms.bool( True )
+)
+
 
 if doApplyTrigger: #apply the triggers and run dj tagging
-   process.p *= process.triggerSelection *  process.correctJets * process.djtagging
+   # if doApplySingleMu: 
+   #    process.p *= process.doApplySingleMu
+   if isMC:
+      process.p *= process.mcTriggerSelection *  process.correctJets * process.djtagging
+   else:
+      process.p *= process.triggerSelection *  process.correctJets * process.djtagging
 else: #just run the tagging sequence
    process.p *= process.correctJets * process.djtagging
 

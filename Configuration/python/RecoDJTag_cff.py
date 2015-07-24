@@ -19,16 +19,21 @@ from DisplacedJets.DisplacedAdaptiveVertexFinder.displacedInclusiveVertexing_cff
 #saving only the tracks matched to certain high pt jets
 from DisplacedJets.DisplacedAssocToTracks.displacedAssocToTracks_cff import *
 
+#matching at the inner track hit
+from DisplacedJets.DisplacedJetInnerHitTrackAssociator.ak4JTA_InnerHit_cff import *
+
 djtagging = cms.Sequence( #track matching for ak5 jets 
-     ak4JTA_noPF +                 
+     ak4JTA_noPF + # jet track matching at vertex and calo face                 
+     ak4JTA_InnerHit + #jet track matching at the inner hit                  
      #make the track collections for tracks matched to the jets
      displacedAssocToTracks + 
      displacedAssocToTracksCaloFace + 
+     displacedAssocToTracksInnerHit + 
      #impact parameter info
      #displacedImpactParameterTagInfos + 
      #trackCountingDJTags + 
      #unconstrained PV collection
-     #     displacedOfflinePrimaryVertices + 
+     #displacedOfflinePrimaryVertices + 
      #vertex matched tracks
      displacedLifetimeTagInfos + 
      displacedSecondaryVertexTagInfos +

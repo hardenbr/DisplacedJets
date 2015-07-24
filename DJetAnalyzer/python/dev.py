@@ -2,30 +2,31 @@ import FWCore.ParameterSet.Config as cms
 
 #output directories
 base                = '/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDIES/CMSSW_7_4_6_patch2/src/DisplacedJets/'
-outputDir           = "~/work/"
+outputDir           = ""
 
 # output options (to be appended to the file name outputted)
-appendSignal        = "gun0mmbbar"
+appendSignal        = "gun300mm"
 appendData          = "singlemu"
 appendBkg           = "qcd470_600"
 ############ FLAGS #############
-debugLevel          = 0
+debugLevel          = 10
 reportEveryNEvents  = 10
-isSignalMC          = False
-isMC                = False
+isSignalMC          = True
+isMC                = True
 isData              = not isMC
 #-------------- globaltags
+#gtag               = "74X_HLT_mcRun2_asympto@c_fromSpring15DR_v0" (spring 15 JEC)
 #gtag               = "FALL1374_25V4"
 #gtag               = "PHYS14_25_V1"
-#gtag               = "MCRUN2_74_V9" #guns
-gtag                = "74X_dataRun2_Prompt_v0" 
+gtag               = "MCRUN2_74_V9" #guns
+#gtag                = "74X_dataRun2_Prompt_v0" 
 # -------------json
 #JSON               = 'json_DCSONLY_Run2015B.txt'
 JSON                = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-251642_13TeV_PromptReco_Collisions15_JSON.txt'
 #--------------trigger
 trigger_process     = "HLT"
 # run related
-nevents             = 5000
+nevents             = 50
 doedm               = False
 #--------------analysis todos
 doEventPreSelection = False
@@ -67,7 +68,7 @@ input_file_list     = None
 # gun samples
 #input_file_list = 'SignalMCLists/DIJET_GUN/dijet_gun_m300_ctau30mm.list'
 #input_file_list = 'SignalMCLists/DIJET_GUN/dijet_gun_m300_ctau0mm.list'
-#input_file_list = 'SignalMCLists/DIJET_GUN/dijet_gun_m300_ctau300mm.list'
+input_file_list = 'SignalMCLists/DIJET_GUN/dijet_gun_m300_ctau300mm.list'
 #input_file_list = 'SignalMCLists/DIJET_GUN/dijet_gun_m300_ctau10mm.list'
 #input_file_list = 'SignalMCLists/DIJET_GUN/dijet_gun_m300_flat_1mm_1000mm.list'
 #input_file_list = 'SignalMCLists/DIJET_GUN/dijet_gun_m300_ctau0mm_bbar.list'
@@ -76,7 +77,7 @@ input_file_list     = None
 #input_file_list = 'DataSampleLists/PD_DisplacedJet_Jul17AOD.txt'
 #input_file_list = 'DataSampleLists/PD_JetHT_Jul17AOD.txt'
 #input_file_list = 'DataSampleLists/PD_HTMHT_Jul17AOD.txt'
-input_file_list  = 'DataSampleLists/PD_SingleMuon_Jul23AOD.txt'
+#input_file_list  = 'DataSampleLists/PD_SingleMuon_Jul23AOD.txt'
 
 # parse the input files to the file list
 myfilelist = cms.untracked.vstring()
@@ -275,6 +276,7 @@ process.test_output = cms.OutputModule( "PoolOutputModule",
 
 # run the displaced jet tags
 process.load('DisplacedJets.Configuration.RecoDJTag_cff')
+
 #process.load('DisplacedJets.Configuration.AdditionalPATSequences_cff')
 #process.load('DisplacedJets/DisplacedTriggerFilters/displacedTriggers_cff')
 

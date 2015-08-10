@@ -89,6 +89,8 @@ output.cd()
 #build the canvas
 canvas = rt.TCanvas("plot","plot", 800, 600)
 canvas.cd()
+canvas.SetGridx()
+
 
 thisFile = rt.TFile(options.file)
 thisTree = thisFile.Get(options.tree)        
@@ -97,7 +99,10 @@ hist1_name  = "h1"
 hist2_name  = "h2"
 
 hist1 = rt.TH1F(hist1_name, options.label1, nbins, xmin, xmax)
+hist1.SetMarkerStyle(21)
 hist2 = rt.TH1F(hist2_name, options.label2, nbins, xmin, xmax)
+hist2.SetMarkerStyle(21)
+
 
 n1 = thisTree.Draw("%s>>%s" % (options.var, hist1_name), options.cut1)
 n2 = thisTree.Draw("%s>>%s" % (options.var, hist2_name), options.cut2)
@@ -114,15 +119,19 @@ hist1.GetYaxis().SetTitle(options.ylabel)
 
 hist1.SetLineWidth(2)
 hist1.SetLineColor(rt.kRed)
+hist1.SetMarkerColor(rt.kRed)
+
 hist2.SetLineWidth(2)
 hist2.SetLineColor(rt.kBlack)
-
+hist2.SetMarkerColor(rt.kBlack)
 
 if hist1.GetMaximum() > hist2.GetMaximum():
     hist1.Draw("e")
+    hist1.SetMarkerSize(2)
     hist2.Draw("same")
 else:
     hist2.Draw("e")
+    hist2.SetMarkerSize(2)
     hist1.Draw("same")
 
 leg1 = canvas.BuildLegend()
@@ -130,9 +139,11 @@ leg1 = canvas.BuildLegend()
 CMS_lumi.CMS_lumi(canvas, 4, 0)
 
 leg1.SetFillColor(0)
-leg1.SetLineColor(0)
+#leg1.SetLineColor(0)
 
 canvas2 = rt.TCanvas("plot2","plot2", 800, 600)
+canvas2.SetGridy()
+canvas2.SetGridx()
 canvas2.cd()
 
 hcopy2 = hist2.Clone()
@@ -163,5 +174,5 @@ leg2 = canvas2.BuildLegend()
 CMS_lumi.CMS_lumi(canvas2, 4, 0)
 
 leg2.SetFillColor(0)
-leg2.SetLineColor(0)
+#leg2.SetLineColor(0)
 raw_input("RAWINPUT")

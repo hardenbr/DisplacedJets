@@ -5,6 +5,7 @@
 <use name="DataFormats/VertexReco"/>
 <use name="RecoBTag/SecondaryVertex"/>
 <use name="DataFormats/TrackReco"/>
+<use name="DataFormats/JetReco"/>
 <use name="RecoTracker/DebugTools"/>
 <use name="CommonTools/UtilAlgos"/>
 <flags EDM_PLUGIN="1"/>

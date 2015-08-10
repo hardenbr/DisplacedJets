@@ -64,6 +64,8 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   edm::InputTag tag_trackIPTagInfoCollection_;
   edm::InputTag tag_lifetimeIPTagInfo_;
   edm::InputTag tag_secondaryVertexTagInfo_; 
+  edm::InputTag tag_caloMatchedTracks_;
+  edm::InputTag tag_vertexMatchedTracks_;
 
   //vertex tags
   edm::InputTag tag_secondaryVertices_;
@@ -81,6 +83,9 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   
   //sim Tags
   edm::InputTag tag_simVertex_;    
+
+  // alpha Tag
+  edm::InputTag tag_alpha_;
 
   // tag threshold classifications
   float shortTagThresDist, mediumTagThresDist, longTagThresDist;
@@ -180,6 +185,8 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   // energy contribution
   Float_t   caloJetHfrac[MAX_JETS];
   Float_t   caloJetEfrac[MAX_JETS];
+
+  Float_t   caloJetAlpha[MAX_JETS];
 
   ///////////////////// GEN MATCHED ////////////////////
 
@@ -426,6 +433,46 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   Float_t   jetIVFGenVertexMatchMetric[MAX_JETS];
   Int_t	    jetIVFSimVertexMatched[MAX_JETS];
   Float_t   jetIVFSimVertexMatchMetric[MAX_JETS];
+
+
+  // TRACK ANGLE VARIABLES
+  // track angle information
+  Float_t   sumTrackPt[MAX_JETS];	      
+  // pt weighted
+  Float_t   ptSumCosTheta2D[MAX_JETS];	      
+  Float_t   ptSumCosTheta3D[MAX_JETS];	      
+  Float_t   ptSumCosThetaDet2D[MAX_JETS];	      
+  Float_t   ptSumCosThetaDet3D[MAX_JETS];     
+  // aboslute sum
+  Float_t   sumCosTheta2D[MAX_JETS];	      
+  Float_t   sumCosTheta3D[MAX_JETS];	      
+  Float_t   sumCosThetaDet2D[MAX_JETS];	      
+  Float_t   sumCosThetaDet3D[MAX_JETS];	      
+  // mean
+  Float_t   meanCosTheta2D[MAX_JETS];	      
+  Float_t   meanCosTheta3D[MAX_JETS];	      
+  Float_t   meanCosThetaDet2D[MAX_JETS];     
+  Float_t   meanCosThetaDet3D[MAX_JETS];      
+  // median
+  Float_t   medianCosTheta2D[MAX_JETS];	      
+  Float_t   medianCosTheta3D[MAX_JETS];	      
+  Float_t   medianCosThetaDet2D[MAX_JETS];    
+  Float_t   medianCosThetaDet3D[MAX_JETS];    
+  // variance
+  Float_t   varianceCosTheta2D[MAX_JETS];     
+  Float_t   varianceCosTheta3D[MAX_JETS];     
+  Float_t   varianceCosThetaDet2D[MAX_JETS];  
+  Float_t   varianceCosThetaDet3D[MAX_JETS]; 
+
+  // track vector momentum sum angles
+  Float_t   trackSumMomCosTheta2D[MAX_JETS];
+  Float_t   trackSumMomCosTheta3D[MAX_JETS];
+  Float_t   trackSumMomMag2D[MAX_JETS];
+  Float_t   trackSumMomMag3D[MAX_JETS];
+
+  // ip vector sum magnitude
+  Float_t ipPosSumMag3D[MAX_JETS];
+  Float_t ipPosSumMag2D[MAX_JETS];
 
   ///////////////// VERTEX TREE SPECIFIC MEMBERS /////////////////
   
@@ -687,6 +734,9 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   ///////////////////HANDLES////////////////////
   // tracks
   edm::Handle<reco::TrackCollection>			gTracks;
+  edm::Handle<reco::JetTracksAssociation::Container>               caloMatchedTracks; 
+  edm::Handle<reco::JetTracksAssociation::Container>               vertexMatchedTracks;
+
   // jets
   edm::Handle<reco::CaloJetCollection>			ak4CaloJets;
   // vertices
@@ -701,6 +751,7 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   edm::Handle<edm::SimVertexContainer>			simVertices;
   edm::Handle<edm::TriggerResults>			triggerResults;
 
+  edm::Handle<std::vector<double>>                      alpha;
   // trigger related
 
   //edm::TriggerNames					tNames;

@@ -1,7 +1,7 @@
 import FWCore.ParameterSet.Config as cms
 
 displacedImpactParameterTagInfos = cms.EDProducer("TrackIPProducer",
-    jetTracks = cms.InputTag("displacedAk5JetTracksAssociatorAtInnerHit"), #displaced using inner hit
+    jetTracks = cms.InputTag("displacedAk5JetTracksAssociatorAtVertex"), #displaced using inner hit
     primaryVertex = cms.InputTag("offlinePrimaryVertices"),
     computeProbabilities = cms.bool(True),
     computeGhostTrack = cms.bool(True),

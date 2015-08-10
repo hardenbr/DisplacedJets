@@ -1,19 +1,64 @@
 
-python ratio_plot.py -f dataPD_SingleMuon.root -o test.root --cut1 "passMu20 && (passHT800 ==0) " --cut2 "passDisplaced500_40 && passMu20 && (passHT800==0)" -t eventInfo -v eventCaloHT --xmin 250 --xmax 800 --nbins 25 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "HLT_Mu20" --label2 "HLT_HT500_DisplacedDijet40_Inclusive AND HLT_Mu20"
 
 
 
-python ratio_plot.py -f dataPD_SingleMuon.root -o test.root --cut1 "passMu20" --cut2 "passDisplaced500_40 && passMu20" -t eventInfo -v eventCaloHT --xmin 250 --xmax 800 --nbins 25 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "HLT_Mu20" --label2 "HLT_HT500_DisplacedDijet40_Inclusive AND HLT_Mu20"
+
+python ratio_plot.py -f dataPD_DisplacedJet_golden.root -o test_golden.root --cut1 "passDisplaced500_40" --cut2 "passDisplaced550_40 && passDisplaced500_40" -t eventInfo -v eventCaloHT --xmin 250 --xmax 800 --nbins 25 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "HLT_HT500_DisplacedDijet40_Inclusive" --label2 "HLT_HT550_DisplacedDijet40_Inclusive"
+
+
+python ratio_plot.py -f dataPD_SingleMuon_golden.root -o test_golden.root --cut1 "passMu20" --cut2 "passDisplaced500_40 && passMu20" -t eventInfo -v eventCaloHT --xmin 250 --xmax 800 --nbins 25 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "HLT_Mu20" --label2 "HLT_HT500_DisplacedDijet40_Inclusive AND HLT_Mu20"
 
 
 
-python ratio_plot.py -f dataPD_MET.root -o test.root --cut1 "passPFMET170 && (passHT800 ==0) " --cut2 "passDisplaced500_40 && passPFMET170 && (passHT800==0)" -t eventInfo -v eventCaloHT --xmin 250 --xmax 800 --nbins 25 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "HLT_Mu20" --label2 "HLT_HT500_DisplacedDijet40_Inclusive AND HLT_PFMET170"
+python ratio_plot.py -f dataPD_JetHT_golden.root -o test_golden.root --cut1 "passHT400" --cut2 "passDisplaced500_40 && passHT400" -t eventInfo -v eventCaloHT --xmin 250 --xmax 800 --nbins 25 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "HLT_HTControl" --label2 "HLT_HT500_DisplacedDijet40_Inclusive AND HLT_HTControl"
 
 
-python ratio_plot.py -f dataPD_MET.root -o test.root --cut1 "passPFMET170 " --cut2 "passDisplaced500_40 && passPFMET170 " -t eventInfo -v eventCaloHT --xmin 250 --xmax 800 --nbins 25 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "HLT_Mu20" --label2 "HLT_HT500_DisplacedDijet40_Inclusive AND HLT_PFMET170"
+---------------_VBF
+python ratio_plot.py -f dataPD_JetHT_golden.root -o test_golden.root --cut1 "passVBFTriple" --cut2 "passVBFHadronic && passVBFTriple" -t eventInfo -v caloLeadingHadronicFraction --xmin 0 --xmax 1 --nbins 25 --xlabel "offline Leading Hadronic Fraction Jet" --ylabel "N Events" --label1 "" --label2 ""
+
+python ratio_plot.py -f dataPD_SingleMuon_golden.root -o test_golden.root --cut1 "passMu20" --cut2 "passMu20 && passVBFHadronic" -t eventInfo -v caloLeadingHadronicFraction --xmin 0 --xmax 1 --nbins 25 --xlabel "offline Leading Hadronic Fraction Jet" --ylabel "N Events" --label1 "" --label2 ""
+
+---------------MET
+python ratio_plot.py -f dataPD_MET_golden.root -o test_golden.root --cut1 "passPFMET170 " --cut2 "passDisplaced500_40 && passPFMET170 " -t eventInfo -v eventCaloHT --xmin 250 --xmax 800 --nbins 25 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "HLT_Mu20" --label2 "HLT_HT500_DisplacedDijet40_Inclusive AND HLT_PFMET170"
 
 
-python ratio_plot.py -f dataPD_MET.root -o test.root --cut1 "passPFMET170NC" --cut2 "passDisplaced500_40 && passPFMET170NC" -t eventInfo -v eventCaloHT --xmin 250 --xmax 800 --nbins 25 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "HLT_PFMET170NC" --label2 "HLT_HT500_DisplacedDijet40_Inclusive AND HLT_PFMET170"
+python ratio_plot.py -f dataPD_MET_golden.root -o test_golden.root --cut1 "passPFMET170NC" --cut2 "passDisplaced500_40 && passPFMET170NC" -t eventInfo -v eventCaloHT --xmin 250 --xmax 800 --nbins 25 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "HLT_PFMET170NC" --label2 "HLT_HT500_DisplacedDijet40_Inclusive AND HLT_PFMET170"
+
+python ratio_plot.py -f dataPD_MET_golden.root -o test_golden.root --cut1 "passPFMET170 || passPFMET170NC " --cut2 "passDisplaced500_40 && (passPFMET170 || passPFMET170NC)  " -t eventInfo -v eventCaloHT --xmin 250 --xmax 800 --nbins 25 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "HLT_Mu20" --label2 "HLT_HT500_DisplacedDijet40_Inclusive AND HLT_PFMET170"
 
 
-python ratio_plot.py -f dataPD_MET.root -o test.root --cut1 "passPFMET170NC && (passHT800 ==0 )" --cut2 "passDisplaced500_40 && passPFMET170NC && (passHT800 ==0 )" -t eventInfo -v eventCaloHT --xmin 250 --xmax 800 --nbins 25 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "HLT_PFMET170NC" --label2 "HLT_HT500_DisplacedDijet40_Inclusive AND HLT_PFMET170"
+--------------- OFFLINE SELECTIOn
+
+python ratio_plot.py -f dataPD_DisplacedJet_golden.root -o test_golden.root --cut1 "eventNTotalTags[1] > 2" --cut2 "passDisplaced500_40 && eventNTotalTags[1] > 2" -t eventInfo -v eventCaloHT --xmin 250 --xmax 800 --nbins 25 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "2 Displaced Jet tags" --label2 "HLT_HT500_DisplacedDijet40_Inclusive"
+
+python ratio_plot.py -f dataPD_DisplacedJet_golden.root -o test_golden.root --cut1 "eventNTotalTags[1] > 2" --cut2 "(passDisplaced500_40 && passDisplaced350_40) && eventNTotalTags[1] > 2" -t eventInfo -v eventCaloHT --xmin 250 --xmax 800 --nbins 25 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "" --label2 ""
+
+
+python ratio_plot.py -f dataPD_JetHT_golden.root -o test_golden.root --cut1 "eventNTotalTags[1] > 2" --cut2 "(passDisplaced500_40 || passHT800) && eventNTotalTags[1] > 2" -t eventInfo -v eventCaloHT --xmin 250 --xmax 1000 --nbins 25 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "2 Displaced Jet tags" --label2 "HLT_HT500_DisplacedDijt40_Inclusive"
+
+
+python ratio_plot.py -f dataPD_SingleMuon_golden.root -o test_golden.root --cut1 "eventNTotalTags[0] > 2" --cut2 "(passDisplaced500_40 || passHT800) && eventNTotalTags[0] > 2" -t eventInfo -v eventCaloHT --xmin 250 --xmax 800 --nbins 25 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "2 Displaced Jet tags" --label2 "HLT_HT500_DisplacedDijet40_Inclusive"
+
+
+
+python ratio_plot.py -f dataPD_SingleMuon_golden.root -o test_golden.root --cut1 "passMu20 && eventNTotalTags[1] > 2" --cut2 "(passDisplaced500_40 || passHT800) && eventNTotalTags[1] > 2" -t eventInfo -v eventCaloHT --xmin 250 --xmax 800 --nbins 25 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "2 Displaced Jet tags" --label2 "HLT_HT500_DisplacedDijet40_Inclusive"
+
+---------------------MC
+python ratio_plot.py -f signalxx4j30cm.root -o test_golden.root --cut1 "eventNTotalTags[1] > 1" --cut2 "(passDisplaced350_40 || passDisplaced500_40 || passHT800) && eventNTotalTags[1] > 1 " -t eventInfo -v eventCaloHT --xmin 250 --xmax 800 --nbins 25 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "2 Loose Displaced Jet Tags" --label2 "2 Tags + pass HLT"
+
+python ratio_plot.py -f signalxx4j30cm.root -o test_golden.root --cut1 "eventNShortTags[1] > 1" --cut2 "(passDisplaced350_40 || passDisplaced500_40 || passHT800) && eventNShortTags[1] > 1 " -t eventInfo -v eventCaloHT --xmin 250 --xmax 800 --nbins 25 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "2 Loose Displaced Jet Tags" --label2 "2 Tags + pass HLT"
+
+python ratio_plot.py -f signalxx4j30cm.root -o test_golden.root --cut1 "passDisplaced500_40" --cut2 "passDisplaced550_40" -t eventInfo -v eventCaloHT --xmin 250 --xmax 800 --nbins 25 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "2 Loose Displaced Jet Tags" --label2 "2 Tags + pass HLT"
+
+
+python ratio_plot.py -f dataPD_JetHT_golden.root -o test_golden.root --cut1 "passHTControl && eventNTotalTags[1] > 1" --cut2 "passHTControl && (passDisplaced350_40 || passDisplaced500_40 || passHT800) && eventNTotalTags[1] > 1" -t eventInfo -v eventCaloHT --xmin 250 --xmax 1000 --nbins 25 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "2 Displaced Jet tags" --label2 "HLT_HT500_DisplacedDijt40_Inclusive"
+
+python ratio_plot.py -f dataPD_SingleMuon_golden.root -o test_golden.root --cut1 "passMu20 && eventNTotalTags[1] > 1" --cut2 "passMu20 && (passDisplaced350_40 || passDisplaced500_40 || passHT800) && eventNTotalTags[1] > 1" -t eventInfo -v eventCaloHT --xmin 250 --xmax 1000 --nbins 25 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "2 Displaced Jet tags" --label2 "HLT_HT500_DisplacedDijt40_Inclusive"
+
+
+
+python ratio_plot.py -f dataPD_SingleMuon_golden.root -o test_golden.root --cut1 "passMu20 && eventNTotalTags[1] > 1" --cut2 "passMu20 && (passDisplaced350_40 || passDisplaced500_40 || passHT800) && eventNTotalTags[1] > 1" -t eventInfo -v eventCaloHT --xmin 250 --xmax 1000 --nbins 25 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "2 Displaced Jet tags" --label2 "HLT_HT500_DisplacedDijt40_Inclusive"
+
+
+
+python ratio_plot.py -f dataPD_MET_golden.root -o test_golden.root --cut1 "(passPFMET170 || passPFMET170NC) && eventNTotalTags[1] > 1" --cut2 "(passPFMET170 || passPFMET170NC) && (passDisplaced350_40 || passDisplaced500_40 || passHT800) && eventNTotalTags[1] > 1" -t eventInfo -v eventCaloHT --xmin 250 --xmax 1000 --nbins 25 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "2 Displaced Jet tags" --label2 "HLT_HT500_DisplacedDijt40_Inclusive"

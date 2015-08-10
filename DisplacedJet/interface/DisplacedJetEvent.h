@@ -3,7 +3,7 @@ typedef std::vector<DisplacedJet>  DisplacedJetCollection;
 
 class DisplacedJetEvent {
  public:
-  DisplacedJetEvent(const bool&, const reco::CaloJetCollection&, const reco::VertexCollection&, const float&, const float&, const int&);
+  DisplacedJetEvent(const bool&, const reco::CaloJetCollection&, const std::vector<double>&,const reco::VertexCollection&, const float&, const float&, const int&);
 
   // event analysis
   bool doesPassPreSelection();  
@@ -26,9 +26,14 @@ class DisplacedJetEvent {
 		    std::vector<float> longThres, 
 		    float shortDistance, float mediumDistance, float longDistance,
 		    int dHTWP);
+
+  // helper method
+  DisplacedJet & findDisplacedJetByPtEtaPhi(const float& pt, const float& eta, const float& phi);
+  DisplacedJetCollection & getDisplacedJets() { return djets; }
     
   // jet associated info mergers
-  void mergeCaloIPTagInfo(const reco::TrackIPTagInfoCollection&) ;
+  void mergeTrackAssociations(const reco::JetTracksAssociation::Container&, const reco::JetTracksAssociation::Container&);
+  void mergeCaloIPTagInfo(const reco::TrackIPTagInfoCollection&, const reco::VertexCollection&, const edm::EventSetup& );
   void mergeSVTagInfo(const reco::SecondaryVertexTagInfoCollection&);
   void fillLeadingSubleadingJets(const bool & isHLT);
   
@@ -42,9 +47,6 @@ class DisplacedJetEvent {
 
   void doSimMatching(const edm::SimVertexContainer & simVertexCollection);  
 
-  // helper method
-  DisplacedJet & findDisplacedJetByPtEtaPhi(const float& pt, const float& eta, const float& phi);
-  DisplacedJetCollection & getDisplacedJets() { return djets; }
   
   // kinematic cuts for analysis
   float minPT;
@@ -100,7 +102,7 @@ private:
 
 
 // constructor designating the calojets, primary vertices, and kinematics cuts
-DisplacedJetEvent::DisplacedJetEvent(const bool& isMC, const reco::CaloJetCollection & caloJets, const reco::VertexCollection & primaryVertices, const float& minPT_, const float& minEta_, const int & debug_) {
+DisplacedJetEvent::DisplacedJetEvent(const bool& isMC, const reco::CaloJetCollection & caloJets,  const std::vector<double> & alphaVector, const reco::VertexCollection & primaryVertices, const float& minPT_, const float& minEta_, const int & debug_) {
 
   minPT	 = minPT_;
   minEta = minEta_;
@@ -119,8 +121,10 @@ DisplacedJetEvent::DisplacedJetEvent(const bool& isMC, const reco::CaloJetCollec
   reco::CaloJetCollection::const_iterator jetIter = caloJets.begin();
   caloLeadingJetPT = -1;
   caloSubLeadingJetPT = -1;
-  for(; jetIter != caloJets.end(); ++jetIter) {    
+  int jj = 0;
+  for(; jetIter != caloJets.end(); ++jj, ++jetIter) {    
     float pt = jetIter->pt(),  eta = jetIter->eta();
+    float alpha = alphaVector[jj];
 
     if (pt > 40 && fabs(eta) < 3.0) caloHT += pt;
     if (pt < minPT || fabs(eta) > minEta) continue;
@@ -139,7 +143,7 @@ DisplacedJetEvent::DisplacedJetEvent(const bool& isMC, const reco::CaloJetCollec
       caloSubLeadingJetPT = pt;
     }       
     
-    DisplacedJet djet(*jetIter, selPV, isMC, jetIDCounter, debug);
+    DisplacedJet djet(*jetIter, alpha,  selPV, isMC, jetIDCounter, debug);
     
     djets.push_back(djet);
     jetIDCounter++;
@@ -390,10 +394,40 @@ void DisplacedJetEvent::mergeSVTagInfo(const reco::SecondaryVertexTagInfoCollect
   }
 }
 
+void DisplacedJetEvent::mergeTrackAssociations(const reco::JetTracksAssociation::Container& caloMatched, const reco::JetTracksAssociation::Container& vertexMatched) {
+  std::vector<reco::JetBaseRef> caloJets   = reco::JetTracksAssociation::allJets(caloMatched);
+  std::vector<reco::JetBaseRef> vertexJets = reco::JetTracksAssociation::allJets(vertexMatched);
+
+  if(caloJets.size() != vertexJets.size()){
+    throw cms::Exception("TrackAssociationJetMatchingFailure");
+  }
+
+  // loop over the jets contained in the caloJet association
+  // add the calo matched track information stored in the assocation 
+  std::vector<reco::JetBaseRef>::const_iterator jetIter = caloJets.begin();
+  for(; jetIter != caloJets.end(); ++jetIter){
+    float pt = (*jetIter)->pt(), eta = (*jetIter)->eta(), phi = (*jetIter)->phi();    
+    if (pt < minPT || fabs(eta) > minEta) continue;    // dont look for jets outside of acceptance
+    DisplacedJet & djet = findDisplacedJetByPtEtaPhi(pt, eta, phi);
+    djet.addCaloTrackInfo(reco::JetTracksAssociation::getValue(caloMatched, *jetIter));
+  }
+
+  // loop over the jets contained in the vertexMatched association
+  // add the  track information stored in the assocation 
+  jetIter = vertexJets.begin();
+  for(; jetIter != vertexJets.end(); ++jetIter){
+    float pt = (*jetIter)->pt(), eta = (*jetIter)->eta(), phi = (*jetIter)->phi();    
+    if (pt < minPT || fabs(eta) > minEta) continue;    // dont look for jets outside of acceptance
+    DisplacedJet & djet = findDisplacedJetByPtEtaPhi(pt, eta, phi);
+    djet.addVertexTrackInfo(reco::JetTracksAssociation::getValue(vertexMatched, *jetIter));
+  }
+}
+
 // fills each jet with ip tag info variables 
 // fills each jet track collection with tracks used for ip variables
-void DisplacedJetEvent::mergeCaloIPTagInfo(const reco::TrackIPTagInfoCollection & ipTagInfo) {
+void DisplacedJetEvent::mergeCaloIPTagInfo(const reco::TrackIPTagInfoCollection & ipTagInfo, const reco::VertexCollection & primaryVertices, const edm::EventSetup& iSetup) {
   if (debug > 1) std::cout << "[DEBUG 1] Merging CALO IP Tag Info " << std::endl;
+
 
   reco::TrackIPTagInfoCollection::const_iterator ipInfoIter = ipTagInfo.begin(); 
   for(; ipInfoIter != ipTagInfo.end(); ++ipInfoIter) {
@@ -408,9 +442,14 @@ void DisplacedJetEvent::mergeCaloIPTagInfo(const reco::TrackIPTagInfoCollection 
     const reco::TrackRefVector trackRefs = ipInfoIter->selectedTracks();        
 
     // add the track and ip info 
-    djet.addIPTagInfo(*ipInfoIter);    
-    djet.addCaloTrackInfo(trackRefs);
+    djet.addIPTagInfo(*ipInfoIter);   
+    // the track colleciton above can be retrieved and passed to track angles below
+    djet.addTrackAngles(djet.getVertexMatchedTracks(), iSetup);    
+    // calculate alpha for the vertces
+    djet.calcJetAlpha(djet.getVertexMatchedTracks(), primaryVertices);
   }
+
+
 }
 
 DisplacedJet & DisplacedJetEvent::findDisplacedJetByPtEtaPhi(const float& pt, const float& eta, const float& phi) {

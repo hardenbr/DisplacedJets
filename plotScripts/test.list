@@ -1,6 +1,3 @@
 #sample |cut| tree | isSignal | isData | xSec | fillcolor | fillstyle | lineStyle | lineWidth | stack | label 
-signalgun300mm.root      |1|eventInfo| 1 |0| 1 | kBlue          | 0    | 1 | 3 | 3 | m_{X}=300 GeV 300mm gun
-signalgun30mm.root       |1|eventInfo| 1 |0| 1 | kRed           | 0    | 1 | 3 | 3 | m_{X}=300 GeV 30mm gun
-signalgun0mm.root        |1|eventInfo| 1 |0| 1 | kGreen        | 0    | 1 | 3 | 3 | m_{X}=300 GeV 0mm gun
-signalgun0mmbbar.root    |1|eventInfo| 1 |0| 1 | kViolet        | 0    | 3 | 3 | 3 | m_{X}=300 GeV 0mm bbar gun
-dataPD_SingleMuon.root   |1|eventInfo| 0 |1| 1 | kBlack    | 0    | 1 | 3 | 3 | Data Single Muon
+qcd_alpha.root     |1  |jets| 0 |0| 1 | kBlack    | 0    | 1 | 3 | 3 | QCD
+xx4j30mm_alpha.root   |1  |jets| 0 |0| 1 | kRed    | 0    | 1 | 3 | 3 | xx4j 30mm

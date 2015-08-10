@@ -1,6 +1,7 @@
+
 class DisplacedJet {
  public:
-  DisplacedJet(const reco::CaloJet & jet_, const reco::Vertex & primaryVertex, const bool & isMC_, const int& jetID_, const int & debug_) {
+  DisplacedJet(const reco::CaloJet & jet_, const float alpha_, const reco::Vertex & primaryVertex, const bool & isMC_, const int& jetID_, const int & debug_) {
     debug = debug_;
 
     jet	  = jet_;
@@ -15,11 +16,17 @@ class DisplacedJet {
 
     // initialize calo related variables
     caloPt	  = jet.pt();
+    caloPx        = jet.px();
+    caloPy        = jet.py();
+    caloPz        = jet.pz();
     caloEta	  = jet.eta();
     caloPhi	  = jet.phi();
     caloN60	  = 0; //jet.n60();
     caloN90	  = 0; //jet.n90();
     caloTowerArea = 0; //jet.towersArea();
+
+    // alpha
+    alpha = alpha_;
     
     // store quantites based on detector geometry (rather than vprimary vertex)
     ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<double>> detP4 = jet.detectorP4();
@@ -85,6 +92,32 @@ class DisplacedJet {
     svIsSimMatched = false;
     svGenVertexMatchMetric = FAKE_HIGH_NUMBER;    
 
+    //angles
+    sumTrackPt = 0;
+    // pt weighted
+    ptSumCosTheta2D	  = -99, ptSumCosTheta3D = -99;
+    ptSumCosThetaDet2D	  = -99, ptSumCosThetaDet3D = -99;
+    // aboslute sum
+    sumCosTheta2D	  = -99, sumCosTheta3D = -99;
+    sumCosThetaDet2D	  = -99, sumCosThetaDet3D = -99;
+    // mean
+    meanCosTheta2D	  = -99, meanCosTheta3D = -99;
+    meanCosThetaDet2D	  = -99, meanCosThetaDet3D = -99;
+    // median
+    medianCosTheta2D	  = -99, medianCosTheta3D = -99;
+    medianCosThetaDet2D	  = -99, medianCosThetaDet3D = -99;
+    // variance
+    varianceCosTheta2D	  = -99, varianceCosTheta3D = -99;
+    varianceCosThetaDet2D = -99, varianceCosThetaDet3D = -99;
+
+    trackSumMomCosTheta2D = -99;
+    trackSumMomCosTheta3D = -99;
+    trackSumMomMag2D = -99;
+    trackSumMomMag3D = -99;
+    
+    ipPosSumMag3D = -99;
+    ipPosSumMag2D = -99;
+
     // matching gen particles init
     caloGenPt	     = -999;
     caloGenEta	     = -999;
@@ -112,9 +145,13 @@ class DisplacedJet {
 
   // jet info integration
   void addCaloTrackInfo(const reco::TrackRefVector&);
+  void addVertexTrackInfo(const reco::TrackRefVector&);
   void addIVFCollection(const reco::VertexCollection&, const float& compatibilityScore);
   void addIPTagInfo(const reco::TrackIPTagInfo&);
   void addSVTagInfo(const reco::SecondaryVertexTagInfo&);
+  
+  // angular information relative to ejt
+  void addTrackAngles(const reco::TrackCollection tracks, const edm::EventSetup& iSetup);
 
   // generator matching
   bool doGenCaloJetMatching(const float& ptMatch, const float& dRMatch, const reco::GenParticleCollection& genParticles);
@@ -133,19 +170,25 @@ class DisplacedJet {
   float getJetMean(const std::vector<float>&, bool);
   float getJetVariance(const std::vector<float>&, bool);
 
+  //alpha calculation
+  void calcJetAlpha(const reco::TrackCollection&, const reco::VertexCollection&);
+
   //////////////CALO INFORMATION////////////
   bool isMC;
   int jetID;
 
   // track association variables
   int nTracks;
-  
+  float sumTrackPt;  
   // calo related variables
   float caloPt, caloEta, caloPhi;
+  float caloPx, caloPy, caloPz;
   float caloN60, caloN90;  
   float caloTowerArea;
   float detPt, detEta, detPhi;
   float caloEMEnergyFrac, caloHadEnergyFrac;
+
+  float alpha;
 
   //////////////JET IP VARIABLES/////////////
 
@@ -209,7 +252,32 @@ class DisplacedJet {
   bool  svIsGenMatched;
   bool  svIsSimMatched;   
   float svGenVertexMatchMetric;
+
+  //////////////TRACK ANGLE VARIABLES
   
+
+  // pt weighted
+  float ptSumCosTheta2D, ptSumCosTheta3D;
+  float ptSumCosThetaDet2D, ptSumCosThetaDet3D;
+  // aboslute sum
+  float sumCosTheta2D, sumCosTheta3D;
+  float sumCosThetaDet2D, sumCosThetaDet3D;
+  // mean
+  float meanCosTheta2D, meanCosTheta3D;
+  float meanCosThetaDet2D, meanCosThetaDet3D;
+  // median
+  float medianCosTheta2D, medianCosTheta3D;
+  float medianCosThetaDet2D, medianCosThetaDet3D;
+  // variance
+  float varianceCosTheta2D, varianceCosTheta3D;
+  float varianceCosThetaDet2D, varianceCosThetaDet3D;
+
+  
+  float trackSumMomCosTheta2D, trackSumMomCosTheta3D;
+  float trackSumMomMag2D, trackSumMomMag3D;
+
+  float ipPosSumMag3D, ipPosSumMag2D;
+
   //////////////GEN MATCH VARIABLES///////////
 
   bool isCaloGenMatched;
@@ -224,11 +292,14 @@ class DisplacedJet {
   std::vector<std::pair<const int, const float>> genMomVector; 
   std::vector<std::pair<const int, const float>> genSonVector; 
 
+  
+
  private: 
   int debug;
   static const int GEN_STATUS_CODE_MATCH = 23; 
   const float FAKE_HIGH_NUMBER = 999999999;
   // calo jet the displaced jet is built upon
+
   reco::CaloJet jet;
 
   // related vertices
@@ -247,6 +318,8 @@ class DisplacedJet {
   std::vector<float> ipLog3dVector, ipLog3dsVector, ipLog2dVector, ipLog2dsVector;
   std::vector<float> jetAxisDistVector, jetAxisDistSigVector; 
 
+  // cos related
+  std::vector<float> cosTheta2DVector, cosThetaDet2DVector, cosTheta3DVector, cosThetaDet3DVector; 
 };
 
 float DisplacedJet::genMatchMetric(const reco::GenParticle & particle, const reco::Vertex& vertex) {
@@ -450,6 +523,15 @@ void DisplacedJet::addCaloTrackInfo(const reco::TrackRefVector & trackRefs) {
     }    
 }
 
+void DisplacedJet::addVertexTrackInfo(const reco::TrackRefVector & trackRefs) {
+  if (debug > 2) std::cout << "[DEBUG] Adding Track Info  " << std::endl;
+    reco::TrackRefVector::const_iterator trackIter = trackRefs.begin();
+    for(; trackIter != trackRefs.end(); ++trackIter) {
+      vertexMatchedTracks.push_back(**trackIter);
+    }    
+}
+
+
 void DisplacedJet::addIVFCollection(const reco::VertexCollection & vertices, const float & pvCompatibilityScore = .05) {
   if (debug > 2) std::cout << "[DEBUG] Building Jet Vertex Association  " << std::endl;
   // build the jet vertex association
@@ -500,6 +582,186 @@ void DisplacedJet::addIVFCollection(const reco::VertexCollection & vertices, con
   ivfMatchingScore = bestVertexScore;
 }
 
+// compute variables related to the track angles and the calo jet 
+void DisplacedJet::addTrackAngles(const reco::TrackCollection tracks, const edm::EventSetup& iSetup) {
+  reco::TrackCollection::const_iterator tIter = tracks.begin();
+  
+  //  ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<double>> jetP4 = jet.physicsP4();  
+  ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<double>> jetDetP4 = jet.detectorP4();  
+  float jdpx = jetDetP4.px(), jdpy = jetDetP4.py(), jdpz = jetDetP4.pz();
+  
+  // jet vectors 2d and 3d
+  TVector3 jetv3;
+  TVector3 jetv2;
+
+  jetv3.SetPtEtaPhi( caloPt, caloEta, caloPhi);
+  jetv2.SetPtEtaPhi( caloPt, 0, caloPhi);
+
+  /* std::cout << " " << std::endl; */
+  /* std::cout << "JET 3D " << jetv3.X() << " " << jetv3.Y() << " " << jetv3.Z() << std::endl; */
+  /* std::cout << "JET 2D " << jetv2.X() << " " << jetv2.Y() << std::endl; */
+  
+  TVector3 jetv3_xyz(jetv3.X(), jetv3.Y(), jetv3.Z());
+  TVector3 jetv2_xy(jetv2.X(), jetv2.Y(), 0);
+
+  // unit jet vectors
+  TVector3 jetv3_unit = jetv3_xyz.Unit();
+  TVector3 jetv2_unit = jetv2_xy.Unit();
+
+  /* std::cout << "JET UNIT 3D " << jetv3_unit.X() << " " << jetv3_unit.Y() << " " << jetv3_unit.Z() << std::endl; */
+  /* std::cout << "JET UNIT  2D " << jetv2_unit.X() << " " << jetv2_unit.Y() << std::endl; */
+
+  // detector jet vectors 2d and 3d
+  TVector3 jetdv3(jdpx, jdpy, jdpz);
+  TVector3 jetdv2(jdpx, jdpy, 0);
+  // detector unit jet vectors
+  TVector3 jetdv3_unit = jetdv3.Unit();
+  TVector3 jetdv2_unit = jetdv2.Unit();
+
+
+  // pt weighted
+  ptSumCosTheta2D	  = 0, ptSumCosTheta3D = 0;
+  ptSumCosThetaDet2D	  = 0, ptSumCosThetaDet3D = 0;
+  // aboslute sum
+  sumCosTheta2D	          = 0, sumCosTheta3D = 0;
+  sumCosThetaDet2D	  = 0, sumCosThetaDet3D = 0;   
+
+  TVector3 trackMomSumV3(0,0,0);
+  TVector3 trackMomSumV2(0,0,0);
+  TVector3 ipPosSumV3(0,0,0);
+  TVector3 ipPosSumV2(0,0,0);
+
+  // find the angle between the jet momentum and track momentum
+  float sumTrackPtValid = 0;
+  for(; tIter != tracks.end(); ++tIter) {
+
+    
+    //track direction based on eta phi
+    //TVector3 trackDir3d, trackDir2d;
+    //trackDir3D.SetPtEtaPhi( trIter->pt(), trIter->eta(), trIter->phi());
+    //trackDir2D.SetPtEtaPhi(trackDir3d.X(), trackDir3D.Y())
+
+    TVector3 trackMom3d(tIter->px(), tIter->py(), tIter->pz());
+    TVector3 trackMom2d(tIter->px(), tIter->py(), 0);
+
+    trackMomSumV3 += trackMom3d;
+    trackMomSumV2 += trackMom2d;
+
+    // uses recotrack debug to approximate hit positions                                                                                                                   
+    
+    static GetTrackTrajInfo getTrackTrajInfo;
+    const reco::Track & const_track = *tIter;
+    std::vector<GetTrackTrajInfo::Result> trajInfo = getTrackTrajInfo.analyze(iSetup, const_track);
+    if (trajInfo[0].valid && trajInfo.back().valid) {
+      const TrajectoryStateOnSurface&   tsosInnerHit = trajInfo[0].detTSOS;
+      const GlobalPoint &               innerPos     = tsosInnerHit.globalPosition();
+      //      const GlobalVector &              innerMom     = tsosInnerHit.globalMomentum();
+      const TrajectoryStateOnSurface&   tsosOuterHit = trajInfo.back().detTSOS;
+      const GlobalPoint &               outerPos     = tsosOuterHit.globalPosition();
+      //      const GlobalVector &              outerMom     = tsosOuterHit.globalMomentum();
+
+      TVector3 outerv3( outerPos.x(), outerPos.y(), outerPos.z());
+      TVector3 outerv2( outerPos.x(), outerPos.y(), 0);
+
+      TVector3 ipv3( tIter->vx(), tIter->vy(), tIter->vz());
+      TVector3 ipv2( tIter->vx(), tIter->vy(), 0);
+
+      ipPosSumV3 += ipv3;
+      ipPosSumV2 += ipv2;
+
+      TVector3 innerv3( innerPos.x(), innerPos.y(), innerPos.z());
+      TVector3 innerv2( innerPos.x(), innerPos.y(), 0);
+
+      float pt = tIter->pt(); 
+
+      /* float dx = outerPos.x() - innerPos.x(); //tIter->outerX() - tIter->innerPosition().X(); */
+      /* float dy = outerPos.y() - innerPos.y(); //tIter->outerY() - tIter->innerPosition().Y();  */
+      /* float dz = outerPos.z() - innerPos.z();//1 - tIter->vz(); //tIter->outerZ() - tIter->innerPosition().Z(); */
+      /* 
+
+      /* std::cout << "TRACK INNER " << innerPos.x() << " " << innerPos.y() << " " << innerPos.z() << std::endl; */
+      /* std::cout << "TRACK OUTER " << outerPos.x() << " " << outerPos.y() << " " << outerPos.z() << std::endl; */
+      /* std::cout << "TRACK Di " << dx << " " << dy << " " << dz << std::endl; */
+
+      /* // track vectors */
+      /* TVector3	trkv3(dx, dy, dz); */
+      /* TVector2	trkv2(dx, dy); */
+      /* // track unit vectors */
+      /* TVector3	trkv3_unit = trkv3.Unit(); */
+      /* TVector2	trkv2_unit = trkv2.Unit(); */
+
+      /* std::cout << "TRACK UNIT  3D " << trkv3_unit.X() << " " << trkv3_unit.Y() << trkv3_unit.Z() << std::endl; */
+      /* std::cout << "TRACK UNIT  2D " << trkv2_unit.X() << " " << trkv2_unit.Y() << std::endl; */
+    
+      // track cosine with jet unit
+      float   cosTheta3D	  = outerv3.Unit().Cross((outerv3 - ipv3).Unit()).Mag(); //trkv3_unit * jetv3_unit;
+      float   cosTheta2D	  = outerv2.Unit().Cross((outerv2 - ipv2).Unit()).Mag(); //trkv2_unit * jetv2_unit;
+
+      //      cosTheta3D = cosTheta3D ? log(cosTheta3D) : -20;
+      //      cosTheta2D = cosTheta2D ? log(cosTheta2D) : -20;
+
+      /* std::cout << "COSTHETA3D " << cosTheta3D << std::endl; */
+      /* std::cout << "COSTHETA2D " << cosTheta2D << std::endl; */
+      /* std::cout << " -----------------" << std::endl; */
+
+      // track cosine with jet unit detecotr
+      float   cosThetaDet3D = 1 - (outerv3.Unit() * (ipv3).Unit()); //trkv3_unit * jetdv3_unit;
+      float   cosThetaDet2D = 1 - (outerv2.Unit() * (ipv2).Unit()); //trkv2_unit * jetdv2_unit;
+
+      cosTheta2DVector.push_back(cosTheta2D);
+      cosTheta3DVector.push_back(cosTheta3D);
+      cosThetaDet2DVector.push_back(cosThetaDet2D);
+      cosThetaDet3DVector.push_back(cosThetaDet3D);
+    
+      // increment sumpt
+      sumTrackPtValid	 += pt;
+
+      // pt weighted
+      ptSumCosTheta2D    += cosTheta2D *    pt;
+      ptSumCosTheta3D    += cosTheta3D *    pt;
+      ptSumCosThetaDet2D += cosThetaDet2D * pt;
+      ptSumCosThetaDet3D += cosThetaDet3D * pt;
+      // not pt weighted
+      sumCosTheta2D      += cosTheta2D;
+      sumCosTheta3D      += cosTheta3D;
+      sumCosThetaDet2D   += cosThetaDet2D;
+      sumCosThetaDet3D   += cosThetaDet3D;
+    }
+
+    // mean
+    meanCosTheta2D	  = getJetMean(cosTheta2DVector, true);
+    meanCosTheta3D	  = getJetMean(cosTheta3DVector, true);
+    meanCosThetaDet2D	  = getJetMean(cosThetaDet2DVector, true);
+    meanCosThetaDet3D	  = getJetMean(cosThetaDet3DVector, true);
+    // variance
+    varianceCosTheta2D	  = getJetVariance(cosTheta2DVector, true);
+    varianceCosTheta3D	  = getJetVariance(cosTheta3DVector, true);
+    varianceCosThetaDet2D = getJetVariance(cosThetaDet2DVector, true);
+    varianceCosThetaDet3D = getJetVariance(cosThetaDet3DVector, true);
+    // median
+    medianCosTheta2D	  = getJetMedian(cosTheta2DVector, true);
+    medianCosTheta3D	  = getJetMedian(cosTheta3DVector, true);
+    medianCosThetaDet2D	  = getJetMedian(cosThetaDet2DVector, true);
+    medianCosThetaDet3D	  = getJetMedian(cosThetaDet3DVector, true);
+    
+  }
+
+  // track sum
+  trackSumMomCosTheta2D	 = jetv2_unit * trackMomSumV2.Unit();
+  trackSumMomCosTheta3D	 = jetv3_unit * trackMomSumV3.Unit();
+  trackSumMomMag2D	 = trackMomSumV2.Mag();
+  trackSumMomMag3D	 = trackMomSumV3.Mag();
+  // vector sum of IP
+  ipPosSumMag3D		 = ipPosSumV3.Mag();
+  ipPosSumMag2D		 = ipPosSumV2.Mag();
+  // normalize by the sum pt
+  ptSumCosTheta2D	/= sumTrackPtValid ? sumTrackPtValid : 1;
+  ptSumCosTheta3D	/= sumTrackPtValid ? sumTrackPtValid : 1;
+  ptSumCosThetaDet2D	/= sumTrackPtValid ? sumTrackPtValid : 1;
+  ptSumCosThetaDet3D	/= sumTrackPtValid ? sumTrackPtValid : 1;
+
+}
+
 void DisplacedJet::addSVTagInfo(const reco::SecondaryVertexTagInfo& svTagInfo) {
   if (debug > 1) std::cout << "[DEBUG 1] Adding SV Tag Info To Jet  " << std::endl;
   // number of vertices reconstructed
@@ -516,11 +778,11 @@ void DisplacedJet::addSVTagInfo(const reco::SecondaryVertexTagInfo& svTagInfo) {
   for(int vv = 0; vv < svNVertex; vv++) {
     reco::Vertex vtx = svTagInfo.secondaryVertex(vv);   
     float pt = vtx.p4().pt();
-    int nTracks = vtx.nTracks();
+    int nTracksSV = vtx.nTracks();
 
     // take the vertex with the most tracks, tie breaker is the sum pt of vertex
-    if ( (nTracks > mostTracks) || (nTracks == mostTracks && pt > tieBreaker) ){
-      mostTracks = nTracks;
+    if ( (nTracksSV > mostTracks) || (nTracksSV == mostTracks && pt > tieBreaker) ){
+      mostTracks = nTracksSV;
       tieBreaker = pt;
       svi = vv;
     }     
@@ -571,7 +833,7 @@ void DisplacedJet::addIPTagInfo(const reco::TrackIPTagInfo & ipTagInfo) {
   
   // loop over each tracks ip information
   std::vector<reco::btag::TrackIPData>::const_iterator ipIter = lifetimeIPData.begin();
-  for(; ipIter != lifetimeIPData.end(); ++ipIter)  {
+  for(; ipIter != lifetimeIPData.end(); ++ipIter)  {    
     nTracks++;
 
     if (debug > 3) std::cout << "[DEBUG] Filing IP INFO  " << std::endl;
@@ -781,4 +1043,53 @@ float DisplacedJet::getJetVariance(const std::vector<float>& values, bool is_sig
 
   if (debug > 4) std::cout << "[DEBUG] jet variance:  " << variance << std::endl;
   return variance;
+}
+
+// calculate the jet variable alpha: the ratio of (vertex tracks sum pt matching the jet)
+// divided by ( general tracks sum pt matching the jet)
+void DisplacedJet::calcJetAlpha(const reco::TrackCollection& tracks, const reco::VertexCollection& primaryVertices) { 
+  // calculate the sum track pt based on the tracks matched  
+  sumTrackPt = 0;
+  reco::TrackCollection::const_iterator mTrIter = tracks.begin();
+  for(; mTrIter != tracks.end(); ++mTrIter) {
+    float pt = mTrIter->pt();
+    if(pt > 1.0) sumTrackPt += pt;
+  }
+
+  // Take the scalar sum pt of tracks from the primary vertices relative to the total pt matched to the jets
+  float sumVertexPt	 = 0;
+  float sumVertexPt_temp = 0;
+  // highest vertex sum pt^2 
+  float highestSum	 = 0;
+  float highestSum_temp	 = 0;
+
+  // loop over vertices in the event (use beam spot constraint vertices
+  reco::VertexCollection::const_iterator vtxIter = primaryVertices.begin();
+  for(; vtxIter != primaryVertices.end(); ++vtxIter ) {
+    std::vector<reco::TrackBaseRef>::const_iterator tIter = vtxIter->tracks_begin();
+
+    // these are the sums for this specific vertex
+    sumVertexPt_temp = 0; // sum for matching within the jet
+    highestSum_temp  = 0; // sum for the whole vertex
+
+    // loop over tracks in the vertex
+    for(; tIter != vtxIter->tracks_end(); ++tIter) {
+      float pt = (*tIter)->pt();
+      
+      if((*tIter)->pt() < 1.0) continue; //apply a cut on the track pt 
+      highestSum_temp += pt * pt; // sort by highest pt^2 
+
+      // check for matching to the jet
+      float dr = reco::deltaR((*tIter)->eta(), (*tIter)->phi(), caloEta, caloPhi);      
+      if (dr < 0.4 ) sumVertexPt_temp += (*tIter)->pt() ;
+    }
+
+    // pick the vertex with the highest sum pt^2
+    if(highestSum_temp > highestSum) {
+      highestSum  = highestSum_temp;
+      sumVertexPt = sumVertexPt_temp;
+    } // loop over tracks from vertex 
+  } // loop over vertices
+
+  alpha = sumVertexPt;
 }

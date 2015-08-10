@@ -22,13 +22,17 @@ from DisplacedJets.DisplacedAssocToTracks.displacedAssocToTracks_cff import *
 #matching at the inner track hit
 from DisplacedJets.DisplacedJetInnerHitTrackAssociator.ak4JTA_InnerHit_cff import *
 
+#alpha calculation based on primary vertices
+from DisplacedJets.DisplacedJetVertexAssociation.displacedJetVertexAssociation_cff import *
+
 djtagging = cms.Sequence( #track matching for ak5 jets 
      ak4JTA_noPF + # jet track matching at vertex and calo face                 
      ak4JTA_InnerHit + #jet track matching at the inner hit                  
      #make the track collections for tracks matched to the jets
      displacedAssocToTracks + 
      displacedAssocToTracksCaloFace + 
-     displacedAssocToTracksInnerHit + 
+     displacedJetVertexAssociation + 
+#     displacedAssocToTracksInnerHit + 
      #impact parameter info
      #displacedImpactParameterTagInfos + 
      #trackCountingDJTags + 

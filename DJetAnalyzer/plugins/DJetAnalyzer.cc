@@ -16,7 +16,8 @@
 #include "TH2F.h"   
 #include "TH1F.h"   
 #include "TTree.h"                      
-
+#include "TVector3.h"
+#include "TVector2.h"
 
 // system include files                                                                                                                                                 
 #include <vector> 
@@ -62,6 +63,7 @@
 // tracking
 #include "DataFormats/TrackReco/interface/TrackFwd.h"
 #include "DataFormats/TrackReco/interface/Track.h"
+#include "DataFormats/TrackReco/interface/TrackBase.h"
 #include "RecoTracker/DebugTools/interface/GetTrackTrajInfo.h"
 
 //vertex
@@ -141,12 +143,17 @@ DJetAnalyzer::DJetAnalyzer(const edm::ParameterSet& iConfig)
   tag_ak4CaloJets_		  = iConfig.getUntrackedParameter<edm::InputTag>("ak4CaloJets");
   tag_secondaryVertexTagInfo_	  = iConfig.getUntrackedParameter<edm::InputTag>("secondaryVertexTagInfo");  
   tag_lifetimeIPTagInfo_	  = iConfig.getUntrackedParameter<edm::InputTag>("lifetimeIPTagInfo"); 
+  tag_caloMatchedTracks_          = iConfig.getUntrackedParameter<edm::InputTag>("caloMatchedTrackAssociation"); 
+  tag_vertexMatchedTracks_        = iConfig.getUntrackedParameter<edm::InputTag>("vertexMatchedTrackAssociation"); 
 
   // vertex tags
   tag_secondaryVertices_	  = iConfig.getUntrackedParameter<edm::InputTag>("secondaryVertex"); 
   tag_inclusiveVertexCandidates_  = iConfig.getUntrackedParameter<edm::InputTag>("inclusiveVertexCand"); 
   tag_inclusiveSecondaryVertices_ = iConfig.getUntrackedParameter<edm::InputTag>("inclusiveVertexSecondary"); 
   tag_offlinePrimaryVertices_	  = iConfig.getUntrackedParameter<edm::InputTag>("offlinePrimaryVertices"); 
+
+  // alpha for vertex jet association
+  tag_alpha_                   = iConfig.getUntrackedParameter<edm::InputTag>("jetVertexAssociation");
   
   //cuts 
   cut_jetPt  = iConfig.getUntrackedParameter<double>("jetPt");
@@ -189,6 +196,8 @@ void DJetAnalyzer::fillTriggerInfo(const edm::Event & iEvent, const edm::Trigger
   passBigOR            = 0;
   passPFMET170	       = 0;
   passPFMET170NC       = 0;
+  passMu20             = 0;
+  passVBFTriple        = 0;
 
   for (size_t i = 0; i < trigNames.size(); ++i) {
     const std::string &name = trigNames.triggerName(i);
@@ -279,8 +288,15 @@ void DJetAnalyzer::fillHandles(const edm::Event & iEvent ) {
   iEvent.getByLabel(tag_inclusiveSecondaryVertices_, inclusiveSecondaryVertices);  
   iEvent.getByLabel(tag_offlinePrimaryVertices_, offlinePrimaryVertices);  
 
+  // track associations
+  iEvent.getByLabel(tag_caloMatchedTracks_, caloMatchedTracks);
+  iEvent.getByLabel(tag_vertexMatchedTracks_, vertexMatchedTracks);
+
   // trigger info
   iEvent.getByLabel(tag_triggerResults_, triggerResults);  
+
+  // Alpha for vertex association
+  iEvent.getByLabel(tag_alpha_, alpha);
 
   // and sim matching quantities related to MC
   if(isMC_) {    
@@ -308,20 +324,25 @@ void  DJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   fillTriggerInfo(iEvent, *(triggerResults.product()));
 
   // collection products
-  const reco::CaloJetCollection &		    caloJets	     = *(ak4CaloJets.product());
-  const reco::VertexCollection &                    pvCollection     = *(offlinePrimaryVertices.product());
-  const reco::TrackIPTagInfoCollection &	    lifetimeTagInfo  = *(lifetimeIPTagInfo.product()); ;
-  const reco::SecondaryVertexTagInfoCollection &    svTagInfo	     = *(secondaryVertexTagInfo.product()); 
-  const reco::VertexCollection &		    inc		     = *(inclusiveVertexCandidates.product());
-  const reco::VertexCollection &		    incSV	     = *(inclusiveSecondaryVertices.product());
-  const reco::GenParticleCollection &		    genCollection    = *(genParticles.product());     
-  const edm::SimVertexContainer &		    simVtxCollection = *(simVertices.product()); 
-  const reco::TrackCollection &                     generalTracks    = *(gTracks.product());
+  const reco::CaloJetCollection &		    caloJets		   = *(ak4CaloJets.product());
+  const reco::VertexCollection &                    pvCollection	   = *(offlinePrimaryVertices.product());
+  const reco::TrackIPTagInfoCollection &	    lifetimeTagInfo	   = *(lifetimeIPTagInfo.product()); ;
+  const reco::SecondaryVertexTagInfoCollection &    svTagInfo		   = *(secondaryVertexTagInfo.product()); 
+  const reco::VertexCollection &		    inc			   = *(inclusiveVertexCandidates.product());
+  const reco::VertexCollection &		    incSV		   = *(inclusiveSecondaryVertices.product());
+  const reco::GenParticleCollection &		    genCollection	   = *(genParticles.product());     
+  const edm::SimVertexContainer &		    simVtxCollection	   = *(simVertices.product()); 
+  const reco::TrackCollection &                     generalTracks	   = *(gTracks.product());
+  const std::vector<double> &                       alphaCollection	   = *(alpha.product());
+  // track associatiosns
+  const reco::JetTracksAssociationCollection &      caloTrackAssociation   = *(caloMatchedTracks.product());
+  const reco::JetTracksAssociationCollection &      vertexTrackAssociation = *(vertexMatchedTracks.product());
 
+  
   if(debug > 0) std::cout << "[----------------- HANDLES RETRIEVED -------------------] " <<std::endl;
 
   // build the displaced event from the calo jet collection and kinematic cuts
-  DisplacedJetEvent djEvent(isMC_, caloJets, pvCollection, cut_jetPt, cut_jetEta, debug);
+  DisplacedJetEvent djEvent(isMC_, caloJets, alphaCollection, pvCollection, cut_jetPt, cut_jetEta, debug);
 
   // pull out the first primary vertex in the collection (the default PV)
   const reco::Vertex & firstPV = *pvCollection.begin(); 
@@ -338,8 +359,11 @@ void  DJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   // ncalo jets indexes every jet branch
   nCaloJets = djEvent.getNJets();   
 
-  // merge in the event info
-  djEvent.mergeCaloIPTagInfo(lifetimeTagInfo); // add the ip info built from the JTA
+  // 1. add the track associations
+  djEvent.mergeTrackAssociations(caloTrackAssociation, vertexTrackAssociation);
+
+  // 2. merge in the event info MUST BE DONE AFTER ASSOCIATIONS
+  djEvent.mergeCaloIPTagInfo(lifetimeTagInfo, pvCollection, iSetup); // add the ip info built from the JTA
 
   // dump information related to the preselection
   dumpPreSelection(djEvent);
@@ -378,6 +402,7 @@ void  DJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
     
   // dump the displaced jet info into the corresponding branches by event
   dumpCaloInfo(djEvent);
+  // ip information for each jet, includes track angles
   dumpIPInfo(djEvent);
   dumpIVFInfo(djEvent);  
   dumpSVTagInfo(djEvent);
@@ -482,6 +507,7 @@ void DJetAnalyzer::beginJob()
   eventTree_->Branch("passHT200", &passHT200, "passHT200/I");
   eventTree_->Branch("passHT250", &passHT250, "passHT250/I");
   eventTree_->Branch("passHT300", &passHT300, "passHT300/I");
+  eventTree_->Branch("passHT350", &passHT350, "passHT350/I");
   eventTree_->Branch("passHT400", &passHT400, "passHT400/I");
   eventTree_->Branch("passDisplaced350_40", &passDisplaced350_40, "passDisplaced350_40/I");
   eventTree_->Branch("passDisplaced500_40", &passDisplaced500_40, "passDisplaced500_40/I");
@@ -617,6 +643,7 @@ void DJetAnalyzer::beginJob()
   jetTree_->Branch("caloJetPt", &caloJetPt, "caloJetPt[nCaloJets]/F");
   jetTree_->Branch("caloJetPhi", &caloJetPhi, "caloJetPhi[nCaloJets]/F");
   jetTree_->Branch("caloJetEta", &caloJetEta, "caloJetEta[nCaloJets]/F");
+  jetTree_->Branch("caloJetAlpha", &caloJetAlpha, "caloJetAlpha[nCaloJets]/F");
 
   // jet size 
   jetTree_->Branch("caloJetn90", &caloJetN90, "caloJetN90[nCaloJets]/F");
@@ -770,6 +797,44 @@ void DJetAnalyzer::beginJob()
   // jetTree_->Branch("jetSvNSimFake", &jetSvNSimFake, "jetSvNSimFake/I");  
   // jetTree_->Branch("jetSvSimMatched", &jetSvSimVertexMatched, "jetSvSimMatched[nCaloJets]/I");  
   // jetTree_->Branch("jetSvSimMatchMetric", &jetSvSimVertexMatchMetric, "jetSvSimMatchMetric[nCaloJets]/F");  
+
+
+  // TRACK ANGLE BRANCHES
+  jetTree_->Branch("sumTrackPt", &sumTrackPt, "sumTrackPt[nCaloJets]/F");  
+  // pt weighted sum
+  jetTree_->Branch("ptSumCosTheta2D", &ptSumCosTheta2D, "ptSumCosTheta2D[nCaloJets]/F");  
+  jetTree_->Branch("ptSumCosTheta3D", &ptSumCosTheta3D, "ptSumCosTheta3D[nCaloJets]/F");  
+  jetTree_->Branch("ptSumCosThetaDet2D", &ptSumCosThetaDet2D, "ptSumCosThetaDet2D[nCaloJets]/F");  
+  jetTree_->Branch("ptSumCosThetaDet3D", &ptSumCosThetaDet3D, "ptSumCosThetaDet3D[nCaloJets]/F");  
+  // sum
+  jetTree_->Branch("sumCosTheta2D", &sumCosTheta2D, "sumCosTheta2D[nCaloJets]/F");  
+  jetTree_->Branch("sumCosTheta3D", &sumCosTheta3D, "sumCosTheta3D[nCaloJets]/F");  
+  jetTree_->Branch("sumCosThetaDet2D", &sumCosThetaDet2D, "sumCosThetaDet2D[nCaloJets]/F");  
+  jetTree_->Branch("sumCosThetaDet3D", &sumCosThetaDet3D, "sumCosThetaDet3D[nCaloJets]/F");  
+  // mean 
+  jetTree_->Branch("meanCosTheta2D", &meanCosTheta2D, "meanCosTheta2D[nCaloJets]/F");  
+  jetTree_->Branch("meanCosTheta3D", &meanCosTheta3D, "meanCosTheta3D[nCaloJets]/F");  
+  jetTree_->Branch("meanCosThetaDet2D", &meanCosThetaDet2D, "meanCosThetaDet2D[nCaloJets]/F");  
+  jetTree_->Branch("meanCosThetaDet3D", &meanCosThetaDet3D, "meanCosThetaDet3D[nCaloJets]/F");  
+  // median
+  jetTree_->Branch("medianCosTheta2D", &medianCosTheta2D, "medianCosTheta2D[nCaloJets]/F");  
+  jetTree_->Branch("medianCosTheta3D", &medianCosTheta3D, "medianCosTheta3D[nCaloJets]/F");  
+  jetTree_->Branch("medianCosThetaDet2D", &medianCosThetaDet2D, "medianCosThetaDet2D[nCaloJets]/F");  
+  jetTree_->Branch("medianCosThetaDet3D", &medianCosThetaDet3D, "medianCosThetaDet3D[nCaloJets]/F");  
+  // variance
+  jetTree_->Branch("varianceCosTheta2D", &varianceCosTheta2D, "varianceCosTheta2D[nCaloJets]/F");  
+  jetTree_->Branch("varianceCosTheta3D", &varianceCosTheta3D, "varianceCosTheta3D[nCaloJets]/F");  
+  jetTree_->Branch("varianceCosThetaDet2D", &varianceCosThetaDet2D, "varianceCosThetaDet2D[nCaloJets]/F");  
+  jetTree_->Branch("varianceCosThetaDet3D", &varianceCosThetaDet3D, "varianceCosThetaDet3D[nCaloJets]/F");  
+
+  //angles for the track momentum sum
+  jetTree_->Branch("trackSumMomCosTheta2D", &trackSumMomCosTheta2D, "trackSumMomCosTheta2D[nCaloJets]/F");
+  jetTree_->Branch("trackSumMomCosTheta3D", &trackSumMomCosTheta3D, "trackSumMomCosTheta3D[nCaloJets]/F");
+  jetTree_->Branch("trackSumMomMag2D", &trackSumMomMag2D, "trackSumMomMag2D[nCaloJets]/F");
+  jetTree_->Branch("trackSumMomMag3D", &trackSumMomMag3D, "trackSumMomMag3D[nCaloJets]/F");
+
+  jetTree_->Branch("ipPosSumMag3D", &ipPosSumMag3D,"ipPosSumMag3D[nCaloJets]/F");
+  jetTree_->Branch("ipPosSumMag2D", &ipPosSumMag2D,"ipPosSumMag2D[nCaloJets]/F");
 
   ///////////  ///////////  ///////////  ///////////  ///////////  ///////////  ////
   //////////////////////////////// TRACK TREE QUANITIES ////////////////////////////
@@ -1336,6 +1401,10 @@ void DJetAnalyzer::dumpCaloInfo(DisplacedJetEvent & djEvent) {
     caloJetN60[jj]	 = djet->caloN60;
     caloJetN90[jj]	 = djet->caloN90;
     caloJetTowerArea[jj] = djet->caloTowerArea;
+
+    // alpha
+    caloJetAlpha[jj]        = djet->alpha; 
+
     // gen matching to particle quantities
     caloGenMatch[jj]	 = djet->isCaloGenMatched ? 1 : 0;       
     caloGenPt[jj]	 = djet->caloGenPt;
@@ -1520,6 +1589,42 @@ void DJetAnalyzer::dumpIPInfo(DisplacedJetEvent & djEvent) {
     jetVarianceIPLog2D[jj] = djet->varianceIPLog2D;
     jetVarianceIPLog3D[jj] = djet->varianceIPLog3D;
     jetVarianceJetDist[jj] = djet->varianceJetDist;
+
+    // track angle information
+    sumTrackPt[jj]	      = djet->sumTrackPt;
+    // pt weighted
+    ptSumCosTheta2D[jj]	      = djet->ptSumCosTheta2D;
+    ptSumCosTheta3D[jj]	      = djet->ptSumCosTheta2D;
+    ptSumCosThetaDet2D[jj]    = djet->ptSumCosThetaDet2D; 
+    ptSumCosThetaDet3D[jj]    = djet->ptSumCosThetaDet3D;
+    // aboslute sum
+    sumCosTheta2D[jj]	      = djet->sumCosTheta2D; 
+    sumCosTheta3D[jj]	      = djet->sumCosTheta3D;
+    sumCosThetaDet2D[jj]      = djet->sumCosThetaDet2D;
+    sumCosThetaDet3D[jj]      = djet->sumCosThetaDet3D;
+    // mean
+    meanCosTheta2D[jj]	      = djet->meanCosTheta2D;
+    meanCosTheta3D[jj]	      = djet->meanCosTheta3D;
+    meanCosThetaDet2D[jj]     = djet->meanCosThetaDet2D; 
+    meanCosThetaDet3D[jj]     = djet->meanCosThetaDet3D;
+    // median
+    medianCosTheta2D[jj]      = djet->medianCosTheta2D; 
+    medianCosTheta3D[jj]      = djet->medianCosTheta3D;
+    medianCosThetaDet2D[jj]   = djet->medianCosThetaDet2D;
+    medianCosThetaDet3D[jj]   = djet->medianCosThetaDet3D;
+    // variance
+    varianceCosTheta2D[jj]    = djet->varianceCosTheta2D;
+    varianceCosTheta3D[jj]    = djet->varianceCosTheta3D;
+    varianceCosThetaDet2D[jj] = djet->varianceCosThetaDet2D;
+    varianceCosThetaDet3D[jj] = djet->varianceCosThetaDet3D;
+
+    trackSumMomCosTheta2D[jj] = djet->trackSumMomCosTheta2D;
+    trackSumMomCosTheta3D[jj] = djet->trackSumMomCosTheta3D;
+    trackSumMomMag2D[jj]      = djet->trackSumMomMag2D;
+    trackSumMomMag3D[jj]      = djet->trackSumMomMag3D;
+
+    ipPosSumMag3D[jj]	      = djet->ipPosSumMag3D;
+    ipPosSumMag2D[jj]	      = djet->ipPosSumMag2D;
   }
 }
 

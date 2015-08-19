@@ -26,7 +26,7 @@ class DisplacedJet {
     caloTowerArea = 0; //jet.towersArea();
 
     // alpha
-    alpha = alpha_;
+    alpha = 0;
     
     // store quantites based on detector geometry (rather than vprimary vertex)
     ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<double>> detP4 = jet.detectorP4();
@@ -188,7 +188,7 @@ class DisplacedJet {
   float detPt, detEta, detPhi;
   float caloEMEnergyFrac, caloHadEnergyFrac;
 
-  float alpha;
+  float alpha, alphaMax;
 
   //////////////JET IP VARIABLES/////////////
 
@@ -292,7 +292,10 @@ class DisplacedJet {
   std::vector<std::pair<const int, const float>> genMomVector; 
   std::vector<std::pair<const int, const float>> genSonVector; 
 
-  
+  std::vector<bool> noVertexTagsVector;
+  std::vector<bool> shortTagsVector;
+  std::vector<bool> mediumTagsVector;
+  std::vector<bool> longTagsVector;
 
  private: 
   int debug;
@@ -515,22 +518,30 @@ bool DisplacedJet::doGenCaloJetMatching(const float& ptMatch, const float& dRMat
   return false;
 }
 
+//keep the collection of tracks matched at the calo surface
 void DisplacedJet::addCaloTrackInfo(const reco::TrackRefVector & trackRefs) {
   if (debug > 2) std::cout << "[DEBUG] Adding Track Info  " << std::endl;
     reco::TrackRefVector::const_iterator trackIter = trackRefs.begin();
-    for(; trackIter != trackRefs.end(); ++trackIter) {
+    for(; trackIter != trackRefs.end(); ++trackIter) {      
       caloMatchedTracks.push_back(**trackIter);
     }    
 }
 
+// count the number of tracks based on the association at the vertex
 void DisplacedJet::addVertexTrackInfo(const reco::TrackRefVector & trackRefs) {
   if (debug > 2) std::cout << "[DEBUG] Adding Track Info  " << std::endl;
-    reco::TrackRefVector::const_iterator trackIter = trackRefs.begin();
-    for(; trackIter != trackRefs.end(); ++trackIter) {
-      vertexMatchedTracks.push_back(**trackIter);
-    }    
+  reco::TrackRefVector::const_iterator trackIter = trackRefs.begin();
+  nTracks = 0;
+  sumTrackPt = 0;
+  for(; trackIter != trackRefs.end(); ++trackIter) {
+    float pt = (*trackIter)->pt();
+    if(pt > 1.0) {
+      nTracks++;
+      sumTrackPt += pt
+    }
+    vertexMatchedTracks.push_back(**trackIter);
+  }    
 }
-
 
 void DisplacedJet::addIVFCollection(const reco::VertexCollection & vertices, const float & pvCompatibilityScore = .05) {
   if (debug > 2) std::cout << "[DEBUG] Building Jet Vertex Association  " << std::endl;
@@ -801,6 +812,8 @@ void DisplacedJet::addSVTagInfo(const reco::SecondaryVertexTagInfo& svTagInfo) {
   svY = selVertex.y();
   svZ = selVertex.z();
 
+  svNTracks = selSV.nTracks();
+
   svChi2 = selVertex.chi2();
   svNDof = selVertex.ndof();
   
@@ -825,8 +838,6 @@ void DisplacedJet::addSVTagInfo(const reco::SecondaryVertexTagInfo& svTagInfo) {
 void DisplacedJet::addIPTagInfo(const reco::TrackIPTagInfo & ipTagInfo) {
   if (debug > 2) std::cout << "[DEBUG 2] Adding SV IP Info into DJet  " << std::endl;
   
-  // if for some reason n tracks is not zero, reset it.
-  nTracks = 0;
 
   // pull the impact parameter data
   lifetimeIPData = ipTagInfo.impactParameterData();
@@ -834,7 +845,6 @@ void DisplacedJet::addIPTagInfo(const reco::TrackIPTagInfo & ipTagInfo) {
   // loop over each tracks ip information
   std::vector<reco::btag::TrackIPData>::const_iterator ipIter = lifetimeIPData.begin();
   for(; ipIter != lifetimeIPData.end(); ++ipIter)  {    
-    nTracks++;
 
     if (debug > 3) std::cout << "[DEBUG] Filing IP INFO  " << std::endl;
     // ip and jet distance information
@@ -907,7 +917,6 @@ void DisplacedJet::addIPTagInfo(const reco::TrackIPTagInfo & ipTagInfo) {
   medianIPLog2D    = getJetMedian(ipLog2dVector, true);	//signed value matters
   medianIPLog3D    = getJetMedian(ipLog3dVector, true);	//signed value matters
 
-
   // variance
   varianceIPSig2D    = getJetVariance(ip2dsVector, false);
   varianceIPSig3D    = getJetVariance(ip3dsVector, false);
@@ -927,9 +936,10 @@ std::vector<bool> DisplacedJet::passNoVtxTag(const std::vector<float> thres){
   std::vector<float>::const_iterator thresIter = thres.begin();
   for(; thresIter != thres.end(); ++thresIter) {
     bool didPass = false;
-    if(selIVFIsPV && medianIPLogSig2D > *thresIter) didPass = true;
+    if(selIVFIsPV && nTracks == 0 && caloHadEnergyFrac > 0.95) didPass = true;
     passResults.push_back(didPass);
   }
+  noVertexTagsVector = passResults;
   return passResults;
 }
 
@@ -938,9 +948,10 @@ std::vector<bool> DisplacedJet::passShortTag(const std::vector<float> thres, flo
   std::vector<float>::const_iterator thresIter = thres.begin();
   for(; thresIter != thres.end(); ++thresIter) {
     bool didPass = false;
-    if(!selIVFIsPV && medianIPLogSig2D > *thresIter && ivfLxy  > min && ivfLxy < max) didPass = true;
+    if(selIVFIsPV && nTracks > 0 && medianIPLogSig2D > *thresIter  && (alphaMax / sumTrackPt) < .05) didPass = true;
     passResults.push_back(didPass);
   }
+  shortTagsVector = passResults;
   return passResults;  
 }
 
@@ -949,9 +960,10 @@ std::vector<bool> DisplacedJet::passMediumTag(const std::vector<float> thres, fl
   std::vector<float>::const_iterator thresIter = thres.begin();
   for(; thresIter != thres.end(); ++thresIter) {
     bool didPass = false;
-    if(!selIVFIsPV && medianIPLogSig2D > *thresIter && ivfLxy > min && ivfLxy < max) didPass = true;
+    if(!selIVFIsPV && medianIPLogSig2D > *thresIter && ivfLxy > min && ivfLxy < max && (alphaMax / sumTrackPt) < .05) didPass = true;
     passResults.push_back(didPass);
   }
+  mediumTagsVector = passResults;
   return passResults;  
 }
 
@@ -960,9 +972,10 @@ std::vector<bool> DisplacedJet::passLongTag(const std::vector<float> thres, floa
   std::vector<float>::const_iterator thresIter = thres.begin();
   for(; thresIter != thres.end(); ++thresIter) {
     bool didPass = false;
-    if(!selIVFIsPV && medianIPLogSig2D > *thresIter && ivfLxy > min && ivfLxy < max) didPass = true;
+    if(!selIVFIsPV && medianIPLogSig2D > *thresIter && ivfLxy > min && ivfLxy < max && (alphaMax / sumTrackPt) < .05) didPass = true;
     passResults.push_back(didPass);
   }
+  longTagsVector = passResults;
   return passResults;  
 }
 
@@ -1049,47 +1062,46 @@ float DisplacedJet::getJetVariance(const std::vector<float>& values, bool is_sig
 // divided by ( general tracks sum pt matching the jet)
 void DisplacedJet::calcJetAlpha(const reco::TrackCollection& tracks, const reco::VertexCollection& primaryVertices) { 
   // calculate the sum track pt based on the tracks matched  
-  sumTrackPt = 0;
-  reco::TrackCollection::const_iterator mTrIter = tracks.begin();
-  for(; mTrIter != tracks.end(); ++mTrIter) {
-    float pt = mTrIter->pt();
-    if(pt > 1.0) sumTrackPt += pt;
-  }
 
   // Take the scalar sum pt of tracks from the primary vertices relative to the total pt matched to the jets
-  float sumVertexPt	 = 0;
-  float sumVertexPt_temp = 0;
+  float sumJetPt	       = 0;
+  float sumJetPtMax	       = 0;
+  float sumJetPt_temp	       = 0;
   // highest vertex sum pt^2 
-  float highestSum	 = 0;
-  float highestSum_temp	 = 0;
+  float leadingVertexPtSq      = 0;
+  float leadingVertexPtSq_temp = 0;
 
   // loop over vertices in the event (use beam spot constraint vertices
   reco::VertexCollection::const_iterator vtxIter = primaryVertices.begin();
   for(; vtxIter != primaryVertices.end(); ++vtxIter ) {
-    std::vector<reco::TrackBaseRef>::const_iterator tIter = vtxIter->tracks_begin();
-
     // these are the sums for this specific vertex
-    sumVertexPt_temp = 0; // sum for matching within the jet
-    highestSum_temp  = 0; // sum for the whole vertex
+    sumJetPt_temp = 0; // sum for matching within the jet
+    leadingVertexPtSq_temp  = 0; // sum for the whole vertex
 
+    std::vector<reco::TrackBaseRef>::const_iterator tIter = vtxIter->tracks_begin();
     // loop over tracks in the vertex
     for(; tIter != vtxIter->tracks_end(); ++tIter) {
       float pt = (*tIter)->pt();
       
       if((*tIter)->pt() < 1.0) continue; //apply a cut on the track pt 
-      highestSum_temp += pt * pt; // sort by highest pt^2 
+      leadingVertexPtSq_temp += pt * pt; // sort by highest pt^2 
 
       // check for matching to the jet
       float dr = reco::deltaR((*tIter)->eta(), (*tIter)->phi(), caloEta, caloPhi);      
-      if (dr < 0.4 ) sumVertexPt_temp += (*tIter)->pt() ;
+      if (dr < 0.4 ) sumJetPt_temp += (*tIter)->pt() ;
     }
 
     // pick the vertex with the highest sum pt^2
-    if(highestSum_temp > highestSum) {
-      highestSum  = highestSum_temp;
-      sumVertexPt = sumVertexPt_temp;
+    if(leadingVertexPtSq_temp > leadingVertexPtSq) {
+      leadingVertexPtSq  = leadingVertexPtSq_temp;
+      sumJetPt = sumJetPt_temp;
     } // loop over tracks from vertex 
+
+    // also keep the highest possible sum
+    sumJetPtMax = std::max(sumJetPtMax, sumJetPt_temp);
+
   } // loop over vertices
 
-  alpha = sumVertexPt;
+  alpha	   = sumJetPt;
+  alphaMax = sumJetPtMax;
 }

@@ -8,11 +8,11 @@ displacedLifetimeTagInfos = cms.EDProducer( "TrackIPProducer",
     maximumLongitudinalImpactParameter = cms.double( 999999.0 ), #displaced 17 -> infinity
     computeGhostTrack = cms.bool( False ),
     ghostTrackPriorDeltaR = cms.double( 0.03 ),
-    jetTracks = cms.InputTag( "displacedAk4JetTracksAssociatorAtInnerHit" ), #displaced  hltFastPixelBLifetimeL3Associator -> jetTracks
+    jetTracks = cms.InputTag( "displacedAk4JetTracksAssociatorAtVertex" ), #displaced  hltFastPixelBLifetimeL3Associator -> jetTracks
     jetDirectionUsingGhostTrack = cms.bool( False ),
     minimumNumberOfPixelHits = cms.int32( 0 ), #displaced 2 -> 0 AOD PROBLEMS
     jetDirectionUsingTracks = cms.bool( False ),
     computeProbabilities = cms.bool( False ),
     useTrackQuality = cms.bool( False ),
-    maximumChiSquared = cms.double( 20.0 ) 
+    maximumChiSquared = cms.double( 20.0 ) #displaced 
 )

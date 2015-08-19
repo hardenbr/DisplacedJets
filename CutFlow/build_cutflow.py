@@ -124,9 +124,10 @@ output = rt.TFile(options.output, "RECREATE")
 config_file = open(options.files, "r")
 lines = map(lambda x: x.rstrip("\n"), config_file.readlines())
 for line in lines:
-    print line.split("|")
-    (file_name, xSec, label, stack) = line.split("|")
-    thisSample = sample(*line.split("|"))
+    if len(line.split("|")) <= 1: continue
+    print line.split("|||")
+    (file_name, xSec, label, stack) = line.split("|||")
+    thisSample = sample(*line.split("|||"))
     cutflow.add_sample(thisSample)
 
 #read in the config file containing the samples to produce cut flow    
@@ -134,8 +135,10 @@ cutflow_file = open(options.cutflow, "r")
 lines = map(lambda x: x.rstrip("\n"), cutflow_file.readlines())
 
 for line in lines:
-    print line.split("|")
-    (tree, cutstring, label) = line.split("|")
+    if len(line.split("|")) <= 1: continue
+    if "//" in line: continue
+    print line.split("|||")
+    (tree, cutstring, label) = line.split("|||")
     thisCut = cut(tree, cutstring, label)
     cutflow.add_cut(thisCut)
 

@@ -1,3 +1,4 @@
+
 import ROOT as rt
 from  optparse  import OptionParser
 import sys, os, array
@@ -17,6 +18,8 @@ def makebins(start_,end_,inc_,inc_inc_):
         list.append(bin)
         bin+=inc
         inc*=(1+inc_inc_)
+
+    list[-1] = end_
     return list
 
 parser = OptionParser()
@@ -44,7 +47,12 @@ parser.add_option("-t", "--tree", dest="tree",
 
 parser.add_option( "--varbins", dest="var_bin",
 		                    help="variable binning. Configure within script",
+		                    action="store", type="float",default=0)
+
+parser.add_option( "--log", dest="islog",
+		                    help="Y axis Log Scale",
 		                    action="store_true", default=False)
+
 
 parser.add_option( "--genmatch", dest="genmatch",
 		                    help="Do generator matching for the signal MC",
@@ -100,13 +108,13 @@ tree = options.tree
 xmin = xmax = nbins = 0
 varbins = None
 
-if not options.var_bin:
+if options.var_bin == 0:
     xmin = options.xmin
     xmax = options.xmax
     nbins = options.nbins
 else:
-    varbins = makebins(options.xmin, options.xmax, .1, .3)
-
+    varbins = makebins(options.xmin, options.xmax, float(options.var_bin), .5)
+    print varbins
 class sample:
     def __init__(self, file_name, cut, tree_name, isSignal, isData, xsec, fillColor, fillStyle, lineStyle, lineWidth, stack, label):
 
@@ -124,13 +132,14 @@ class sample:
         self.hist_name = file_name.split(".")[0] + "_" + tree_name
         self.isSignal = int(isSignal)
         self.isData =  int(isData)
+        self.total_events = 1 
 
         #build the corresponding histogram
         self.hist = None
-        if not options.var_bin:
+        if options.var_bin == 0:
             self.hist = rt.TH1F(self.hist_name, self.label, nbins, xmin, xmax)
         else:
-            self.hist = rt.TH1F(self.hist_name, self.label, array.array("d",varsbins))
+            self.hist = rt.TH1F(self.hist_name, self.label, len(varbins)-1, array.array("d",varbins))
 
         if int(fillStyle) != 0:
             eval("self.hist.SetFillColor(rt.%s)" % fillColor)
@@ -192,7 +201,9 @@ for key in stacks.keys():
         #fill each histogram 
         draw_string = "%s>>%s" % (options.var, samp.hist_name)
         print draw_string
+        samp.total_events = thisTree.GetEntries() 
         nevents = thisTree.Draw(draw_string , thisCut)
+
         #nevents = thisTree.GetEntries(thisCut)
 
         if samp.isData:
@@ -202,8 +213,13 @@ for key in stacks.keys():
         else:
             samp.hist.SetMarkerStyle(4)
 
-        if samp.hist.Integral() > 0:
-            samp.hist.Scale( float(options.lumi) * float(samp.xsec) / float(samp.hist.Integral()))
+        if samp.hist.Integral() > 0 and not samp.isData:
+
+            scale_factor = float(options.lumi) * float(samp.xsec) / float(samp.total_events)
+            print samp, "SCALE FACTOR", scale_factor, "INTEGRAL", samp.hist.Integral()
+            samp.hist.Scale(scale_factor) #float(samp.hist.Integral()))
+
+            
         samp.hist.GetXaxis().SetTitle(options.xlabel)
         samp.hist.GetYaxis().SetTitle(options.ylabel)
 
@@ -239,15 +255,29 @@ for key in stacks.keys():
 print "length of draw_rest", len(draw_rest)
 
 print draw_first
-draw_first.Draw()
+draw_first.Draw("")
 
 for ii in draw_rest: ii.Draw("same")
 
 
-leg = canvas.BuildLegend()
+if options.islog:
+    canvas.SetLogy()
+    #    canvas.SetMaximum(1.5)
+    #    canvas.SetMinimum(.0001)
+
+leg = rt.TLegend(.4, .45 ,.75, .75)#canvas.BuildLegend()
+for key in stacks.keys(): 
+    for samp in stacks[key]:
+        if samp.isData:
+            leg.AddEntry(samp.hist, samp.label, 'pl')
+        else:
+            leg.AddEntry(samp.hist, samp.label, 'l')
+
 leg.SetFillColor(0)
 leg.SetLineColor(0)
+leg.Draw("same")
 CMS_lumi.CMS_lumi(canvas, 4, 0)
+
 
 raw_input("RAW INPUT")
 

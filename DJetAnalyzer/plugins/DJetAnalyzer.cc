@@ -388,7 +388,7 @@ void  DJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 
   // only do tagging after all information has been added / merged
   // currently using the same thresholds for each category
-  const std::vector<float> thresholds{0.0, 1.0, 2.0, 3.0, 4.0};
+  const std::vector<float> thresholds{0.0, 1.0, 2.0, 3.0, 4.0, 5.0};
 
   // tagging thresholds (nvtx, short, medium, long)
   // ThresDist = Threshold Distance in cm for the vertex used to categorize the jets
@@ -637,6 +637,22 @@ void DJetAnalyzer::beginJob()
   jetTree_->Branch("eventPassEventPreSelection", &eventPassEventPreSelection, "eventPassEventPreSelection/I");
   jetTree_->Branch("jetPassPreSelection", &jetPassPreSelection, "jetPassPreSelection[nCaloJets]/I");
 
+  // jet tags
+  // loose per jet
+  jetTree_->Branch("noVertexTag", &noVertexTag, "noVertexTag[nCaloJets]/I");
+  jetTree_->Branch("shortTag", &shortTag, "shortTag[nCaloJets]/I");
+  jetTree_->Branch("mediumTag", &mediumTag, "mediumTag[nCaloJets]/I");
+  jetTree_->Branch("longTag", &longTag, "longTag[nCaloJets]/I");
+  jetTree_->Branch("anyTag", &anyTag, "AnyTag[nCaloJets]/I");
+  // tight per jet
+  jetTree_->Branch("noVertexTightTag", &noVertexTightTag, "noVertexTightTag[nCaloJets]/I");
+  jetTree_->Branch("shortTightTag", &shortTightTag, "shortTightTag[nCaloJets]/I");
+  jetTree_->Branch("mediumTightTag", &mediumTightTag, "mediumTightTag[nCaloJets]/I");
+  jetTree_->Branch("longTightTag", &longTightTag, "longTightTag[nCaloJets]/I");
+  jetTree_->Branch("anyTightTag", &anyTightTag, "AnyTightTag[nCaloJets]/I");
+
+
+
   //////////////// CALO JETS ///////////////////
   
   //jet kinematics
@@ -644,6 +660,7 @@ void DJetAnalyzer::beginJob()
   jetTree_->Branch("caloJetPhi", &caloJetPhi, "caloJetPhi[nCaloJets]/F");
   jetTree_->Branch("caloJetEta", &caloJetEta, "caloJetEta[nCaloJets]/F");
   jetTree_->Branch("caloJetAlpha", &caloJetAlpha, "caloJetAlpha[nCaloJets]/F");
+  jetTree_->Branch("caloJetAlphaMax", &caloJetAlphaMax, "caloJetAlphaMax[nCaloJets]/F");
 
   // jet size 
   jetTree_->Branch("caloJetn90", &caloJetN90, "caloJetN90[nCaloJets]/F");
@@ -1272,8 +1289,8 @@ void DJetAnalyzer::beginJob()
   trackTree_->Branch("trInnerEta", &trInnerEta, "trInnerEta[nTracks]/F");
   trackTree_->Branch("trInnerPhi", &trInnerPhi, "trInnerPhi[nTracks]/F");
   trackTree_->Branch("trInnerPt", &trInnerPt, "trInnerPt[nTracks]/F");
-  trackTree_->Branch("trInnerPx", &trInnerPt, "trInnerPx[nTracks]/F");
-  trackTree_->Branch("trInnerPz", &trInnerPt, "trInnerPy[nTracks]/F");
+  trackTree_->Branch("trInnerPx", &trInnerPx, "trInnerPx[nTracks]/F");
+  trackTree_->Branch("trInnerPz", &trInnerPz, "trInnerPy[nTracks]/F");
   trackTree_->Branch("trInnerP", &trInnerP, "trInnerP[nTracks]/F");
 
   // outer hit kinematics
@@ -1395,23 +1412,22 @@ void DJetAnalyzer::dumpCaloInfo(DisplacedJetEvent & djEvent) {
     caloJetEta[jj]	 = djet->caloEta;
     caloJetPhi[jj]	 = djet->caloPhi;        
     // energy fractions
-    caloJetHfrac[jj]	 = djet->caloEMEnergyFrac;
-    caloJetEfrac[jj]	 = djet->caloHadEnergyFrac;
+    caloJetHfrac[jj]	 = djet->caloHadEnergyFrac;
+    caloJetEfrac[jj]	 = djet->caloEMEnergyFrac;
     // jet size
     caloJetN60[jj]	 = djet->caloN60;
     caloJetN90[jj]	 = djet->caloN90;
     caloJetTowerArea[jj] = djet->caloTowerArea;
-
     // alpha
-    caloJetAlpha[jj]        = djet->alpha; 
-
+    caloJetAlpha[jj]	 = djet->alpha; 
+    caloJetAlphaMax[jj]	 = djet->alphaMax; 
     // gen matching to particle quantities
     caloGenMatch[jj]	 = djet->isCaloGenMatched ? 1 : 0;       
     caloGenPt[jj]	 = djet->caloGenPt;
     caloGenEta[jj]	 = djet->caloGenEta;
     caloGenPhi[jj]	 = djet->caloGenPhi;
   }
-
+  
   // flat ordered numbers
   caloLeadingJetPT	       = djEvent.caloLeadingJetPT;
   caloSubLeadingJetPT	       = djEvent.caloSubLeadingJetPT;
@@ -1754,8 +1770,8 @@ void DJetAnalyzer::dumpTrackInfo(DisplacedJetEvent& djEvent, const reco::TrackCo
       trInnerX[nTracks]	     = innerPos.x();
       trInnerY[nTracks]	     = innerPos.y();
       trInnerZ[nTracks]	     = innerPos.z();
-      trInnerEta[nTracks]    = innerPos.eta();
-      trInnerPhi[nTracks]    = innerPos.phi();
+      trInnerEta[nTracks]    = innerMom.eta();
+      trInnerPhi[nTracks]    = innerMom.phi();
       // inner momentum
       trInnerPt[nTracks]     = innerMom.perp();
       trInnerPx[nTracks]     = innerMom.x();
@@ -1778,8 +1794,9 @@ void DJetAnalyzer::dumpTrackInfo(DisplacedJetEvent& djEvent, const reco::TrackCo
       trOuterX[nTracks]	     = outerPos.x();
       trOuterY[nTracks]	     = outerPos.y();
       trOuterZ[nTracks]	     = outerPos.z();
-      trOuterEta[nTracks]    = outerPos.eta();
-      trOuterPhi[nTracks]    = outerPos.phi();
+
+      trOuterEta[nTracks]    = outerMom.eta();
+      trOuterPhi[nTracks]    = outerMom.phi();
       // outer momentum
       trOuterPt[nTracks]     = outerMom.perp();
       trOuterPx[nTracks]     = outerMom.x();
@@ -1898,6 +1915,30 @@ void DJetAnalyzer::dumpDJTags(DisplacedJetEvent & djEvent) {
 
     eventCaloDHT[wp]       = djEvent.caloDHT[wp];
   } // loop: working points  
+
+  // fill the pass tags for the jet tree
+  const DisplacedJetCollection djetCollection = djEvent.getDisplacedJets();
+  DisplacedJetCollection::const_iterator djet = djetCollection.begin();
+  int jj = 0;
+  int tightWP = 3;
+  int looseWP = 2;
+  for(; djet != djetCollection.end(); ++djet, ++jj) {        
+    // Loose Tags
+    noVertexTag[jj]	 = djet->noVertexTagsVector[looseWP];
+    shortTag[jj]	 = djet->shortTagsVector[looseWP];
+    mediumTag[jj]	 = djet->mediumTagsVector[looseWP];
+    longTag[jj]		 = djet->longTagsVector[looseWP];
+    anyTag[jj]		 = djet->noVertexTagsVector[looseWP] || djet->shortTagsVector[looseWP] || 
+      djet->mediumTagsVector[looseWP] || djet->longTagsVector[looseWP];
+    // Tight
+    noVertexTightTag[jj] = djet->noVertexTagsVector[tightWP];
+    shortTightTag[jj]	 = djet->shortTagsVector[tightWP];
+    mediumTightTag[jj]	 = djet->mediumTagsVector[tightWP];
+    longTightTag[jj]	 = djet->longTagsVector[tightWP];    
+    anyTightTag[jj]		 = djet->noVertexTagsVector[tightWP] || djet->shortTagsVector[tightWP] || 
+      djet->mediumTagsVector[tightWP] || djet->longTagsVector[tightWP];
+
+  }
 }
 
 //define this as a plug-in

@@ -70,6 +70,8 @@ cmsenv
 cd -
 
 
+python fischer_analyzer.py -s ../plotScripts/signalxx4j300_30mm.root -b ../plotScripts/qcd120_170.root -t jets -o tagsALP30.root  --roc
+
 
 python jet_counter.py -f tight.list  -o test.root --genmatch 
 

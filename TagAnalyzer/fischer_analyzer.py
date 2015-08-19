@@ -359,7 +359,7 @@ class jet_collection:
                 index = names_to_fill.index(name)                
                 result[jj][index] = thisJet.jetvars[name]
 
-        print result[:4]
+        print result
 
         return result
 
@@ -485,18 +485,29 @@ class jet_collection:
 
             iev += 1
             entry = itlist.Next()
-            tree.GetEntry(entry)                                                
-            
-            self.njets += tree.nCaloJets 
+            tree.GetEntry(entry)                                                            
 
             for jj in range(tree.nCaloJets):
                 jetvars = {}
-                jetID = tree.jetID[jj]
 
+                fillZero = False
+                #jet must have 1 track
+                if tree.jetNTracks[jj] == 0 or tree.sumTrackPt[jj] == 0: continue #fillZero = True
+                
+                self.njets+= 1
+                # if fillZero:
+                #     jetvars["jetMedianIPLogSig2D"] = tree.jetMedianIPLogSig2D[jj]
+                #     jetvars["caloJetAlphaMax"]     = tree.caloJetAlphaMax[jj] / tree.sumTrackPt[jj]
+                #     jetvars["jetMedianJetDist"]    = tree.jetMedianJetDist[jj]
+
+                jetID = tree.jetID[jj]
+#                print "jetNTracks", tree.jetNTracks[jj], "sumtrackpt", tree.sumTrackPt[jj], "jetid", jetID
                 jetvars["jetIVFLxySig"]        = tree.jetIVFLxySig[jj]
                 jetvars["jetIVFNTrack"]        = tree.jetIVFNTrack[jj]
                 jetvars["jetMedianIPLogSig2D"] = tree.jetMedianIPLogSig2D[jj]
-                jetvars["jetIPSigLogSum2D"]    = tree.jetIPSigLogSum2D[jj]
+                jetvars["jetIPSigLogSum2D"]    = tree.jetIPSigLogSum2D[jj]                    
+                jetvars["caloJetAlphaMax"]     = tree.caloJetAlphaMax[jj] / tree.sumTrackPt[jj]
+                jetvars["jetMedianJetDist"]    = tree.jetMedianJetDist[jj]
                 jetvars["jetMedianIPSig2D"]    = tree.jetMedianIPSig2D[jj]
                 jetvars["jetELogIPSig2D"]      = tree.jetELogIPSig2D[jj]
                 jetvars["caloJetPt"]           = tree.caloJetPt[jj]
@@ -562,13 +573,28 @@ class jet:
         (w1, w3) = pars
 
         x1 = self.jetvars["jetMedianIPLogSig2D"]
-        # x2 = self.jetvars["jetIVFLxySig"]
-        x3 = self.jetvars["jetIVFNTrack"]
+        x2 = self.jetvars["caloJetAlphaMax"] 
+        x3 = self.jetvars["jetMedianJetDist"]
 
-        val = w1*x1 + w3*x3
+        val = w1*x1 + w2*x2 + w3*x3
 
         return val
 
+
+    def calc_metric_alph(self, pars):
+        (w1, w2, w3) = pars
+
+        # x1 = self.jetvars["jetMedianIPLogSig2D"]
+        # # x2 = self.jetvars["jetIVFLxySig"]
+        # x3 = self.jetvars["jetIVFNTrack"]
+
+        x1 = self.jetvars["jetMedianIPLogSig2D"]
+        x2 = self.jetvars["caloJetAlphaMax"] 
+        x3 = self.jetvars["jetMedianJetDist"]
+
+        val = w1*x1 + w2*x2 + w3*x3
+
+        return val
 
     def fill_disc(self, disc, weight_space):        
         wgrid = weight_space.grid
@@ -581,6 +607,9 @@ class jet:
                 self.disc_dict[disc, wvector] = self.calc_metric_vtx(wvector)
             elif disc == "ivf":
                 self.disc_dict[disc, wvector] = self.calc_metric_ivf(wvector)
+            elif disc == "alph":
+                self.disc_dict[disc, wvector] = self.calc_metric_alph(wvector)
+
             else:
                 print "FALSE DISCRIMINANT: ", disc, "---EXITING----"
                 exit(1)
@@ -600,12 +629,15 @@ ana.build_jetcollections()
 
 mediplog_range   = weight_range("jetMedianIPLogSig2D", 0, 1, 2, 1, explicit=[0])
 ivflxysig_range  = weight_range("jetIVFLxySig", 0, 1, 2, 1, explicit=[0])
+alpha_range    = weight_range("caloJetAlphaMax", 0, 1, 2, 1,explicit=[0])
+dist_range    = weight_range("jetMedianJetDist", 0, 1, 2, 1, explicit=[0])
+                             
 #ivfntracks_range = weight_range("jetIVFNTrack", 0, 1, 2, 1, explicit=[0])
 
 #disc_simple_tuple = (med_range, ipsiglog_range)
 #disc_simple_tuple = (mediplog_range, ivflxysig_range, ivfntracks_range ) 
 #disc_simple_tuple = (mediplog_range, ivfntracks_range ) 
-disc_simple_tuple = (mediplog_range, ivflxysig_range) 
+disc_simple_tuple = (mediplog_range, alpha_range, dist_range)
 
 #calculate the fischer weights for this range
 print "-- Building Weights --"
@@ -618,15 +650,17 @@ print "Fischer Weights: ", fweights
 #fischer_tuple = (fischer_med_range, fischer_ipsiglog_range)
 
 fischer_mediplog_range    = weight_range("jetMedianIPLogSig2D", 0, 1, 2, 1, [-1 * fweights[0]])
-fischer_ivflxysig_range   = weight_range("jetIVFLxySig", 0, 1, 2, 1, [-1 * fweights[1]])
+fischer_alpha_range    = weight_range("caloJetAlphaMax", 0, 1, 2, 1, [-1 * fweights[0]])
+fischer_dist_range    = weight_range("jetMedianJetDist", 0, 1, 2, 1, [-1 * fweights[0]])
+#fischer_ivflxysig_range   = weight_range("jetIVFLxySig", 0, 1, 2, 1, [-1 * fweights[1]])
 #fischer_ivfntracks_range = weight_range("jetIVFNTrack", 0, 1, 2, 1, [fweights[1]])
 #fischer_tuple            = (fischer_mediplog_range, fischer_ivflxysig_range, fischer_ivfntracks_range)
 #fischer_tuple            = (fischer_mediplog_range, fischer_ivfntracks_range)
-fischer_tuple             = (fischer_mediplog_range, fischer_ivflxysig_range)
+fischer_tuple             = (fischer_mediplog_range, fischer_alpha_range, fischer_dist_range)#fischer_ivflxysig_range)
 
 #build the weight space to fill the discriminant
-disc_simple_weight_space = weight_space("ivf", 2, fischer_tuple)
-ana.fill_discriminant("ivf", disc_simple_weight_space)
+disc_simple_weight_space = weight_space("alph", 3, fischer_tuple)
+ana.fill_discriminant("alph", disc_simple_weight_space)
 
 #disc_simple_weight_space.write_output(options.output_GID)
 
@@ -657,7 +691,7 @@ sig_tree.Write()
 bkg_tree.Write()
 
 if options.do_roc:    
-    ana.build_roc_curves(sig_tree, bkg_tree, -.001, .005 , 1000)
+    ana.build_roc_curves(sig_tree, bkg_tree, -.0001, .0005 , 1000)
     tgraphs = ana.generate_tgraphs() 
 #    roc_canvas = ana.build_roc_canvas()
 #    roc_canvas.Write()

@@ -1,3 +1,3 @@
 #sample |cut| tree | isSignal | isData | xSec | fillcolor | fillstyle | lineStyle | lineWidth | stack | label 
-qcd_alpha.root     |1  |jets| 0 |0| 1 | kBlack    | 0    | 1 | 3 | 3 | QCD
-xx4j30mm_alpha.root   |1  |jets| 0 |0| 1 | kRed    | 0    | 1 | 3 | 3 | xx4j 30mm
+signalxx4j30mm.root              |1  |jets| 0 |0| 1 | kRed    | 0    | 1 | 3 | 3 | XX4J 30mm 300GeV
+dataPD_DisplacedJet.root   |1  |jets| 0 |1| 1 | kBlack | 0 | 1 | 3 | 3 | DisplacedJet Data

@@ -2,11 +2,12 @@ import FWCore.ParameterSet.Config as cms
 
 #output directories
 base                = '/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDIES/CMSSW_7_4_6_patch2/src/DisplacedJets/'
+#outputDir           = "/afs/cern.ch/work/h/hardenbr/2015/DIJET/DJANALYSIS/MC_ALPHA_AUG13/"
 outputDir           = ""
 
 # output options (to be appended to the file name outputted)
-appendSignal        = "xx4j30mm"
-appendData          = "data"
+appendSignal        = "dsusy500_10mm"
+appendData          = ""
 appendBkg           = "qcd470_600"
 ############ FLAGS #############
 debugLevel          = 0
@@ -14,21 +15,21 @@ reportEveryNEvents  = 10
 isSignalMC          = True
 isMC                = True
 isData              = not isMC
+doedm               = False
+nevents             = 200
 
 #-------------- globaltags
-gtag               = "74X_HLT_mcRun2_asymptotic_fromSpring15DR_v0" #spring 15 25ns
+#gtag               = "74X_HLT_mcRun2_asymptotic_fromSpring15DR_v0" #spring 15 25ns
 #gtag               = "FALL1374_25V4"
 #gtag               = "PHYS14_25_V1"
-#gtag               = "MCRUN2_74_V9" #guns
+gtag                = "MCRUN2_74_V9" #guns
 #gtag                = "74X_dataRun2_Prompt_v0"  #data
 # -------------json
 #JSON               = 'json_DCSONLY_Run2015B.txt'
 JSON                = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-251883_13TeV_PromptReco_Collisions15_JSON.txt'
 #--------------trigger
 trigger_process     = ""
-# run related
-nevents             = 1000
-doedm               = False
+
 #--------------analysis todos
 doEventPreSelection = False
 doJetPreSelection   = False
@@ -49,7 +50,7 @@ cut_jetPt           = 40
 cut_jetEta          = 2.0
 #----------- tag categories
 shortTagThreshold   = 0.0
-mediumTagThreshold  = 10
+mediumTagThreshold  = 0.0
 longTagThreshold    = 30
 dHTWorkingPoint     = 2
 
@@ -57,16 +58,17 @@ dHTWorkingPoint     = 2
 input_file_list     = None
 #input_file_list    = '/SignalMCLists/740patch1/mx300_100mm_aod.list'
 #input_file_list    = '/SignalMCLists/740patch1/mx300_300mm_aod.list'
-input_file_list    = '/SignalMCLists/740patch1/mx300_30mm_aod.list'
+#input_file_list    = '/SignalMCLists/740patch1/mx300_30mm_aod.list'
 #input_file_list    = '/SignalMCLists/740patch1/mx600_30mm_aod.list'
 #input_file_list    = '/SignalMCLists/740patch1/mx100_30mm_aod.list'
+#input_file_list    = '/SignalMCLists/740patch1/mx300_1mm_aod.list'
 
-# other samples
+#other samples
 #input_file_list = '/SignalMCLists/DISPLACED_SUSY/displaced_susy.list'
-#input_file_list = '/SignalMCLists/DISPLACED_SUSY/displaced_susy500_10.list'
+input_file_list = '/SignalMCLists/DISPLACED_SUSY/displaced_susy500_10.list'
 #input_file_list = '/SignalMCLists/EMERGING_JETS/emerging_jets.txt'
 
-# gun samples
+#gun samples
 #input_file_list = 'SignalMCLists/DIJET_GUN/dijet_gun_m300_ctau30mm.list'
 #input_file_list = 'SignalMCLists/DIJET_GUN/dijet_gun_m300_ctau0mm.list'
 #input_file_list = 'SignalMCLists/DIJET_GUN/dijet_gun_m300_ctau300mm.list'
@@ -82,7 +84,7 @@ input_file_list    = '/SignalMCLists/740patch1/mx300_30mm_aod.list'
 
 # parse the input files to the file list
 myfilelist = cms.untracked.vstring()
-if input_file_list != None:
+if input_file_list != None and isSignalMC:
    list_from_input_list = open(base + input_file_list, "r") 
    lines = list_from_input_list.readlines()
    stripped_lines = map(lambda x: x.rstrip("\n"), lines)
@@ -92,8 +94,10 @@ if input_file_list != None:
 #fillter for the file list
 if isSignalMC and input_file_list == None :
    myfilelist = cms.untracked.vstring()
-   myfilelist.extend(['file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/MC_PRODUCTION/XXTo4J_M-300_CTau_30mm/AODSIM/XXTo4J_M-300_CTau-30mm_reco_102_1_ne5.root',
-                      'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/MC_PRODUCTION/XXTo4J_M-300_CTau_30mm/AODSIM/XXTo4J_M-300_CTau-30mm_reco_105_1_1MO.root' ])
+   print "NO SIGNAL INPUT" 
+   exit(1)
+#   myfilelist.extend(['file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/MC_PRODUCTION/XXTo4J_M-300_CTau_30mm/AODSIM/XXTo4J_M-300_CTau-30mm_reco_102_1_ne5.root',
+ #                     'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/MC_PRODUCTION/XXTo4J_M-300_CTau_30mm/AODSIM/XXTo4J_M-300_CTau-30mm_reco_105_1_1MO.root' ])
 if not isSignalMC and input_file_list == None and not isData:
    myfilelist = cms.untracked.vstring()
 #   myfilelist.extend(['file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/data/Run2015B/DisplacedJet/AOD/PromptReco-v1/000/251/562/00000/F6834634-9A2A-E511-9F6F-02163E012402.root'])   
@@ -102,7 +106,8 @@ if not isSignalMC and input_file_list == None and not isData:
 #   myfilelist.extend(['root://xrootd-cms.infn.it//store/mc/Phys14DR/QCD_Pt-470to600_Tune4C_13TeV_pythia8/AODSIM/AVE20BX25_tsg_castor_PHYS14_25_V3-v1/00000/1E538A06-988E-E411-8F36-0025905B8562.root']
    myfilelist.extend(['/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/00000/00D76158-CCFC-E411-89EA-AC853DA06B56.root'])
 if isData:
-   myfilelist.extend(['/store/data/Run2015B/SingleMuon/AOD/PromptReco-v1/000/251/162/00000/C2C5E84D-4227-E511-8878-02163E01280D.root'])
+#   myfilelist.extend(['/store/data/Run2015B/SingleMuon/AOD/PromptReco-v1/000/251/162/00000/C2C5E84D-4227-E511-8878-02163E01280D.root'])
+   myfilelist.extend(['file:pickevents.root'])
 
 process = cms.Process("ANA")
 
@@ -170,7 +175,7 @@ if isSignalMC:
 elif not isSignalMC and isMC:
 #    process.analyzerVTX.outputFileName = cms.untracked.string('qcdVTX%s.root' % appendBkg)
 #    process.analyzerCALO.outputFileName = cms.untracked.string('qcdCALO%s.root' % appendBkg)
-   process.analyzerCALO.outputFileName = cms.untracked.string("qcd.root")
+   process.analyzerCALO.outputFileName = cms.untracked.string("%sqcd120_170.root" % outputDir)
 else:
    process.analyzerVTX.outputFileName  = cms.untracked.string('dataVTX%s.root' % appendData)
    process.analyzerCALO.outputFileName = cms.untracked.string('%sdata%s.root' % (outputDir, appendData))   

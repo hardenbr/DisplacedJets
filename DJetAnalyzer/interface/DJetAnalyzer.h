@@ -187,7 +187,7 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   Float_t   caloJetEfrac[MAX_JETS];
 
   Float_t   caloJetAlpha[MAX_JETS];
-
+  Float_t   caloJetAlphaMax[MAX_JETS];
   ///////////////////// GEN MATCHED ////////////////////
 
   Int_t genMatch[MAX_JETS];
@@ -394,6 +394,19 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   // n sim matched
   Int_t	    jetSvNSimMatched;
   Int_t	    jetSvNSimFake;
+
+  // jet indidivudal tagging variables
+  Int_t noVertexTag[MAX_JETS];
+  Int_t shortTag[MAX_JETS];
+  Int_t mediumTag[MAX_JETS];
+  Int_t longTag[MAX_JETS];
+  Int_t anyTag[MAX_JETS];
+  // tight variables
+  Int_t noVertexTightTag[MAX_JETS];
+  Int_t shortTightTag[MAX_JETS];
+  Int_t mediumTightTag[MAX_JETS];
+  Int_t longTightTag[MAX_JETS];
+  Int_t anyTightTag[MAX_JETS];
 
   ///////////////////////////// IVF ///////////////////////
 

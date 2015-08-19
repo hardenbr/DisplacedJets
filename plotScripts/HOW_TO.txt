@@ -22,7 +22,7 @@ python plot1D.py -f test.list -v "jetVarianceIPLogSig2D" -c "1" -t jets --xmin -
 
 ### mean 
 python plot1D.py -f test.list -v "jetMeanIPSig2D" -c "1" -t jets --xmin 0 --xmax 1000 --nbins 100 --xlabel "IP_{sig} Mean" -o test.root --genmatch 
-python plot1D.py -f test.list -v "jetMeanJetDist" -c "1" -t jets --xmin 0 --xmax 1000 --nbins 100 --xlabel "Jet Track Distance Mean" -o test.root --genmatch 
+python plot1D.py -f test.list -v "jetMedianJetDist" -c "1" -t jets --xmin 0 --xmax 1000 --nbins 100 --xlabel "Jet Track Distance Mean" -o test.root
 python plot1D.py -f test.list -v "jetMeanIPLogSig2D" -c "1" -t jets --xmin -10 --xmax 10 --nbins 40 --xlabel "Jet Mean IP Log Sig 2D" -o test.root --genmatch 
 
 ### secondary vertex

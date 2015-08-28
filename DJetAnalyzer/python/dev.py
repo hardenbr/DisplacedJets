@@ -6,24 +6,24 @@ base                = '/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDI
 outputDir           = ""
 
 # output options (to be appended to the file name outputted)
-appendSignal        = "dsusy500_10mm"
+appendSignal        = "xx4j300mm"
 appendData          = ""
 appendBkg           = "qcd470_600"
 ############ FLAGS #############
 debugLevel          = 0
 reportEveryNEvents  = 10
-isSignalMC          = True
+isSignalMC          = False
 isMC                = True
 isData              = not isMC
 doedm               = False
-nevents             = 200
+nevents             = 500
 
 #-------------- globaltags
 #gtag               = "74X_HLT_mcRun2_asymptotic_fromSpring15DR_v0" #spring 15 25ns
 #gtag               = "FALL1374_25V4"
 #gtag               = "PHYS14_25_V1"
-gtag                = "MCRUN2_74_V9" #guns
-#gtag                = "74X_dataRun2_Prompt_v0"  #data
+#gtag                = "MCRUN2_74_V9" #guns
+gtag                = "74X_dataRun2_Prompt_v0"  #data
 # -------------json
 #JSON               = 'json_DCSONLY_Run2015B.txt'
 JSON                = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-251883_13TeV_PromptReco_Collisions15_JSON.txt'
@@ -35,7 +35,7 @@ doEventPreSelection = False
 doJetPreSelection   = False
 doApplySingleMu     = False
 doApplyTrigger      = False
-dumpGeneralTracks   = True
+dumpGeneralTracks   = False
 # trees to write
 writeTrackTree      = True
 writeEventTree      = True
@@ -65,7 +65,7 @@ input_file_list     = None
 
 #other samples
 #input_file_list = '/SignalMCLists/DISPLACED_SUSY/displaced_susy.list'
-input_file_list = '/SignalMCLists/DISPLACED_SUSY/displaced_susy500_10.list'
+#input_file_list = '/SignalMCLists/DISPLACED_SUSY/displaced_susy500_10.list'
 #input_file_list = '/SignalMCLists/EMERGING_JETS/emerging_jets.txt'
 
 #gun samples

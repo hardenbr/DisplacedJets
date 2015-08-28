@@ -428,10 +428,8 @@ void DisplacedJetEvent::mergeTrackAssociations(const reco::JetTracksAssociation:
 void DisplacedJetEvent::mergeCaloIPTagInfo(const reco::TrackIPTagInfoCollection & ipTagInfo, const reco::VertexCollection & primaryVertices, const edm::EventSetup& iSetup) {
   if (debug > 1) std::cout << "[DEBUG 1] Merging CALO IP Tag Info " << std::endl;
 
-
   reco::TrackIPTagInfoCollection::const_iterator ipInfoIter = ipTagInfo.begin(); 
-  for(; ipInfoIter != ipTagInfo.end(); ++ipInfoIter) {
-    
+  for(; ipInfoIter != ipTagInfo.end(); ++ipInfoIter) {    
     // check the jet against the acceptance
     const reco::Jet jet = *ipInfoIter->jet();
     const float & pt = jet.pt(), eta = jet.eta(), phi = jet.phi();
@@ -444,12 +442,11 @@ void DisplacedJetEvent::mergeCaloIPTagInfo(const reco::TrackIPTagInfoCollection 
     // add the track and ip info 
     djet.addIPTagInfo(*ipInfoIter);   
     // the track colleciton above can be retrieved and passed to track angles below
+    djet.addHitInfo(djet.getVertexMatchedTracks(), iSetup);    
     djet.addTrackAngles(djet.getVertexMatchedTracks(), iSetup);    
     // calculate alpha for the vertces
     djet.calcJetAlpha(djet.getVertexMatchedTracks(), primaryVertices);
   }
-
-
 }
 
 DisplacedJet & DisplacedJetEvent::findDisplacedJetByPtEtaPhi(const float& pt, const float& eta, const float& phi) {

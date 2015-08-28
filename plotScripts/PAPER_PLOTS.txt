@@ -1,0 +1,77 @@
+
+#jets
+python plot1D.py -f gun.list -v "log10(jetMeanIPSig2D)" -c "jetNTracks > 0" -t jets --xmin -2 --xmax 9 --nbins 100 --xlabel "log_{10} (Jet Mean 2D IP Significance)" -o test.root  --log
+python plot1D.py -f gun.list -v "log10(jetMedianIPSig3D)" -c "jetNTracks > 0" -t jets --xmin -2 --xmax 9 --nbins 100 --xlabel "log_{10} (Jet Median 3D IP Significance)" -o test.root  --log
+python plot1D.py -f xx4j.list -v "jetMedianIPSig2D" -c "1" -t jets --xmin 0 --xmax 1000 --nbins 100 --xlabel "Jet Median 2D IP Significance" -o test.root --varbins 5 --log
+python plot1D.py -f xx4j.list -v "log10(jetMedianJetDist)" -c "1" -t jets --xmin -5 --xmax 3 --nbins 100 --xlabel "log_{10} (Jet Median Track Distance [cm])" -o test.root --varbins 5 --log
+python plot1D.py -f xx4j.list -v "jetMedianIP2D" -c "1" -t jets --xmin 0 --xmax 1000 --nbins 100 --xlabel "Jet Median 2D IP Significance" -o test.root --log --varbins 5
+python plot1D.py -f xx4j.list -v "caloJetAlphaMax/sumTrackPt" -c "jetNTracks>0" -t jets --xmin 0 --xmax 1 --nbins 100 --xlabel "Jet #alpha_{max}" -o test.root --log --varbin .01
+
+python plot1D.py -f xx4j.list -v "caloJetAlphaMax/caloJetPt" -c "jetNTracks>0" -t jets --xmin 0 --xmax 1 --nbins 100 --xlabel "Jet #beta_{max}" -o test.root --log --varbin .01
+python plot1D.py -f xx4j.list -v "caloJetAlpha/caloJetPt" -c "jetNTracks>0" -t jets --xmin 0 --xmax 1 --nbins 100 --xlabel "Jet #beta" -o test.root --log --varbin .01
+
+python plot1D.py -f xx4j.list -v "caloJetAlpha/sumTrackPt" -c "jetNTracks>0" -t jets --xmin 0 --xmax 1 --nbins 100 --xlabel "Jet #alpha" -o test.root --log --varbin .01
+python plot1D.py -f xx4j.list -v "jetMedianJetDist" -c "1" -t jets --xmin 0 --xmax 1000 --nbins 100 --xlabel "Jet Median Track Distance " -o test.root --log --varbin .1 
+python plot1D.py -f xx4j.list -v "caloJetEFrac" -c "1" -t jets --xmin 0 --xmax 1 --nbins 40 --xlabel "Hadronic Energy Fraction " -o test.root --log
+python plot1D.py -f gun.list -v "(jetMedianIPSig2D)" -c "jetNTracks > 0" -t jets --xmin 0 --xmax 1000 --nbins 100 --xlabel "Jet Median 2D IP Significance" -o test.root  --log
+
+
+#guns
+python plot1D.py -f gun.list -v "log10(jetMeanJetDist)" -c "1" -t jets --xmin -4.5 --xmax 8 --nbins 100 --xlabel "log_{10} (Jet Mean Track Distance [cm])" -o test.root  --log
+python plot1D.py -f gun.list -v "log10(jetMedianJetDist)" -c "1" -t jets --xmin -4.5 --xmax 8 --nbins 100 --xlabel "log_{10} (Jet Median Track Distance [cm])" -o test.root  --log
+python plot1D.py -f gun.list -v "jetMedianIPSig2D" -c "jetNTracks > 0" -t jets --xmin 0 --xmax 1000 --nbins 100 --xlabel "Jet Median 2D IP Significance" -o test.root --varbins 5 --log
+python plot1D.py -f gun.list -v "log10(jetMedianIPSig2D)" -c "jetNTracks > 0" -t jets --xmin -3 --xmax 10 --nbins 100 --xlabel "log_{10} (Jet Median 2D IP Significance)" -o test.root  --log
+python plot1D.py -f gun.list -v "jetMedianIP2D" -c "1" -t jets --xmin 0 --xmax 60 --nbins 100 --xlabel "Jet Median 2D IP" -o test.root --log
+python plot1D.py -f gun.list -v "caloJetAlphaMax/sumTrackPt" -c "jetNTracks>0" -t jets --xmin 0 --xmax 1 --nbins 100 --xlabel "Jet #alpha_{max}" -o test.root --log --varbin .01
+python plot1D.py -f gun.list -v "caloJetAlpha/sumTrackPt" -c "jetNTracks>0" -t jets --xmin 0 --xmax 1 --nbins 100 --xlabel "Jet #alpha" -o test.root --log --varbin .01
+python plot1D.py -f gun.list -v "jetMedianJetDist" -c "1" -t jets --xmin 0 --xmax 100 --nbins 100 --xlabel "Jet Median Track Distance " -o test.root --log --varbin .1 
+python plot1D.py -f gun.list -v "jetNTracks" -c "1" -t jets --xmin 0 --xmax 40 --nbins 40 --xlabel "N Matched Tracks " -o test.root --log
+
+python plot1D.py -f gun.list -v "caloJetEFrac" -c "1" -t jets --xmin 0 --xmax 1 --nbins 40 --xlabel "Hadronic Energy Fraction " -o test.root --log
+
+
+
+#tracks
+python plot1D.py -f guntracks.list --ylabel "N Tracks" -v "trInnerR2D" -c "1" -t tracks --xmin 0 --xmax 100 --nbins 100 --xlabel "Track Inner Hit 2D Distance " -o test.root
+python plot1D.py -f guntracks.list --ylabel "N Tracks" -v "trOuterR2D" -c "1" -t tracks --xmin 0 --xmax 100 --nbins 100 --xlabel "Track Outer Hit 2D Distance " -o test.root
+python plot1D.py -f guntracks.list --ylabel "N Tracks" -v "trChi2" -c "1" -t tracks --xmin 0 --xmax 100 --nbins 100 --xlabel "Track #Chi^{2}" -o test.root
+python plot1D.py -f guntracks.list --ylabel "N Tracks" -v "trNDoF" -c "1" -t tracks --xmin 0 --xmax 0 --nbins 100 --xlabel "Track Degrees of Freedom" -o test.root
+python plot1D.py -f guntracks.list --ylabel "N Tracks" -v "trAlgoInt" -c "1" -t tracks --xmin 0 --xmax 30 --nbins 30 --xlabel "Track Algorithm" -o test.root
+python plot1D.py -f guntracks.list --ylabel "N Tracks" -v "log(abs(trDxySig))" -c "1" -t tracks --xmin -5 --xmax 15 --nbins 100 --xlabel "Track log(|D_{xy} Significance|)" -o test.root
+python plot1D.py -f guntracks.list --ylabel "N Tracks" -v "trDxySig" -c "1" -t tracks --xmin -1000 --xmax 1000 --nbins 100 --xlabel "Track D_{xy} Significance" -o test.root
+python plot1D.py -f guntracks.list --ylabel "N Tracks" -v "trDxy" -c "1" -t tracks --xmin -100 --xmax 100 --nbins 100 --xlabel "Track D_{xy} [cm]" -o test.root
+python plot1D.py -f guntracks.list --ylabel "N Tracks" -v "trDsz" -c "1" -t tracks --xmin -100 --xmax 100 --nbins 100 --xlabel "Track D_{sz}" -o test.root
+python plot1D.py -f guntracks.list --ylabel "N Tracks" -v "trNLost" -c "1"  -t tracks  --xmin 0 --xmax 12 --nbins 12  --xlabel  "Track Hits Lost" -o test.root
+python plot1D.py -f guntracks.list --ylabel "N Tracks" -v "trNFound" -c "1" -t tracks  --xmin 0 --xmax 12 --nbins 12 --xlabel "Track Hits Found" -o test.root
+python plot1D.py -f guntracks.list --ylabel "N Tracks" -v "trCharge" -c "1" -t tracks  --xmin -2 --xmax 2 --nbins 5 --xlabel "Track Charge" -o test.root
+python plot1D.py -f guntracks.list --ylabel "N Tracks" -v "trValidFraction" -c "1" -t tracks --xmin 0 --xmax 1 --nbins 100 --xlabel "Valid Fraction of Hits" -o test.root
+
+
+#vertexing 
+python plot1D.py -f gun.list -v "jetSvLxyz / genMomLxyz" -c "jetNTracks > 0" -t jets --xmin 0 --xmax 5 --nbins 100 --xlabel "Jet SV L_{xyz} / gen L_{xyz}" -o test.root --log
+
+#2d distribution
+python plot2D.py -f xx4j2D.list -v "caloJetAlphaMax/sumTrackPt:log10(jetMedianIPSig2D)" -c "jetNTracks > 0" -t jets --xmin -2 --xmax 5 --nxbins 40  --xlabel "log_{10} (Jet Median 2D IP_{sig})" --ymin 0  --ymax 1 --nybins 40 --ylabel "Jet #alpha_{max}" -o test.root
+python plot2D.py -f xx4j2D.list -v "caloJetAlphaMax/caloJetPt:log10(jetMedianIPSig2D)" -c "jetNTracks > 0" -t jets --xmin -2 --xmax 5 --nxbins 40  --xlabel "log_{10} (Jet Median 2D IP_{sig})" --ymin 0  --ymax 1 --nybins 40 --ylabel "Jet #beta_{max}" -o test.root
+
+python plot2D.py -f xx4j2D.list -v "log10(jetMedianJetDist):log10(jetMedianIPSig2D)" -c "jetNTracks > 0" -t jets --xmin -2 --xmax 5 --nxbins 40  --xlabel "log_{10} (Jet Median 2D IP_{sig})" --ymin 0  --ymax 1 --nybins 40 --ylabel "log_{10}(Jet Median Track Distance)" -o test.root
+ python plot2D.py -f promptTrack2D.list -v "trOuterY:trOuterX" -c "1" -t tracks --xmin -140 --xmax 140 --nxbins 600  --xlabel "Track Outer Hit X [cm]" --ymin -140  --ymax 140 --nybins 600 --ylabel "Track Outer Hit Y [cm]" -o test.root --square
+ python plot2D.py -f promptTrack2D.list -v "trInnerY:trInnerX" -c "1" -t tracks --xmin -140 --xmax 140 --nxbins 600  --xlabel "Track Inner Hit X [cm]" --ymin -140  --ymax 140 --nybins 600 --ylabel "Track Inner Hit Y [cm]" -o test.root --square
+ python plot2D.py -f promptTrack2D.list -v "trInnerY:trInnerX" -c "trInnerR2D < 20" -t tracks --xmin -20 --xmax 20 --nxbins 600  --xlabel "Track Inner Hit X [cm]" --ymin -20  --ymax 20 --nybins 600 --ylabel "Track Inner Hit Y [cm]" -o test.root --square
+
+#ctau
+python plot1D.py -f xx4j.list --ylabel "N Gen Particles" -v "log10(genMomCTau0)" -c "1" -t genp --xmin -3 --xmax 5 --nbins 100 --xlabel "log_{10}(c#tau_{0} [cm])" -o test.root
+python plot1D.py -f xx4j.list --ylabel "N Gen Particles" -v "genMomCTau0" -c "1" -t genp --xmin 0 --xmax 100 --nbins 100 --xlabel "c#tau_{0} [cm]" -o test.root
+
+#kinematics
+python plot1D.py -f gun.list --ylabel "N Jets" -v "genMomPt" -c "1" -t jets --xmin 0 --xmax 525 --nbins 100 --xlabel "Gen X^{0} Pt [GeV]" -o test.root
+python plot1D.py -f gun.list --ylabel "N Jets" -v "genMomEta" -c "1" -t jets --xmin -3.14 --xmax 3.14 --nbins 100 --xlabel "Gen X^{0} #eta [GeV]" -o test.root
+
+python plot1D.py -f xx4j.list --ylabel "N Jets" -v "caloJetPt" -c "1" -t jets --xmin 0 --xmax 1000 --nbins 100 --xlabel "Calo Jet Pt [GeV]" -o test.root
+python plot1D.py -f xx4j_mass.list --ylabel "N Jets" -v "caloJetPt" -c "1" -t jets --xmin 0 --xmax 1000 --nbins 100 --xlabel "Calo Jet Pt [GeV]" -o test.root
+python plot1D.py -f xx4j_mass.list --ylabel "N Jets" -v "eventCaloHT" -c "1" -t eventInfo --xmin 0 --xmax 1000 --nbins 100 --xlabel "H_{T} [GeV]" -o test.root
+
+
+#data
+python plot1D.py -f xx4j_mass_data.list -v "eventNTotalTags[3]" -c "passDisplaced500_40 || passDisplaced350_40" -t eventInfo --xmin 0 --xmax 7 --nbins 7 --xlabel "Total Tags" -o test.root --ylabel "N Events"
+python plot1D.py -f xx4j_data.list -v "eventNTotalTags[3]" -c "passDisplaced500_40 || passDisplaced350_40" -t eventInfo --xmin 0 --xmax 7 --nbins 7 --xlabel "Total Tags" -o test.root --ylabel "N Events"

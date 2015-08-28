@@ -64,7 +64,12 @@
 #include "DataFormats/TrackReco/interface/TrackFwd.h"
 #include "DataFormats/TrackReco/interface/Track.h"
 #include "DataFormats/TrackReco/interface/TrackBase.h"
+#include "TrackingTools/DetLayers/interface/DetLayer.h"
+#include "TrackingTools/Records/interface/TransientTrackRecord.h"
+#include "TrackingTools/TransientTrack/interface/TransientTrack.h"
+#include "TrackingTools/PatternTools/interface/TransverseImpactPointExtrapolator.h"
 #include "RecoTracker/DebugTools/interface/GetTrackTrajInfo.h"
+#include "RecoVertex/VertexPrimitives/interface/ConvertToFromReco.h"
 
 //vertex
 #include "DataFormats/VertexReco/interface/Vertex.h"
@@ -735,6 +740,37 @@ void DJetAnalyzer::beginJob()
   jetTree_->Branch("jetMedianIPLog2D", &jetMedianIPLog2D, "jetMedianIPLog2D[nCaloJets]/F");
   jetTree_->Branch("jetMedianIPLog3D", &jetMedianIPLog3D, "jetMedianIPLog3D[nCaloJets]/F");
   jetTree_->Branch("jetMedianJetDist", &jetMedianJetDist, "jetMedianJetDist[nCaloJets]/F");
+
+  /////////////////// HIT RELATED
+  jetTree_->Branch("jetMedianInnerHitPos", &jetMedianInnerHitPos ,	      "jetMedianInnerHitPos[nCaloJets]/F");
+  jetTree_->Branch("jetMedianOuterHitPos", &jetMedianOuterHitPos ,	      "jetMedianOuterHitPos[nCaloJets]/F");
+  jetTree_->Branch("jetMeanInnerHitPos", &jetMeanInnerHitPos ,	      "jetMeanInnerHitPos[nCaloJets]/F");
+  jetTree_->Branch("jetMeanOuterHitPos", &jetMeanOuterHitPos ,	      "jetMeanOuterHitPos[nCaloJets]/F");
+  jetTree_->Branch("jetVarianceInnerHitPos", &jetVarianceInnerHitPos ,	      "jetVarianceInnerHitPos[nCaloJets]/F");
+  jetTree_->Branch("jetVarianceOuterHitPos", &jetVarianceOuterHitPos ,	      "jetVarianceOuterHitPos[nCaloJets]/F");
+  // distributions from inside the pixel layers
+  jetTree_->Branch("jetMedianInnerHitPosInPixel", &jetMedianInnerHitPosInPixel ,    "jetMedianInnerHitPosInPixel[nCaloJets]/F");
+  jetTree_->Branch("jetMedianOuterHitPosInPixel", &jetMedianOuterHitPosInPixel ,    "jetMedianOuterHitPosInPixel[nCaloJets]/F");
+  jetTree_->Branch("jetMeanInnerHitPosInPixel", &jetMeanInnerHitPosInPixel ,      "jetMeanInnerHitPosInPixel [nCaloJets]/F");
+  jetTree_->Branch("jetMeanOuterHitPosInPixel", &jetMeanOuterHitPosInPixel ,      "jetMeanOuterHitPosInPixel [nCaloJets]/F");
+  jetTree_->Branch("jetVarianceInnerHitPosInPixel", &jetVarianceInnerHitPosInPixel ,  "jetVarianceInnerHitPosInPixel [nCaloJets]/F");
+  jetTree_->Branch("jetVarianceOuterHitPosInPixel", &jetVarianceOuterHitPosInPixel ,  "jetVarianceOuterHitPosInPixel[nCaloJets]/F");
+  // distributions outside the pixel layers
+  jetTree_->Branch("jetMedianInnerHitPosOutPixel", &jetMedianInnerHitPosOutPixel ,   "jetMedianInnerHitPosOutPixel[nCaloJets]/F");
+  jetTree_->Branch("jetMedianOuterHitPosOutPixel", &jetMedianOuterHitPosOutPixel ,   "jetMedianOuterHitPosOutPixel[nCaloJets]/F");
+  jetTree_->Branch("jetMeanInnerHitPosOutPixel", &jetMeanInnerHitPosOutPixel ,     "jetMeanInnerHitPosOutPixel[nCaloJets]/F");
+  jetTree_->Branch("jetMeanOuterHitPosOutPixel", &jetMeanOuterHitPosOutPixel ,     "jetMeanOuterHitPosOutPixel[nCaloJets]/F");
+  jetTree_->Branch("jetVarianceInnerHitPosOutPixel", &jetVarianceInnerHitPosOutPixel , "jetVarianceInnerHitPosOutPixel[nCaloJets]/F");
+  jetTree_->Branch("jetVarianceOuterHitPosOutPixel", &jetVarianceOuterHitPosOutPixel , "jetVarianceOuterHitPosOutPixel[nCaloJets]/F");
+  // fraction valid hits
+  jetTree_->Branch("jetMedianTrackValidHitFrac", &jetMedianTrackValidHitFrac ,     "jetMedianTrackValidHitFrac[nCaloJets]/F");
+  jetTree_->Branch("jetMeanTrackValidHitFrac", &jetMeanTrackValidHitFrac ,	      "jetMeanTrackValidHitFrac[nCaloJets]/F");
+  jetTree_->Branch("jetVarianceTrackValidHitFrac", &jetVarianceTrackValidHitFrac ,   "jetVarianceTrackValidHitFrac[nCaloJets]/F");
+  // track counting
+  jetTree_->Branch("jetNTracksNoPixel", &jetNTracksNoPixel ,	      "jetNTracksNoPixel[nCaloJets]/F");
+  jetTree_->Branch("jetNTracksPixel", &jetNTracksPixel ,		      "jetNTracksPixel[nCaloJets]/F");
+  jetTree_->Branch("jetPtSumTracksNoPixel", &jetPtSumTracksNoPixel ,	      "jetPtSumTracksNoPixel[nCaloJets]/F");
+  jetTree_->Branch("jetPtSumTracksPixel", &jetPtSumTracksPixel ,	      "jetPtSumTracksPixel[nCaloJets]/F");
 
   //////////////SECONDARY VTX INFORMATION //////////////
 
@@ -1641,6 +1677,39 @@ void DJetAnalyzer::dumpIPInfo(DisplacedJetEvent & djEvent) {
 
     ipPosSumMag3D[jj]	      = djet->ipPosSumMag3D;
     ipPosSumMag2D[jj]	      = djet->ipPosSumMag2D;
+
+    //
+    // Hit Related
+    //
+    jetMedianInnerHitPos[jj]	      = djet->jetMedianInnerHitPos;
+    jetMedianOuterHitPos[jj]	      = djet->jetMedianOuterHitPos;
+    jetMeanInnerHitPos[jj]	      = djet->jetMeanInnerHitPos;
+    jetMeanOuterHitPos[jj]	      = djet->jetMeanOuterHitPos;
+    jetVarianceInnerHitPos[jj]	      = djet->jetVarianceInnerHitPos;
+    jetVarianceOuterHitPos[jj]	      = djet->jetVarianceOuterHitPos;
+    // distributions from inside the pixel layers
+    jetMedianInnerHitPosInPixel[jj]    = djet->jetMedianInnerHitPosInPixel;
+    jetMedianOuterHitPosInPixel[jj]    = djet->jetMedianOuterHitPosInPixel;
+    jetMeanInnerHitPosInPixel[jj]      = djet->jetMeanInnerHitPosInPixel ;
+    jetMeanOuterHitPosInPixel[jj]      = djet->jetMeanOuterHitPosInPixel ;
+    jetVarianceInnerHitPosInPixel[jj]  = djet->jetVarianceInnerHitPosInPixel ;
+    jetVarianceOuterHitPosInPixel[jj]  = djet->jetVarianceOuterHitPosInPixel;
+    // distributions outside the pixel layers
+    jetMedianInnerHitPosOutPixel[jj]   = djet->jetMedianInnerHitPosOutPixel;
+    jetMedianOuterHitPosOutPixel[jj]   = djet->jetMedianOuterHitPosOutPixel;
+    jetMeanInnerHitPosOutPixel[jj]     = djet->jetMeanInnerHitPosOutPixel;
+    jetMeanOuterHitPosOutPixel[jj]     = djet->jetMeanOuterHitPosOutPixel;
+    jetVarianceInnerHitPosOutPixel[jj] = djet->jetVarianceInnerHitPosOutPixel;
+    jetVarianceOuterHitPosOutPixel[jj] = djet->jetVarianceOuterHitPosOutPixel;
+    // fraction valid hits
+    jetMedianTrackValidHitFrac[jj]     = djet->jetMedianTrackValidHitFrac;
+    jetMeanTrackValidHitFrac[jj]	      = djet->jetMeanTrackValidHitFrac;
+    jetVarianceTrackValidHitFrac[jj]   = djet->jetVarianceTrackValidHitFrac;
+    // track counting
+    jetNTracksNoPixel[jj]	      = djet->jetNTracksNoPixel;
+    jetNTracksPixel[jj]		      = djet->jetNTracksPixel;
+    jetPtSumTracksNoPixel[jj]	      = djet->jetPtSumTracksNoPixel;
+    jetPtSumTracksPixel[jj]	      = djet->jetPtSumTracksPixel;
   }
 }
 

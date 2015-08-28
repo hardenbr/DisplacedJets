@@ -96,6 +96,11 @@ parser.add_option("-l", "--lumi", dest="lumi",
 		                    help="integrated luminosity for normalization",
 		                    action="store",type="float", default = 1.0)
 
+parser.add_option("--norm1", dest="norm1",
+		                    help="The plotte histogram is normalized to 1",
+		                    action="store_true", default = False)
+
+
 (options, args) = parser.parse_args()
 
 #output root file
@@ -161,6 +166,7 @@ stacks = {}
 
 #ignore the first line for labels
 for line in lines[1:]:
+    if  "//" in line: continue
     (file_name, cut, tree_name, isSignal, isData,  xSec, fillColor, fillStyle, lineStyle, lineWidth, stack, label) = line.split("|")
     samples[file_name] = sample(*line.split("|"))
 
@@ -214,8 +220,11 @@ for key in stacks.keys():
             samp.hist.SetMarkerStyle(4)
 
         if samp.hist.Integral() > 0 and not samp.isData:
-
             scale_factor = float(options.lumi) * float(samp.xsec) / float(samp.total_events)
+
+            if options.norm1:
+                scale_factor = 1 / samp.hist.Integral()
+
             print samp, "SCALE FACTOR", scale_factor, "INTEGRAL", samp.hist.Integral()
             samp.hist.Scale(scale_factor) #float(samp.hist.Integral()))
 

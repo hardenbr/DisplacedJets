@@ -356,6 +356,38 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   Float_t   jetVarianceIPLog3D[MAX_JETS];
   Float_t   jetVarianceJetDist[MAX_JETS];
 
+  // hit related set distributions
+  // HIT RELATED
+  Float_t jetMedianInnerHitPos[MAX_JETS];
+  Float_t jetMedianOuterHitPos[MAX_JETS];
+  Float_t jetMeanInnerHitPos[MAX_JETS];
+  Float_t jetMeanOuterHitPos[MAX_JETS];
+  Float_t jetVarianceInnerHitPos[MAX_JETS];
+  Float_t jetVarianceOuterHitPos[MAX_JETS];
+  // distributions from inside the pixel layers
+  Float_t jetMedianInnerHitPosInPixel[MAX_JETS];
+  Float_t jetMedianOuterHitPosInPixel[MAX_JETS];
+  Float_t jetMeanInnerHitPosInPixel[MAX_JETS];
+  Float_t jetMeanOuterHitPosInPixel[MAX_JETS];
+  Float_t jetVarianceInnerHitPosInPixel[MAX_JETS];
+  Float_t jetVarianceOuterHitPosInPixel[MAX_JETS];
+  // distributions outside the pixel layers                                                                                                                                
+  Float_t jetMedianInnerHitPosOutPixel[MAX_JETS];
+  Float_t jetMedianOuterHitPosOutPixel[MAX_JETS];
+  Float_t jetMeanInnerHitPosOutPixel[MAX_JETS];
+  Float_t jetMeanOuterHitPosOutPixel[MAX_JETS];
+  Float_t jetVarianceInnerHitPosOutPixel[MAX_JETS];
+  Float_t jetVarianceOuterHitPosOutPixel[MAX_JETS];
+  // fraction valid hits
+  Float_t jetMedianTrackValidHitFrac[MAX_JETS];
+  Float_t jetMeanTrackValidHitFrac[MAX_JETS];
+  Float_t jetVarianceTrackValidHitFrac [MAX_JETS];
+  // track counting
+  Float_t jetNTracksNoPixel[MAX_JETS];
+  Float_t jetNTracksPixel[MAX_JETS];
+  Float_t jetPtSumTracksNoPixel[MAX_JETS];
+  Float_t jetPtSumTracksPixel[MAX_JETS];
+
   // SV information
   Int_t	    jetNSv[MAX_JETS];
   Float_t   jetSvMass[MAX_JETS];

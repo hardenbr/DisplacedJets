@@ -112,22 +112,54 @@ class DisplacedJet {
 
     trackSumMomCosTheta2D = -99;
     trackSumMomCosTheta3D = -99;
-    trackSumMomMag2D = -99;
-    trackSumMomMag3D = -99;
-    
-    ipPosSumMag3D = -99;
-    ipPosSumMag2D = -99;
+    trackSumMomMag2D	  = -99;
+    trackSumMomMag3D	  = -99;
 
+    ipPosSumMag3D	  = -99;
+    ipPosSumMag2D	  = -99;
     // matching gen particles init
-    caloGenPt	     = -999;
-    caloGenEta	     = -999;
-    caloGenPhi	     = -999;
-    caloGenMass	     = -999;
-    isCaloGenMatched = 0;
-
+    caloGenPt		  = -999;
+    caloGenEta		  = -999;
+    caloGenPhi		  = -999;
+    caloGenMass		  = -999;
+    isCaloGenMatched	  = 0;
     // ivf mc id
-    ivfHighestPtMomPt = 0;
-    ivfHighestPtMomID = 0;
+    ivfHighestPtMomPt	  = 0;
+    ivfHighestPtMomID	  = 0;
+
+    // 
+    // HIT RELATED
+    //
+    // overall distribution
+    jetMedianInnerHitPos	   = -1;
+    jetMedianOuterHitPos	   = -1;
+    jetMeanInnerHitPos		   = -1;
+    jetMeanOuterHitPos		   = -1;
+    jetVarianceInnerHitPos	   = -1;
+    jetVarianceOuterHitPos	   = -1;
+    // distributions from inside the pixel layers
+    jetMedianInnerHitPosInPixel	   = -1;
+    jetMedianOuterHitPosInPixel	   = -1;
+    jetMeanInnerHitPosInPixel	   = -1;
+    jetMeanOuterHitPosInPixel	   = -1;
+    jetVarianceInnerHitPosInPixel  = -1;
+    jetVarianceOuterHitPosInPixel  = -1;
+    // distributions outside the pixel layers
+    jetMedianInnerHitPosOutPixel   = -1;
+    jetMedianOuterHitPosOutPixel   = -1;
+    jetMeanInnerHitPosOutPixel	   = -1;
+    jetMeanOuterHitPosOutPixel	   = -1;
+    jetVarianceInnerHitPosOutPixel = -1;
+    jetVarianceOuterHitPosOutPixel = -1;
+    // fraction valid hits
+    jetMedianTrackValidHitFrac     = -1;
+    jetMeanTrackValidHitFrac	   = -1;
+    jetVarianceTrackValidHitFrac   = -1;
+    // track counting
+    jetNTracksNoPixel		   = -1;
+    jetNTracksPixel		   = -1;
+    jetPtSumTracksNoPixel	   = -1;
+    jetPtSumTracksPixel		   = -1;
   }
 
   // tag related
@@ -152,6 +184,7 @@ class DisplacedJet {
   
   // angular information relative to ejt
   void addTrackAngles(const reco::TrackCollection tracks, const edm::EventSetup& iSetup);
+  void addHitInfo(const reco::TrackCollection tracks, const edm::EventSetup& iSetup);
 
   // generator matching
   bool doGenCaloJetMatching(const float& ptMatch, const float& dRMatch, const reco::GenParticleCollection& genParticles);
@@ -218,6 +251,38 @@ class DisplacedJet {
   float varianceIPLogSig2D, varianceIPLogSig3D;  
   float varianceIPLog2D, varianceIPLog3D;
   float varianceJetDist, varianceJetDistSig;
+
+  /////////////HIT RELATED////////////////
+
+  float jetMedianInnerHitPos;
+  float jetMedianOuterHitPos;
+  float jetMeanInnerHitPos;
+  float jetMeanOuterHitPos;
+  float jetVarianceInnerHitPos;
+  float jetVarianceOuterHitPos;
+  // distributions from inside the pixel layers
+  float jetMedianInnerHitPosInPixel;
+  float jetMedianOuterHitPosInPixel;
+  float jetMeanInnerHitPosInPixel;
+  float jetMeanOuterHitPosInPixel;
+  float jetVarianceInnerHitPosInPixel;
+  float jetVarianceOuterHitPosInPixel;
+  // distributions outside the pixel layers
+  float jetMedianInnerHitPosOutPixel;
+  float jetMedianOuterHitPosOutPixel;
+  float jetMeanInnerHitPosOutPixel;
+  float jetMeanOuterHitPosOutPixel;
+  float jetVarianceInnerHitPosOutPixel;
+  float jetVarianceOuterHitPosOutPixel;
+  // fraction valid hits
+  float jetMedianTrackValidHitFrac;
+  float jetMeanTrackValidHitFrac;
+  float jetVarianceTrackValidHitFrac ;
+  // track counting
+  float jetNTracksNoPixel;
+  float jetNTracksPixel;
+  float jetPtSumTracksNoPixel;
+  float jetPtSumTracksPixel;
 
   //////////////VERTEX VARIABLES//////////////
 
@@ -537,9 +602,9 @@ void DisplacedJet::addVertexTrackInfo(const reco::TrackRefVector & trackRefs) {
     float pt = (*trackIter)->pt();
     if(pt > 1.0) {
       nTracks++;
-      sumTrackPt += pt
+      sumTrackPt += pt;
+      vertexMatchedTracks.push_back(**trackIter);
     }
-    vertexMatchedTracks.push_back(**trackIter);
   }    
 }
 
@@ -592,6 +657,118 @@ void DisplacedJet::addIVFCollection(const reco::VertexCollection & vertices, con
   // matching score
   ivfMatchingScore = bestVertexScore;
 }
+// compute variables related to the track angles and the calo jet 
+void DisplacedJet::addHitInfo(const reco::TrackCollection tracks, const edm::EventSetup& iSetup) {
+  reco::TrackCollection::const_iterator tIter = tracks.begin();
+  // iterative of the tracks
+  std::vector<float> fractionValidHits;
+  std::vector<float> innerHitPos;
+  std::vector<float> outerHitPos;
+  std::vector<float> innerHitPosInPixel;
+  std::vector<float> innerHitPosOutPixel;
+  std::vector<float> outerHitPosInPixel;
+  std::vector<float> outerHitPosOutPixel;
+
+  jetNTracksNoPixel	= 0;
+  jetNTracksPixel	= 0;
+  jetPtSumTracksNoPixel = 0;
+  jetPtSumTracksPixel   = 0;
+
+  for(; tIter != tracks.end(); ++tIter) {
+    static GetTrackTrajInfo getTrackTrajInfo;
+    const reco::Track & const_track = *tIter;
+    std::vector<GetTrackTrajInfo::Result> trajInfo = getTrackTrajInfo.analyze(iSetup, const_track);
+
+    float trackNValidHits = 0;
+    std::vector<GetTrackTrajInfo::Result>::const_iterator ti = trajInfo.begin();
+    for( ; ti != trajInfo.end(); ++ti) {
+      if ((*ti).valid) trackNValidHits += 1;
+    }
+    
+    fractionValidHits.push_back(float(trackNValidHits) / float(trajInfo.size()));   
+
+    // check the inner and outer hit
+    if (trajInfo[0].valid && trajInfo.back().valid) {
+
+      // get the detector layer
+      const DetLayer &  detLayerInner	 = *(trajInfo[0].detLayer); 
+      const DetLayer &  detLayerOuter	 = *(trajInfo.back().detLayer); 
+      
+      //const bool	isBarInner	 = detLayerInner.isBarrel();
+      //const bool	isBarOuter	 = detLayerOuter.isBarrel();
+      GeomDetEnumerators::SubDetector subDetLayerInner = detLayerInner.subDetector();
+      GeomDetEnumerators::SubDetector subDetLayerOuter = detLayerOuter.subDetector();
+      
+      // get the state on the surface
+      const TrajectoryStateOnSurface&   tsosInnerHit  = trajInfo[0].detTSOS;
+      const TrajectoryStateOnSurface&   tsosOuterHit  = trajInfo.back().detTSOS;
+      // position of the hit
+      const GlobalPoint &               innerPos      = tsosInnerHit.globalPosition();
+      const GlobalPoint &               outerPos      = tsosOuterHit.globalPosition();
+
+      float pt = tIter->pt(); 
+
+      TVector3 outerv3( outerPos.x(), outerPos.y(), outerPos.z());
+      TVector3 outerv2( outerPos.x(), outerPos.y(), 0);
+      TVector3 ipv3( tIter->vx(), tIter->vy(), tIter->vz());
+      TVector3 ipv2( tIter->vx(), tIter->vy(), 0);
+      TVector3 innerv3( innerPos.x(), innerPos.y(), innerPos.z());
+      TVector3 innerv2( innerPos.x(), innerPos.y(), 0);            
+
+      float ri = innerv2.Mag();
+      float ro = outerv2.Mag();
+      
+      innerHitPos.push_back(ri);
+      outerHitPos.push_back(ro);
+
+      bool hasNoPixelInner = subDetLayerInner!=GeomDetEnumerators::PixelBarrel && subDetLayerInner!=GeomDetEnumerators::PixelEndcap;
+      bool hasNoPixelOuter = subDetLayerOuter!=GeomDetEnumerators::PixelBarrel && subDetLayerOuter!=GeomDetEnumerators::PixelEndcap;
+
+      // if the inner hit is in the pixel layers
+      if (!hasNoPixelInner) {
+	innerHitPosInPixel.push_back(ri);
+	jetNTracksPixel	    += 1;	
+	jetPtSumTracksPixel += pt;
+      }
+      else {
+	innerHitPosOutPixel.push_back(ri);
+	jetNTracksNoPixel     += 1;
+	jetPtSumTracksNoPixel += pt;	  
+      }
+
+      if (!hasNoPixelOuter) outerHitPosInPixel.push_back(ro);
+      else outerHitPosOutPixel.push_back(ro);     
+    } // end hits valid
+  } //end loop filling vectors of hits
+
+  // fill the jet parameters
+  // overall distribution
+  jetMedianInnerHitPos		 = getJetMedian(innerHitPos, false); 
+  jetMedianOuterHitPos		 = getJetMedian(outerHitPos, false);
+  jetMeanInnerHitPos		 = getJetMean(innerHitPos, false);
+  jetMeanOuterHitPos		 = getJetMean(outerHitPos, false);
+  jetVarianceInnerHitPos	 = getJetVariance(innerHitPos, false);
+  jetVarianceOuterHitPos	 = getJetVariance(outerHitPos, false);
+  // distributions from inside the pixel layers
+  jetMedianInnerHitPosInPixel	 = getJetMedian(innerHitPosInPixel, false);
+  jetMedianOuterHitPosInPixel	 = getJetMedian(outerHitPosInPixel, false);
+  jetMeanInnerHitPosInPixel	 = getJetMean(innerHitPosInPixel, false);
+  jetMeanOuterHitPosInPixel	 = getJetMean(outerHitPosInPixel, false);
+  jetVarianceInnerHitPosInPixel  = getJetVariance(innerHitPosInPixel, false);
+  jetVarianceOuterHitPosInPixel  = getJetVariance(outerHitPosInPixel, false);
+  // distributions outside the pixel layers
+  jetMedianInnerHitPosOutPixel   = getJetMedian(innerHitPosOutPixel, false);
+  jetMedianOuterHitPosOutPixel   = getJetMedian(outerHitPosOutPixel, false);
+  jetMeanInnerHitPosOutPixel	 = getJetMean(innerHitPosOutPixel, false);
+  jetMeanOuterHitPosOutPixel	 = getJetMean(outerHitPosOutPixel, false);
+  jetVarianceInnerHitPosOutPixel = getJetVariance(innerHitPosOutPixel, false);
+  jetVarianceOuterHitPosOutPixel = getJetVariance(outerHitPosOutPixel, false);
+  // fraction valid hits
+  jetMedianTrackValidHitFrac     = getJetMedian(fractionValidHits, false);
+  jetMeanTrackValidHitFrac	 = getJetMean(fractionValidHits,false);
+  jetVarianceTrackValidHitFrac   = getJetVariance(fractionValidHits,false);  
+}
+
 
 // compute variables related to the track angles and the calo jet 
 void DisplacedJet::addTrackAngles(const reco::TrackCollection tracks, const edm::EventSetup& iSetup) {
@@ -602,25 +779,13 @@ void DisplacedJet::addTrackAngles(const reco::TrackCollection tracks, const edm:
   float jdpx = jetDetP4.px(), jdpy = jetDetP4.py(), jdpz = jetDetP4.pz();
   
   // jet vectors 2d and 3d
-  TVector3 jetv3;
-  TVector3 jetv2;
-
-  jetv3.SetPtEtaPhi( caloPt, caloEta, caloPhi);
-  jetv2.SetPtEtaPhi( caloPt, 0, caloPhi);
-
-  /* std::cout << " " << std::endl; */
-  /* std::cout << "JET 3D " << jetv3.X() << " " << jetv3.Y() << " " << jetv3.Z() << std::endl; */
-  /* std::cout << "JET 2D " << jetv2.X() << " " << jetv2.Y() << std::endl; */
-  
-  TVector3 jetv3_xyz(jetv3.X(), jetv3.Y(), jetv3.Z());
-  TVector3 jetv2_xy(jetv2.X(), jetv2.Y(), 0);
-
+  TVector3 jetv3(jet.px(), jet.py(), jet.pz());
+  TVector3 jetv2(jet.px(), jet.py(), 0);
+  TVector3 jetv3_xyz(jet.px(), jet.py(), jet.pz());
+  TVector3 jetv2_xy(jet.px(), jet.py(), 0);
   // unit jet vectors
   TVector3 jetv3_unit = jetv3_xyz.Unit();
   TVector3 jetv2_unit = jetv2_xy.Unit();
-
-  /* std::cout << "JET UNIT 3D " << jetv3_unit.X() << " " << jetv3_unit.Y() << " " << jetv3_unit.Z() << std::endl; */
-  /* std::cout << "JET UNIT  2D " << jetv2_unit.X() << " " << jetv2_unit.Y() << std::endl; */
 
   // detector jet vectors 2d and 3d
   TVector3 jetdv3(jdpx, jdpy, jdpz);
@@ -629,7 +794,7 @@ void DisplacedJet::addTrackAngles(const reco::TrackCollection tracks, const edm:
   TVector3 jetdv3_unit = jetdv3.Unit();
   TVector3 jetdv2_unit = jetdv2.Unit();
 
-
+  //  std::cout << "Jet px = " << jet.px() << " py = " << jet.py() << std::endl;
   // pt weighted
   ptSumCosTheta2D	  = 0, ptSumCosTheta3D = 0;
   ptSumCosThetaDet2D	  = 0, ptSumCosThetaDet3D = 0;
@@ -644,38 +809,55 @@ void DisplacedJet::addTrackAngles(const reco::TrackCollection tracks, const edm:
 
   // find the angle between the jet momentum and track momentum
   float sumTrackPtValid = 0;
+  // Create the transient track builder
+  edm::ESHandle<TransientTrackBuilder> builder;
+  iSetup.get<TransientTrackRecord>().get("TransientTrackBuilder", builder);
   for(; tIter != tracks.end(); ++tIter) {
-
     
-    //track direction based on eta phi
-    //TVector3 trackDir3d, trackDir2d;
-    //trackDir3D.SetPtEtaPhi( trIter->pt(), trIter->eta(), trIter->phi());
-    //trackDir2D.SetPtEtaPhi(trackDir3d.X(), trackDir3D.Y())
-
+    // build the track momentum sum for the jet
     TVector3 trackMom3d(tIter->px(), tIter->py(), tIter->pz());
     TVector3 trackMom2d(tIter->px(), tIter->py(), 0);
-
     trackMomSumV3 += trackMom3d;
     trackMomSumV2 += trackMom2d;
-
-    // uses recotrack debug to approximate hit positions                                                                                                                   
     
+    // uses recotrack debug to approximate hit positions
     static GetTrackTrajInfo getTrackTrajInfo;
     const reco::Track & const_track = *tIter;
     std::vector<GetTrackTrajInfo::Result> trajInfo = getTrackTrajInfo.analyze(iSetup, const_track);
     if (trajInfo[0].valid && trajInfo.back().valid) {
+
+      // get the inner and outer hit of the track for valid hits
       const TrajectoryStateOnSurface&   tsosInnerHit = trajInfo[0].detTSOS;
-      const GlobalPoint &               innerPos     = tsosInnerHit.globalPosition();
-      //      const GlobalVector &              innerMom     = tsosInnerHit.globalMomentum();
       const TrajectoryStateOnSurface&   tsosOuterHit = trajInfo.back().detTSOS;
+      // parse the position from the tsos
+      const GlobalPoint &               innerPos     = tsosInnerHit.globalPosition();
       const GlobalPoint &               outerPos     = tsosOuterHit.globalPosition();
-      //      const GlobalVector &              outerMom     = tsosOuterHit.globalMomentum();
+      // const GlobalVector &              innerMom     = tsosInnerHit.globalMomentum();
+      // const GlobalVector &              outerMom     = tsosOuterHit.globalMomentum();
 
-      TVector3 outerv3( outerPos.x(), outerPos.y(), outerPos.z());
-      TVector3 outerv2( outerPos.x(), outerPos.y(), 0);
+      // build the transient track for manipulations
+      reco::TransientTrack transientTrack = builder->build(const_track);
+      // create the extraoplator using the transient track
+      //      TransverseImpactPointExtrapolator extrapolator(transientTrack.field());
+      // extrapolate to the closest point to the primary vertex
+      //      TrajectoryStateOnSurface tsosClosestToPV2D = extrapolator.extrapolate(transientTrack.impactPointState(), RecoVertex::convertPos(selPV.position()));
+      TrajectoryStateClosestToPoint tscpPV = transientTrack.trajectoryStateClosestToPoint(RecoVertex::convertPos(selPV.position()));
+      // get the position from the tsos
+      //      const GlobalPoint & closestToPV = tsosClosestToPV2D.globalPosition();
+      const GlobalPoint & closestToPV = tscpPV.position();
+      const GlobalVector & closestMom = tscpPV.momentum();
 
-      TVector3 ipv3( tIter->vx(), tIter->vy(), tIter->vz());
-      TVector3 ipv2( tIter->vx(), tIter->vy(), 0);
+      TVector3 innerMomv3( closestMom.x(), closestMom.y(), closestMom.z());
+      TVector3 innerMomv2( closestMom.x(), closestMom.y(), 0);
+
+      
+      TVector3 outerv3( outerPos.x() - selPV.x(), outerPos.y() - selPV.y(), outerPos.z() - selPV.z());
+      TVector3 outerv2( outerPos.x() - selPV.x(), outerPos.y() - selPV.y(), 0);
+
+      TVector3 ipv3( closestToPV.x() - selPV.x(), closestToPV.y() - selPV.y(), closestToPV.z() - selPV.z());
+      TVector3 ipv2( closestToPV.x() - selPV.x(), closestToPV.y() - selPV.y(), 0);
+
+      //      std::cout << "Closest to PV x = " << closestToPV.x() - selPV.x() << " y = " << closestToPV.y() - selPV.y() << " z = " <<closestToPV.y() - selPV.y() << std::endl;
 
       ipPosSumV3 += ipv3;
       ipPosSumV2 += ipv2;
@@ -705,9 +887,8 @@ void DisplacedJet::addTrackAngles(const reco::TrackCollection tracks, const edm:
       /* std::cout << "TRACK UNIT  2D " << trkv2_unit.X() << " " << trkv2_unit.Y() << std::endl; */
     
       // track cosine with jet unit
-      float   cosTheta3D	  = outerv3.Unit().Cross((outerv3 - ipv3).Unit()).Mag(); //trkv3_unit * jetv3_unit;
-      float   cosTheta2D	  = outerv2.Unit().Cross((outerv2 - ipv2).Unit()).Mag(); //trkv2_unit * jetv2_unit;
-
+      float   cosTheta3D	  = (jetv3.Unit().Cross((innerMomv3).Unit())).Mag();//outerv3.Unit().Cross((outerv3 - ipv3).Unit()).Mag(); //trkv3_unit * jetv3_unit;
+      float   cosTheta2D	  = (jetv2.Unit().Cross((innerMomv2).Unit())).Mag();//outerv2.Unit().Cross((outerv2 - ipv2).Unit()).Mag(); //trkv2_unit * jetv2_unit;
       //      cosTheta3D = cosTheta3D ? log(cosTheta3D) : -20;
       //      cosTheta2D = cosTheta2D ? log(cosTheta2D) : -20;
 
@@ -716,8 +897,8 @@ void DisplacedJet::addTrackAngles(const reco::TrackCollection tracks, const edm:
       /* std::cout << " -----------------" << std::endl; */
 
       // track cosine with jet unit detecotr
-      float   cosThetaDet3D = 1 - (outerv3.Unit() * (ipv3).Unit()); //trkv3_unit * jetdv3_unit;
-      float   cosThetaDet2D = 1 - (outerv2.Unit() * (ipv2).Unit()); //trkv2_unit * jetdv2_unit;
+      float   cosThetaDet3D = 0; //trkv3_unit * jetdv3_unit;
+      float   cosThetaDet2D = 0; //trkv2_unit * jetdv2_unit;
 
       cosTheta2DVector.push_back(cosTheta2D);
       cosTheta3DVector.push_back(cosTheta3D);
@@ -753,8 +934,7 @@ void DisplacedJet::addTrackAngles(const reco::TrackCollection tracks, const edm:
     medianCosTheta2D	  = getJetMedian(cosTheta2DVector, true);
     medianCosTheta3D	  = getJetMedian(cosTheta3DVector, true);
     medianCosThetaDet2D	  = getJetMedian(cosThetaDet2DVector, true);
-    medianCosThetaDet3D	  = getJetMedian(cosThetaDet3DVector, true);
-    
+    medianCosThetaDet3D	  = getJetMedian(cosThetaDet3DVector, true);    
   }
 
   // track sum
@@ -763,8 +943,10 @@ void DisplacedJet::addTrackAngles(const reco::TrackCollection tracks, const edm:
   trackSumMomMag2D	 = trackMomSumV2.Mag();
   trackSumMomMag3D	 = trackMomSumV3.Mag();
   // vector sum of IP
-  ipPosSumMag3D		 = ipPosSumV3.Mag();
-  ipPosSumMag2D		 = ipPosSumV2.Mag();
+  //std::cout << "Sin(theta,jet,ipVectorSum) " << (jetv2_unit.Cross(ipPosSumV2.Unit())).Mag() << " |ipVectorSum| " << ipPosSumV2.Mag() << std::endl;
+
+  ipPosSumMag3D		 = (jetv3_unit.Cross(ipPosSumV3.Unit())).Mag();
+  ipPosSumMag2D		 = (jetv2_unit.Cross(ipPosSumV2.Unit())).Mag();
   // normalize by the sum pt
   ptSumCosTheta2D	/= sumTrackPtValid ? sumTrackPtValid : 1;
   ptSumCosTheta3D	/= sumTrackPtValid ? sumTrackPtValid : 1;
@@ -906,8 +1088,8 @@ void DisplacedJet::addIPTagInfo(const reco::TrackIPTagInfo & ipTagInfo) {
   meanIPLog3D      = getJetMean(ipLog3dVector, true);	//signed value matters  
 
   // median
-  medianIPSig2D	   = getJetMedian(ip2dsVector, false);
-  medianIPSig3D	   = getJetMedian(ip3dsVector, false);
+  medianIPSig2D	   = getJetMedian(ip2dsVector, true);
+  medianIPSig3D	   = getJetMedian(ip3dsVector, true);
   medianIP2D	   = getJetMedian(ip2dVector, false);
   medianIP3D	   = getJetMedian(ip3dVector, false);
   medianJetDist	   = getJetMedian(jetAxisDistVector, false);

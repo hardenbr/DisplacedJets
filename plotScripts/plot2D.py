@@ -59,6 +59,11 @@ parser.add_option( "--genmatch", dest="genmatch",
 		                    action="store_true", default=False)
 
 
+parser.add_option( "--square", dest="square",
+		                    help="use a square canvas",
+		                    action="store_true" )
+
+
 parser.add_option( "--ymin", dest="ymin",
 		                    help="minimum y for variable",
 		                    action="store",type="float",default=0)
@@ -95,6 +100,9 @@ parser.add_option( "--nybins", dest="nxbins",
 parser.add_option("-l", "--lumi", dest="lumi",
 		                    help="integrated luminosity for normalization",
 		                    action="store",type="float", default = 1.0)
+
+
+
 
 (options, args) = parser.parse_args()
 
@@ -209,7 +217,11 @@ for key in stacks.keys():
 
 output.cd()
 #build the canvas
-canvas = rt.TCanvas("plot","plot", 1024, 768)
+canvas = None
+if options.square:
+    canvas = rt.TCanvas("plot","plot", 1024, 1024)
+else:
+    canvas = rt.TCanvas("plot","plot", 1024, 768)
 canvas.cd()
 
 draw_first = None

@@ -23,6 +23,7 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   void dumpIPInfo(DisplacedJetEvent&);
   void dumpIVFInfo(DisplacedJetEvent&);
   void dumpDJTags(DisplacedJetEvent&);
+  void dumpV0Info(DisplacedJetEvent&);
   void dumpPVInfo(DisplacedJetEvent &, const reco::VertexCollection &);
   //tree dumping track quantities
   void dumpTrackInfo(DisplacedJetEvent&, const reco::TrackCollection &, const int & collectionID, const edm::EventSetup & iSetup);
@@ -47,6 +48,7 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   bool   dumpGeneralTracks_;
   // keep trees
   bool   writeJetTree_;
+  bool   writeV0Tree_;
   bool   writeTrackTree_;
   bool   writeEventTree_;
   bool   writeGenTree_;
@@ -96,6 +98,7 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   //output related
   TTree*    trackTree_;   
   TTree*    jetTree_;   
+  TTree*    v0Tree_;   
   TTree*    vertexTree_;
   TTree*    genTree_;
   TTree*    eventTree_; 
@@ -106,6 +109,7 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   const float		VERTEX_MATCH_METRIC   = 0.05;
   static const Int_t	MAX_TRIGGERS	      = 1000;
   static const Int_t	MAX_TRACKS	      = 5000;
+  static const Int_t	MAX_V0	              = 5000;
   static const Int_t	MAX_JETS	      = 40;
   static const Int_t	MAX_VTX		      = 100;
   static const Int_t	MAX_CAT		      = 100; // max number of tagging categories
@@ -439,6 +443,58 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   Int_t mediumTightTag[MAX_JETS];
   Int_t longTightTag[MAX_JETS];
   Int_t anyTightTag[MAX_JETS];
+
+  //////////////////////// V0 CANDIDATES ///////////
+  //jet info
+  Float_t v0JetEta[MAX_V0];
+  Float_t v0JetPhi[MAX_V0];
+  Float_t v0JetPt[MAX_V0];
+  Float_t v0JetNV0[MAX_V0];
+  Float_t v0JetNV0AboveP1[MAX_V0];
+  Float_t v0JetMedianIPLogSig2D[MAX_V0];
+  Float_t v0JetAlphaMax[MAX_V0];
+  // info
+  Int_t  nV0;
+  Int_t  v0NTracks[MAX_V0];
+  Float_t v0isOS[MAX_V0];
+  Float_t v0Chi2[MAX_V0];
+  Float_t v0NChi2[MAX_V0];
+  Int_t   v0IsFake[MAX_V0];
+  // kinematics
+  Float_t v0Mass[MAX_V0];
+  Float_t v0LambdaMass[MAX_V0];
+  Float_t v0Pt[MAX_V0];
+  Float_t v0Px[MAX_V0];
+  Float_t v0Py[MAX_V0];
+  Float_t v0Pz[MAX_V0];
+  // opening angle
+  Float_t v0DR[MAX_V0];
+  // positions
+  Float_t v0Eta[MAX_V0];
+  Float_t v0Phi[MAX_V0];
+  Float_t v0X[MAX_V0];
+  Float_t v0Y[MAX_V0];
+  Float_t v0Z[MAX_V0];
+  Float_t v0XError[MAX_V0];
+  Float_t v0YError[MAX_V0];
+  Float_t v0ZError[MAX_V0];
+  Float_t v0Lxy[MAX_V0];
+  Float_t v0Lxyz[MAX_V0];
+  Float_t v0LxySig[MAX_V0];
+  Float_t v0LxyzSig[MAX_V0];
+
+  ///////////////// NUCLEAR INTERACTIONS
+
+  Int_t jetOneTrackNuclearCount[MAX_JETS];
+  Int_t jetTwoTrackNuclearCount[MAX_JETS];
+  Int_t jetVertexNearBPIX1[MAX_JETS];
+  Int_t jetVertexNearBPIX2[MAX_JETS];
+  Int_t jetVertexNearBPIX3[MAX_JETS];
+  Int_t jetVertexNearBPIX[MAX_JETS];
+  Int_t jetTightNuclear[MAX_JETS];
+  Int_t jetLooseNuclear[MAX_JETS];  
+  Int_t jetNV0HitBehindVertex[MAX_JETS];
+  Int_t jetNV0NoHitBehindVertex[MAX_JETS];
 
   ///////////////////////////// IVF ///////////////////////
 

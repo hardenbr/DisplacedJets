@@ -444,6 +444,8 @@ void DisplacedJetEvent::mergeCaloIPTagInfo(const reco::TrackIPTagInfoCollection 
     // the track colleciton above can be retrieved and passed to track angles below
     djet.addHitInfo(djet.getVertexMatchedTracks(), iSetup);    
     djet.addTrackAngles(djet.getVertexMatchedTracks(), iSetup);    
+    // calculate the v0 candidates
+    djet.addV0Info(djet.getVertexMatchedTrackRefs(), iSetup);    
     // calculate alpha for the vertces
     djet.calcJetAlpha(djet.getVertexMatchedTracks(), primaryVertices);
   }

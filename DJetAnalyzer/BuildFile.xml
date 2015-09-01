@@ -9,4 +9,6 @@
 <use name="SimDataFormats/Vertex"/>
 <use name="RecoTracker/DebugTools"/>
 <use name="CommonTools/UtilAlgos"/>
+<use name="RecoVertex/AdaptiveVertexFinder"/>
+<use name="RecoVertex/AdaptiveVertexFit"/>
 <flags EDM_PLUGIN="1"/>

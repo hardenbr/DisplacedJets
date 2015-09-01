@@ -6,17 +6,17 @@ base                = '/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDI
 outputDir           = ""
 
 # output options (to be appended to the file name outputted)
-appendSignal        = "xx4j300mm"
+appendSignal        = "30mm"
 appendData          = ""
 appendBkg           = "qcd470_600"
 ############ FLAGS #############
-debugLevel          = 0
-reportEveryNEvents  = 10
-isSignalMC          = False
+debugLevel          = -1
+reportEveryNEvents  = 100
+isSignalMC          = True
 isMC                = True
 isData              = not isMC
 doedm               = False
-nevents             = 500
+nevents             = -1
 
 #-------------- globaltags
 #gtag               = "74X_HLT_mcRun2_asymptotic_fromSpring15DR_v0" #spring 15 25ns
@@ -28,7 +28,7 @@ gtag                = "74X_dataRun2_Prompt_v0"  #data
 #JSON               = 'json_DCSONLY_Run2015B.txt'
 JSON                = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-251883_13TeV_PromptReco_Collisions15_JSON.txt'
 #--------------trigger
-trigger_process     = ""
+trigger_process     = "HLT"
 
 #--------------analysis todos
 doEventPreSelection = False
@@ -38,6 +38,7 @@ doApplyTrigger      = False
 dumpGeneralTracks   = False
 # trees to write
 writeTrackTree      = True
+writeV0Tree         = True
 writeEventTree      = True
 writeJetTree        = True
 writeVertexTree     = True
@@ -58,7 +59,7 @@ dHTWorkingPoint     = 2
 input_file_list     = None
 #input_file_list    = '/SignalMCLists/740patch1/mx300_100mm_aod.list'
 #input_file_list    = '/SignalMCLists/740patch1/mx300_300mm_aod.list'
-#input_file_list    = '/SignalMCLists/740patch1/mx300_30mm_aod.list'
+input_file_list    = '/SignalMCLists/740patch1/mx300_30mm_aod.list'
 #input_file_list    = '/SignalMCLists/740patch1/mx600_30mm_aod.list'
 #input_file_list    = '/SignalMCLists/740patch1/mx100_30mm_aod.list'
 #input_file_list    = '/SignalMCLists/740patch1/mx300_1mm_aod.list'
@@ -84,7 +85,7 @@ input_file_list     = None
 
 # parse the input files to the file list
 myfilelist = cms.untracked.vstring()
-if input_file_list != None and isSignalMC:
+if input_file_list != None:
    list_from_input_list = open(base + input_file_list, "r") 
    lines = list_from_input_list.readlines()
    stripped_lines = map(lambda x: x.rstrip("\n"), lines)
@@ -105,9 +106,9 @@ if not isSignalMC and input_file_list == None and not isData:
 #   myfilelist.extend(['root://xrootd-cms.infn.it//store/mc/Fall13dr/QCD_Pt-470to600_Tune4C_13TeV_pythia8/AODSIM/castor_tsg_PU20bx25_POSTLS162_V2-v1/00000/005646AA-EB79-E311-A788-00304867924E.root'])
 #   myfilelist.extend(['root://xrootd-cms.infn.it//store/mc/Phys14DR/QCD_Pt-470to600_Tune4C_13TeV_pythia8/AODSIM/AVE20BX25_tsg_castor_PHYS14_25_V3-v1/00000/1E538A06-988E-E411-8F36-0025905B8562.root']
    myfilelist.extend(['/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/00000/00D76158-CCFC-E411-89EA-AC853DA06B56.root'])
-if isData:
-#   myfilelist.extend(['/store/data/Run2015B/SingleMuon/AOD/PromptReco-v1/000/251/162/00000/C2C5E84D-4227-E511-8878-02163E01280D.root'])
-   myfilelist.extend(['file:pickevents.root'])
+if isData and input_file_list == None:
+   myfilelist.extend(['/store/data/Run2015B/SingleMuon/AOD/PromptReco-v1/000/251/162/00000/C2C5E84D-4227-E511-8878-02163E01280D.root'])
+#   myfilelist.extend(['file:pickevents.root'])
 
 process = cms.Process("ANA")
 
@@ -203,6 +204,7 @@ process.analyzerCALO.dumpGeneralTracks      = cms.untracked.bool(dumpGeneralTrac
 process.analyzerCALO.writeTrackTree  = cms.untracked.bool(writeTrackTree)
 process.analyzerCALO.writeEventTree  = cms.untracked.bool(writeEventTree)
 process.analyzerCALO.writeJetTree    = cms.untracked.bool(writeJetTree)
+process.analyzerCALO.writeV0Tree    = cms.untracked.bool(writeV0Tree)
 process.analyzerCALO.writeVertexTree = cms.untracked.bool(writeVertexTree)
 process.analyzerCALO.writeGenTree    = cms.untracked.bool(writeGenTree)
 

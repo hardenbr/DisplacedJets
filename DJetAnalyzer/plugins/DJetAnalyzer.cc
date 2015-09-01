@@ -70,10 +70,15 @@
 #include "TrackingTools/PatternTools/interface/TransverseImpactPointExtrapolator.h"
 #include "RecoTracker/DebugTools/interface/GetTrackTrajInfo.h"
 #include "RecoVertex/VertexPrimitives/interface/ConvertToFromReco.h"
+#include  "DataFormats/VertexReco/interface/Vertex.h"
 
 //vertex
 #include "DataFormats/VertexReco/interface/Vertex.h"
 #include "DataFormats/BTauReco/interface/VertexTypes.h"
+#include "RecoVertex/AdaptiveVertexFit/interface/AdaptiveVertexFitter.h"
+#include "RecoVertex/AdaptiveVertexFit/interface/AdaptiveVertexFitter.h"
+#include "RecoVertex/KalmanVertexFit/interface/KalmanVertexFitter.h"
+//#include "RecoVertex/AdaptiveVertexFinder/interface/AdaptiveVertexReconstructor.h"
 
 // sim information
 #include "SimDataFormats/Vertex/interface/SimVertex.h"
@@ -134,6 +139,7 @@ DJetAnalyzer::DJetAnalyzer(const edm::ParameterSet& iConfig)
   applyJetPreSelection_	  = iConfig.getUntrackedParameter<bool>("applyJetPreSelection");
   dumpGeneralTracks_      = iConfig.getUntrackedParameter<bool>("dumpGeneralTracks");
   writeJetTree_		  = iConfig.getUntrackedParameter<bool>("writeJetTree");
+  writeV0Tree_		  = iConfig.getUntrackedParameter<bool>("writeV0Tree");
   writeTrackTree_	  = iConfig.getUntrackedParameter<bool>("writeTrackTree");
   writeEventTree_	  = iConfig.getUntrackedParameter<bool>("writeEventTree");
   writeGenTree_		  = iConfig.getUntrackedParameter<bool>("writeEventTree");
@@ -412,6 +418,7 @@ void  DJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   dumpIVFInfo(djEvent);  
   dumpSVTagInfo(djEvent);
   dumpDJTags(djEvent);
+  dumpV0Info(djEvent);
 
   // dump the gen particle information
   if(isMC_ && doGenMatch_) dumpGenInfo(genCollection);
@@ -429,6 +436,8 @@ void  DJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   if(writeTrackTree_) trackTree_->Fill();
   if(debug > 1) std::cout << "[DEBUG] Fill Jet Tree" << std::endl;
   if(writeJetTree_) jetTree_->Fill();
+  if(debug > 1) std::cout << "[DEBUG] Fill V0 Tree" << std::endl; 
+  if(writeV0Tree_) v0Tree_->Fill();
   if(debug > 1) std::cout << "[DEBUG] Fill VTX Tree" << std::endl; 
   if(writeVertexTree_) vertexTree_->Fill();
   if(debug > 1) std::cout << "[DEBUG] Fill GEN Tree" << std::endl;
@@ -444,6 +453,7 @@ void DJetAnalyzer::beginJob()
   outputFile_ = new TFile(outputFileName_.c_str(), "RECREATE");
   trackTree_  = new TTree(trackTreeName_.c_str(), "track, vertex, jet index tree");
   jetTree_    = new TTree(jetTreeName_.c_str(), "jet indexed tree");
+  v0Tree_    = new TTree("v0", "jet indexed tree");
   vertexTree_ = new TTree(vertexTreeName_.c_str(), "vertex indexed tree");
   genTree_    = new TTree(genTreeName_.c_str(), "Gen Particle Info tree");
   eventTree_  = new TTree("eventInfo", "Event Information Tree");
@@ -606,7 +616,7 @@ void DJetAnalyzer::beginJob()
   jetTree_->Branch("run", &run, "run/I");
   jetTree_->Branch("lumi", &lumi, "lumi/I");
   jetTree_->Branch("event", &event, "event/I");
-  
+
   // trigger Related
   jetTree_->Branch("nTrig", &nTrig, "nTrig/I");
   //jetTree_->Branch("triggerNames", &triggerNames);
@@ -888,6 +898,94 @@ void DJetAnalyzer::beginJob()
 
   jetTree_->Branch("ipPosSumMag3D", &ipPosSumMag3D,"ipPosSumMag3D[nCaloJets]/F");
   jetTree_->Branch("ipPosSumMag2D", &ipPosSumMag2D,"ipPosSumMag2D[nCaloJets]/F");
+
+  ///////////////////// NUCLEAR INTERACITON BASED //////////////////////////
+
+  jetTree_->Branch("jetOneTrackNuclearCount", &jetOneTrackNuclearCount,"jetOneTrackNuclearCount[nCaloJets]/I");
+  jetTree_->Branch("jetTwoTrackNuclearCount", &jetTwoTrackNuclearCount,"jetTwoTrackNuclearCount[nCaloJets]/I");
+  jetTree_->Branch("jetVertexNearBPIX1", &jetVertexNearBPIX1,"jetVertexNearBPIX1[nCaloJets]/I");
+  jetTree_->Branch("jetVertexNearBPIX2", &jetVertexNearBPIX2,"jetVertexNearBPIX2[nCaloJets]/I");
+  jetTree_->Branch("jetVertexNearBPIX3", &jetVertexNearBPIX3,"jetVertexNearBPIX3[nCaloJets]/I");
+  jetTree_->Branch("jetVertexNearBPIX", &jetVertexNearBPIX,"jetVertexNearBPIX[nCaloJets]/I");
+  jetTree_->Branch("jetTightNuclear", &jetTightNuclear,"jetTightNuclear[nCaloJets]/I");
+  jetTree_->Branch("jetLooseNuclear", &jetLooseNuclear,"jetLooseNuclear[nCaloJets]/I");
+  jetTree_->Branch("jetNV0HitBehindVertex", &jetNV0HitBehindVertex,"jetNV0HitBehindVertex[nCaloJets]/I");
+  jetTree_->Branch("jetNV0NoHitBehindVertex", &jetNV0NoHitBehindVertex,"jetNV0NoHitBehindVertex[nCaloJets]/I");
+
+  ///////////  ///////////  ///////////  ///////////  ///////////  ///////////  ////
+  //////////////////////////////// V0 Candidate QUANITIES ////////////////////////
+  ///////////  ///////////  ///////////  ///////////  ///////////  /////////// /////
+  //////// Everything is either a flat number or indexed by nV0 //////////////
+
+  //jet quantities
+
+  // global book keeping
+  v0Tree_->Branch("run", &run, "run/I");
+  v0Tree_->Branch("lumi", &lumi, "lumi/I");
+  v0Tree_->Branch("event", &event, "event/I");
+  v0Tree_->Branch("evNum", &evNum, "evNum/I");  
+  // trigger 
+  v0Tree_->Branch("nTrig", &nTrig, "nTrig/I");
+  v0Tree_->Branch("passDisplacedOR5e33", &passDisplacedOR5e33, "passDisplacedOR5e33/I");
+  v0Tree_->Branch("passDisplacedOR14e34", &passDisplacedOR14e34, "passDisplacedOR14e34/I");
+  v0Tree_->Branch("passHTControl", &passHTControl, "passHTControl/I");
+  v0Tree_->Branch("passHT200", &passHT200, "passHT200/I");
+  v0Tree_->Branch("passHT250", &passHT250, "passHT250/I");
+  v0Tree_->Branch("passHT300", &passHT300, "passHT300/I");
+  v0Tree_->Branch("passHT350", &passHT350, "passHT350/I");
+  v0Tree_->Branch("passHT400", &passHT400, "passHT400/I");
+  v0Tree_->Branch("passDisplaced350_40", &passDisplaced350_40, "passDisplaced350_40/I");
+  v0Tree_->Branch("passDisplaced500_40", &passDisplaced500_40, "passDisplaced500_40/I");
+  v0Tree_->Branch("passDisplaced550_40", &passDisplaced550_40, "passDisplaced550_40/I");
+  v0Tree_->Branch("passBigOR", &passBigOR, "passBigOR/I");
+  v0Tree_->Branch("passHT800", &passHT800, "passHT800/I");
+  v0Tree_->Branch("passVBFHadronic", &passVBFHadronic, "passVBFHadronic/I");
+  v0Tree_->Branch("passVBFDispTrack", &passVBFDispTrack, "passVBFDispTrack/I");
+  v0Tree_->Branch("passVBFTriple", &passVBFTriple, "passVBFTriple/I");
+  v0Tree_->Branch("passPFMET170", &passPFMET170, "passPFMET170/I");
+  v0Tree_->Branch("passPFMET170NC", &passPFMET170NC, "passPFMET170NC/I");
+  v0Tree_->Branch("passMu20", &passMu20, "passMu20/I");
+
+  // jet tree
+  v0Tree_->Branch("nCaloJets", &nCaloJets, "nCaloJets/I");
+  v0Tree_->Branch("nV0", &nV0, "nV0/I");
+  v0Tree_->Branch("v0JetEta", &v0JetEta,"v0JetEta[nV0]/F");
+  v0Tree_->Branch("v0JetPhi", &v0JetPhi,"v0JetPhi[nV0]/F");
+  v0Tree_->Branch("v0JetPt",  &v0JetPt,"v0JetPt[nV0]/F");
+  v0Tree_->Branch("v0JetMedianIPLogSig2D", &v0JetMedianIPLogSig2D,"v0JetMedianIPLogSig2D[nV0]/F");
+  v0Tree_->Branch("v0JetAlphaMax",&v0JetAlphaMax, "v0JetAlphaMax[nV0]/F");
+  v0Tree_->Branch("v0JetNV0",&v0JetNV0, "v0JetNV0[nV0]/F");
+  v0Tree_->Branch("v0JetNV0AboveP1",&v0JetNV0AboveP1, "v0JetNV0AboveP1[nV0]/F");
+  
+  // info
+  v0Tree_->Branch("v0NTracks",&v0NTracks, "v0NTracks[nV0]/I");
+  v0Tree_->Branch("v0isOS",&v0isOS, "v0isOS[nV0]/I");
+  v0Tree_->Branch("v0Chi2",&v0Chi2,"v0Chi2[nV0]/F");
+  v0Tree_->Branch("v0NChi2",&v0NChi2 , "v0NChi2[nV0]/F");
+  v0Tree_->Branch("v0IsFake",&v0IsFake , "v0IsFake[nV0]/F");
+  // kinematics
+  v0Tree_->Branch("v0LambdaMass", &v0LambdaMass , "v0LambdaMass[nV0]/F");
+  v0Tree_->Branch("v0Mass",&v0Mass , "v0Mass[nV0]/F");
+  v0Tree_->Branch("v0Pt",&v0Pt , "v0Pt[nV0]/F");
+  v0Tree_->Branch("v0Px",&v0Px , "v0Px[nV0]/F");
+  v0Tree_->Branch("v0Py",&v0Py , "v0Py[nV0]/F");
+  v0Tree_->Branch("v0Pz",&v0Pz , "v0Pz[nV0]/F");
+  // opening angle
+  v0Tree_->Branch("v0DR", &v0DR , "v0DR[nV0]/F");
+  // positions
+  v0Tree_->Branch("v0Eta", &v0Eta , "v0Eta[nV0]/F");
+  v0Tree_->Branch("v0Phi",&v0Phi , "v0Phi[nV0]/F");
+  v0Tree_->Branch("v0X",&v0X , "v0X[nV0]/F");
+  v0Tree_->Branch("v0Y",&v0Y , "v0Y[nV0]/F");
+  v0Tree_->Branch("v0Z",&v0Z , "v0Z[nV0]/F");
+  v0Tree_->Branch("v0XError",&v0XError , "v0XError[nV0]/F");
+  v0Tree_->Branch("v0YError",&v0YError , "v0YError[nV0]/F");
+  v0Tree_->Branch("v0ZError",&v0ZError , "v0ZError[nV0]/F");
+  v0Tree_->Branch("v0Lxy",&v0Lxy , "v0Lxy[nV0]/F");
+  v0Tree_->Branch("v0Lxyz",&v0Lxyz , "v0Lxyz[nV0]/F");
+  v0Tree_->Branch("v0LxySig",&v0LxySig , "v0LxySig[nV0]/F");
+  v0Tree_->Branch("v0LxyzSig",&v0LxyzSig , "v0LxyzSig[nV0]/F");
+
 
   ///////////  ///////////  ///////////  ///////////  ///////////  ///////////  ////
   //////////////////////////////// TRACK TREE QUANITIES ////////////////////////////
@@ -1362,6 +1460,7 @@ void DJetAnalyzer::endJob()
   runStatTree_->Write();
   if(writeJetTree_) jetTree_->Write();
   if(writeTrackTree_) trackTree_->Write();
+  if(writeV0Tree_) v0Tree_->Write();
   if(writeEventTree_) eventTree_->Write();
   if(writeGenTree_ || isMC_ ) genTree_->Write(); 
   if(writeVertexTree_) vertexTree_->Write(); 
@@ -1967,6 +2066,147 @@ void DJetAnalyzer::dumpGenInfo(const reco::GenParticleCollection & gen) {
     }
 
     genPartN++;    
+  }
+}
+
+void DJetAnalyzer::dumpV0Info(DisplacedJetEvent & djEvent) { 
+  if(debug > 1 ) std::cout << "[DEBUG] V0 INFO DUMPING" << std::endl;
+
+  nV0 = 0;
+  // fill the pass tags for the jet tree
+  const DisplacedJetCollection djetCollection = djEvent.getDisplacedJets();
+  DisplacedJetCollection::const_iterator djet = djetCollection.begin();
+  // loop over each jet
+  int jj = 0; 
+  for(; djet != djetCollection.end(); ++djet, ++jj) {        
+    /////////////////JET DUMP NUCLEAR INTERACTIONS////////////
+    jetOneTrackNuclearCount[jj] = djet->jetOneTrackNuclearCount;
+    jetTwoTrackNuclearCount[jj] = djet->jetTwoTrackNuclearCount;
+    jetVertexNearBPIX1[jj]	= djet->jetVertexNearBPIX1;
+    jetVertexNearBPIX2[jj]	= djet->jetVertexNearBPIX2;
+    jetVertexNearBPIX3[jj]	= djet->jetVertexNearBPIX3;
+    jetVertexNearBPIX[jj]	= djet->jetVertexNearBPIX;
+    jetTightNuclear[jj]		= djet->jetTightNuclear;
+    jetLooseNuclear[jj]		= djet->jetLooseNuclear;
+    jetNV0HitBehindVertex[jj]	= djet->jetNV0HitBehindVertex;
+    jetNV0NoHitBehindVertex[jj] = djet->jetNV0NoHitBehindVertex;
+
+    /////////////////VERTEX BASED CALCULATIONS////////////////
+    reco::VertexCollection::const_iterator vtx = djet->v0vtxVector.begin();    
+    reco::Vertex selPV = djet->selPV;
+    int nJetV0 = 0;
+    int nJetV0Above0p1 = 0;
+    // count vertex quantities
+    for(; vtx != djet->v0vtxVector.end(); ++vtx) {
+      if (vtx->nTracks() != 2) continue;
+      float x = vtx->x(), y = vtx->y(); //, z = vtx->z();
+      float dx = x - selPV.x() , dy = y - selPV.y();//, dz = z - selPV.z();
+      //float lxyz = std::sqrt(dx*dx + dy*dy + dz*dz);
+      float lxy = std::sqrt(dx*dx + dy*dy);
+      
+      nJetV0++;
+      if (lxy > 0.1) nJetV0Above0p1++;
+    }
+
+    // reset the iterator
+    vtx = djet->v0vtxVector.begin();
+    // loop over each vertex candidate in the jet
+    for(; vtx != djet->v0vtxVector.end(); ++vtx) {
+      if (vtx->nTracks() != 2) continue;
+      if (vtx->refittedTracks().size() < 2) continue;
+
+      //float lxyz = std::sqrt(dx*dx + dy*dy + dz*dz);
+      reco::Track track1 = vtx->refittedTracks()[0];
+      reco::Track track2 = vtx->refittedTracks()[1];
+
+      if(debug > 5 ) std::cout << "[DEBUG 5] V0 Filling Vertex" << std::endl;     
+      // build the positions and errors
+      float x = vtx->x(), y = vtx->y(), z = vtx->z();
+      float v0XE = vtx->xError(), v0YE = vtx->yError(), v0ZE = vtx->zError();
+      // errors related to PV
+      float pvxE = selPV.xError(), pvyE = selPV.yError(), pvzE = selPV.zError();
+      // combined error
+      float	xE = std::sqrt(v0XE * v0XE + pvxE * pvxE);
+      float	yE = std::sqrt(v0YE * v0YE + pvyE * pvyE);
+      float	zE = std::sqrt(v0ZE * v0ZE + pvzE * pvzE);
+      // difference in position
+      float dx = x - selPV.x() , dy = y - selPV.y(), dz = z - selPV.z();
+      float lxyz = std::sqrt(dx*dx + dy*dy + dz*dz);
+      Int_t sum_charge = (track1.charge() + track2.charge());
+
+      if(debug > 5 ) std::cout << "[DEBUG 5] Track Charge 1  Q= " << track1.charge() << " track 2 Q=" << track2.charge() << " sum " << sum_charge << std::endl;           
+      ROOT::Math::LorentzVector<ROOT::Math::PxPyPzM4D<double>> vec1;
+      ROOT::Math::LorentzVector<ROOT::Math::PxPyPzM4D<double>> vec2;
+
+      // the  pion Q = -1
+      vec1.SetPx(track1.px());
+      vec1.SetPy(track1.py());
+      vec1.SetPz(track1.pz());
+      // the proton Q = +1
+      vec2.SetPx(track2.px());
+      vec2.SetPy(track2.py());
+      vec2.SetPz(track2.pz());
+      
+      //calculate the lambda mass
+      if (track1.pt() > track2.pt() && sum_charge == 0 ){
+	vec1.SetM(0.938272); // proton mass
+	vec2.SetM(0.139570); // pion
+      }
+      else if (track1.pt() < track2.pt() && sum_charge == 0) {
+	vec1.SetM(0.139570); // pi 
+	vec2.SetM(0.938272); // proton 	
+      }	
+      else { 
+	vec1.SetM(0);
+	vec2.SetM(0);
+      }
+      math::XYZTLorentzVectorD sumLambda;
+      sumLambda+=vec1;
+      sumLambda+=vec2;
+            
+      // associated jet information
+      v0JetEta[nV0]		 = djet->caloEta;
+      v0JetPhi[nV0]		 = djet->caloPhi;
+      v0JetPt[nV0]		 = djet->caloPt;
+      v0JetMedianIPLogSig2D[nV0] = djet->medianIPLogSig2D;
+      v0JetAlphaMax[nV0]	 = djet->alphaMax / djet->sumTrackPt;
+      v0JetNV0[nV0]		 = nJetV0;
+      v0JetNV0AboveP1[nV0]       = nJetV0Above0p1;
+      // kinematics
+      v0isOS[nV0]		 = sum_charge;
+      v0Chi2[nV0]		 = vtx->chi2();
+      v0NChi2[nV0]		 = vtx->normalizedChi2();
+      v0IsFake[nV0]		 = vtx->isFake();
+      v0NTracks[nV0]		 = vtx->nTracks();
+      v0LambdaMass[nV0]		 = sumLambda.mass();
+      v0Mass[nV0]		 = vtx->p4().mass();
+      v0Pt[nV0]			 = vtx->p4().pt();
+      v0Px[nV0]			 = vtx->p4().px();
+      v0Py[nV0]			 = vtx->p4().py();
+      v0Pz[nV0]			 = vtx->p4().pz();
+      // opening angle
+      v0DR[nV0]                  = reco::deltaR(track1.eta(), track1.phi(), track2.eta(), track2.phi());
+      // positions      
+      v0Eta[nV0]		 = vtx->p4().eta();
+      v0Phi[nV0]		 = vtx->p4().Phi();
+      v0X[nV0]			 = x;
+      v0Y[nV0]			 = y;
+      v0Z[nV0]			 = z;
+      // erors
+      v0XError[nV0]		 = v0XE;
+      v0YError[nV0]		 = v0YE;
+      v0ZError[nV0]		 = v0ZE;
+      // positions
+      v0Lxy[nV0]		 = std::sqrt( dx * dx + dy * dy );
+      v0Lxyz[nV0]		 = lxyz;
+      // significances
+      v0LxySig[nV0]		 = std::sqrt( dx * dx + dy * dy ) / std::sqrt(xE * xE + yE * yE);
+      v0LxyzSig[nV0]		 = std::sqrt( dx * dx + dy * dy + dz * dz) / std::sqrt(xE * xE + yE * yE + zE * zE);
+      if(debug > 5 ) std::cout << "[DEBUG 5] V0 Mass" << vtx->p4().mass() << std::endl;     
+      //increment the counter
+      nV0++;
+
+    }
   }
 }
 

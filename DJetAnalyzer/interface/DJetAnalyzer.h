@@ -18,15 +18,15 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   void fillTriggerInfo(const edm::Event &  iEvent, const edm::TriggerResults & trigResults);
 
   // tree dumping displaced jet quantities
-  void dumpCaloInfo(DisplacedJetEvent&);
-  void dumpSVTagInfo(DisplacedJetEvent&);
-  void dumpIPInfo(DisplacedJetEvent&);
-  void dumpIVFInfo(DisplacedJetEvent&);
-  void dumpDJTags(DisplacedJetEvent&);
-  void dumpV0Info(DisplacedJetEvent&);
-  void dumpPVInfo(DisplacedJetEvent &, const reco::VertexCollection &);
+  void	dumpCaloInfo(DisplacedJetEvent&);
+  void	dumpSVTagInfo(DisplacedJetEvent&);
+  void	dumpIPInfo(DisplacedJetEvent&);
+  void	dumpIVFInfo(DisplacedJetEvent&);
+  void	dumpDJTags(DisplacedJetEvent&);
+  void	dumpV0Info(DisplacedJetEvent&);
+  void	dumpPVInfo(DisplacedJetEvent &, const reco::VertexCollection &);
   //tree dumping track quantities
-  void dumpTrackInfo(DisplacedJetEvent&, const reco::TrackCollection &, const int & collectionID, const edm::EventSetup & iSetup);
+  void	dumpTrackInfo(DisplacedJetEvent&, const reco::TrackCollection &, const int & collectionID, const edm::EventSetup& iSetup);
   
   virtual void beginJob() override;
   virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
@@ -109,7 +109,7 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   const float		VERTEX_MATCH_METRIC   = 0.05;
   static const Int_t	MAX_TRIGGERS	      = 1000;
   static const Int_t	MAX_TRACKS	      = 5000;
-  static const Int_t	MAX_V0	              = 5000;
+  static const Int_t	MAX_V0	              = 10000;
   static const Int_t	MAX_JETS	      = 40;
   static const Int_t	MAX_VTX		      = 100;
   static const Int_t	MAX_CAT		      = 100; // max number of tagging categories
@@ -463,12 +463,14 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   // kinematics
   Float_t v0Mass[MAX_V0];
   Float_t v0LambdaMass[MAX_V0];
+  Float_t v0LambdaMassNoRefit[MAX_V0];
   Float_t v0Pt[MAX_V0];
   Float_t v0Px[MAX_V0];
   Float_t v0Py[MAX_V0];
   Float_t v0Pz[MAX_V0];
   // opening angle
   Float_t v0DR[MAX_V0];
+  Float_t v0DRNoRefit[MAX_V0];
   // positions
   Float_t v0Eta[MAX_V0];
   Float_t v0Phi[MAX_V0];
@@ -482,6 +484,18 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   Float_t v0Lxyz[MAX_V0];
   Float_t v0LxySig[MAX_V0];
   Float_t v0LxyzSig[MAX_V0];
+  Float_t v0Track1Chi2[MAX_V0];
+  Float_t v0Track2Chi2[MAX_V0];
+  Float_t v0Track1Pt[MAX_V0];
+  Float_t v0Track2Pt[MAX_V0];
+  Float_t v0Track1NoRefitPt[MAX_V0];
+  Float_t v0Track2NoRefitPt[MAX_V0];
+  // dxy
+  Float_t v0Track1Dxy[MAX_V0];
+  Float_t v0Track2Dxy[MAX_V0];
+  Float_t v0Track1DxySig[MAX_V0];
+  Float_t v0Track2DxySig[MAX_V0];
+
 
   ///////////////// NUCLEAR INTERACTIONS
 
@@ -495,6 +509,16 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   Int_t jetLooseNuclear[MAX_JETS];  
   Int_t jetNV0HitBehindVertex[MAX_JETS];
   Int_t jetNV0NoHitBehindVertex[MAX_JETS];
+  Int_t jetNV0KShort[MAX_JETS];
+  Int_t jetV0HIndex[MAX_JETS];
+  Int_t jetV0ClusterSize[MAX_JETS];
+  Float_t jetV0ClusterLxy[MAX_JETS];
+  Float_t jetV0ClusterLxySig[MAX_JETS];
+  Float_t jetV0ClusterLxyz[MAX_JETS];
+  Float_t jetV0ClusterLxyzSig[MAX_JETS];
+  Float_t jetV0ClusterX[MAX_JETS];
+  Float_t jetV0ClusterY[MAX_JETS];
+  Float_t jetV0ClusterZ[MAX_JETS];
 
   ///////////////////////////// IVF ///////////////////////
 

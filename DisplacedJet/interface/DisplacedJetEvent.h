@@ -3,7 +3,76 @@ typedef std::vector<DisplacedJet>  DisplacedJetCollection;
 
 class DisplacedJetEvent {
  public:
-  DisplacedJetEvent(const bool&, const reco::CaloJetCollection&, const std::vector<double>&,const reco::VertexCollection&, const float&, const float&, const int&);
+  // constructor designating the calojets, primary vertices, and kinematics cuts
+ DisplacedJetEvent(const bool& isMC, const reco::CaloJetCollection & caloJets, 
+		   const reco::VertexCollection & primaryVertices, 
+		   const float& minPT_, const float& minEta_,
+		   const edm::EventSetup& iSetup_, const int & debug_) : selPV(*(primaryVertices.begin())), minPT(minPT_), minEta(minEta_), debug(debug_), iSetup(iSetup_) {    
+
+    caloHT	      = 0;
+    caloMET	      = 0;    
+    nIVFReconstructed = 0;
+    nIVFGenMatched    = 0;
+
+    // construct the empty displaced jet objects to merge info later
+    if (debug > 1) std::cout << "[DEBUG 1] Constructing Event From Calo jets " << std::endl;
+    reco::CaloJetCollection::const_iterator jetIter = caloJets.begin();
+    caloLeadingJetPT = -1;
+    caloSubLeadingJetPT = -1;
+    int jj = 0;
+    for(; jetIter != caloJets.end(); ++jj, ++jetIter) {    
+      float pt = jetIter->pt(),  eta = jetIter->eta();
+
+      if (pt > 40 && fabs(eta) < 3.0) caloHT += pt;
+      if (pt < minPT || fabs(eta) > minEta) continue;
+    
+      // check leading sub-leading kinematic quantities
+      // if this is the first jet
+      if (pt > caloLeadingJetPT && caloLeadingJetPT == -1) {
+	caloLeadingJetPT = pt;
+      }
+      // shift down the leading jet
+      else if( pt > caloLeadingJetPT && caloLeadingJetPT > 0) {
+	caloSubLeadingJetPT = caloLeadingJetPT;
+	caloLeadingJetPT = pt;
+      }
+      else if (pt > caloSubLeadingJetPT) {
+	caloSubLeadingJetPT = pt;
+      }       
+    
+      DisplacedJet djet(*jetIter,  selPV, isMC, jetIDCounter, iSetup, debug);
+    
+      djets.push_back(djet);
+      jetIDCounter++;
+    }    
+
+    // merge primary vertices into event
+    if (debug > 1) std::cout << "[DEBUG 1] Storing Primary Vertices " << std::endl;
+    reco::VertexCollection::const_iterator pvIter = primaryVertices.begin();
+    for(; pvIter != primaryVertices.end(); ++pvIter) { 
+      pVertices.push_back(*pvIter);
+    }
+
+    // Intialize the leading subleading track variables
+    caloFewestPromptTracks       = 999;
+    caloSubFewestPromptTracks    = 999;
+    caloMostDispTracks	       = -1;
+    caloSubMostDispTracks	       = -1;
+    // HLT
+    caloFewestPromptTracksHLT    = 999;
+    caloSubFewestPromptTracksHLT = 999;
+    caloMostDispTracksHLT	       = -1;
+    caloSubMostDispTracksHLT     = -1;
+    // by hadronic fraction for pt > 40 GeV                                     
+    caloLeadingHadronicFraction  = -1;
+  }   // end constructor
+
+  // constructor intiatlized const values
+  const reco::Vertex selPV;
+  const float minPT;
+  const float minEta; 
+  const int debug;
+  const edm::EventSetup& iSetup;
 
   // event analysis
   bool doesPassPreSelection();  
@@ -33,7 +102,7 @@ class DisplacedJetEvent {
     
   // jet associated info mergers
   void mergeTrackAssociations(const reco::JetTracksAssociation::Container&, const reco::JetTracksAssociation::Container&);
-  void mergeCaloIPTagInfo(const reco::TrackIPTagInfoCollection&, const reco::VertexCollection&, const edm::EventSetup& );
+  void mergeCaloIPTagInfo(const reco::TrackIPTagInfoCollection&, const reco::VertexCollection&);
   void mergeSVTagInfo(const reco::SecondaryVertexTagInfoCollection&);
   void fillLeadingSubleadingJets(const bool & isHLT);
   
@@ -46,11 +115,10 @@ class DisplacedJetEvent {
 		     const float& ptMatch, const float& drMatch, const float& vtxMatchThreshold); 
 
   void doSimMatching(const edm::SimVertexContainer & simVertexCollection);  
-
   
   // kinematic cuts for analysis
-  float minPT;
-  float minEta; 
+
+
 
   // kinematic variables
   float caloHT;
@@ -89,106 +157,16 @@ class DisplacedJetEvent {
   std::vector<reco::Track> caloMatchedTracks;
   std::vector<reco::Track> vtxMatchedTracks;
 
-  reco::Vertex selPV;
-
 private:
   static const int GEN_STATUS_CODE_MATCH     = 23;
   static const int GEN_STATUS_CODE_MATCH_MOM = 62;
 
   std::vector<DisplacedJet> djets;
   int jetIDCounter = 0;     
-  int debug = 0;
+
 };
 
 
-// constructor designating the calojets, primary vertices, and kinematics cuts
-DisplacedJetEvent::DisplacedJetEvent(const bool& isMC, const reco::CaloJetCollection & caloJets,  const std::vector<double> & alphaVector, const reco::VertexCollection & primaryVertices, const float& minPT_, const float& minEta_, const int & debug_) {
-
-  minPT	 = minPT_;
-  minEta = minEta_;
-  debug	 = debug_;
-
-  selPV = *primaryVertices.begin();
-  //const reco::Vertex & firstPV = *primaryVertices.begin();
-  caloHT = 0;
-  caloMET = 0;    
-
-  nIVFReconstructed = 0;
-  nIVFGenMatched    = 0;
-
-  // construct the empty displaced jet objects to merge info later
-  if (debug > 1) std::cout << "[DEBUG 1] Constructing Event From Calo jets " << std::endl;
-  reco::CaloJetCollection::const_iterator jetIter = caloJets.begin();
-  caloLeadingJetPT = -1;
-  caloSubLeadingJetPT = -1;
-  int jj = 0;
-  for(; jetIter != caloJets.end(); ++jj, ++jetIter) {    
-    float pt = jetIter->pt(),  eta = jetIter->eta();
-    float alpha = alphaVector[jj];
-
-    if (pt > 40 && fabs(eta) < 3.0) caloHT += pt;
-    if (pt < minPT || fabs(eta) > minEta) continue;
-    
-    // check leading sub-leading kinematic quantities
-    // if this is the first jet
-    if (pt > caloLeadingJetPT && caloLeadingJetPT == -1) {
-      caloLeadingJetPT = pt;
-    }
-    // shift down the leading jet
-    else if( pt > caloLeadingJetPT && caloLeadingJetPT > 0) {
-      caloSubLeadingJetPT = caloLeadingJetPT;
-      caloLeadingJetPT = pt;
-    }
-    else if (pt > caloSubLeadingJetPT) {
-      caloSubLeadingJetPT = pt;
-    }       
-    
-    DisplacedJet djet(*jetIter, alpha,  selPV, isMC, jetIDCounter, debug);
-    
-    djets.push_back(djet);
-    jetIDCounter++;
-  }  
-
-  // merge primary vertices into event
-  if (debug > 1) std::cout << "[DEBUG 1] Storing Primary Vertices " << std::endl;
-  reco::VertexCollection::const_iterator pvIter = primaryVertices.begin();
-  for(; pvIter != primaryVertices.end(); ++pvIter) { 
-    pVertices.push_back(*pvIter);
-  }
-
-  // Intialize the leading subleading track variables
-  caloFewestPromptTracks       = 999;
-  caloSubFewestPromptTracks    = 999;
-  caloMostDispTracks	       = -1;
-  caloSubMostDispTracks	       = -1;
-  // HLT
-  caloFewestPromptTracksHLT    = 999;
-  caloSubFewestPromptTracksHLT = 999;
-  caloMostDispTracksHLT	       = -1;
-  caloSubMostDispTracksHLT     = -1;
-  // by hadronic fraction for pt > 40 GeV                                     
-  caloLeadingHadronicFraction  = -1;
-}
-
-/* void DisplacedJetEvent::fillTriggerObjects(trigger::TriggerEvent trigEvent, std::string process) { */
-
-/*   std::string filterName("hltSingleJet190Regional");  */
-
-/*   trigger::size_type filterIndex = trigEvent->filterIndex(edm::InputTag(filterName));  */
-/*   if(filterIndex<trigEvent->sizeFilters()){  */
-/*     const trigger::Keys& trigKeys = trigEvent->filterKeys(filterIndex);  */
-/*     const trigger::TriggerObjectCollection & trigObjColl(trigEvent->getObjects()); */
-/*     //now loop of the trigger objects passing filter */
-/*     for(trigger::Keys::const_iterator keyIt=trigKeys.begin();keyIt!=trigKeys.end();++keyIt){  */
-/*       const trigger::TriggerObject& obj = trigObjColl[*keyIt]; */
-/*       //do what you want with the trigger objects, you have */
-/*       //eta,phi,pt,mass,p,px,py,pz,et,energy accessors */
-/*     } */
-    
-/*   }//end filter size check */
-  
-
-/* } */
 
 
 // fill leading sub leading quantities for displaced jets
@@ -425,7 +403,7 @@ void DisplacedJetEvent::mergeTrackAssociations(const reco::JetTracksAssociation:
 
 // fills each jet with ip tag info variables 
 // fills each jet track collection with tracks used for ip variables
-void DisplacedJetEvent::mergeCaloIPTagInfo(const reco::TrackIPTagInfoCollection & ipTagInfo, const reco::VertexCollection & primaryVertices, const edm::EventSetup& iSetup) {
+void DisplacedJetEvent::mergeCaloIPTagInfo(const reco::TrackIPTagInfoCollection & ipTagInfo, const reco::VertexCollection & primaryVertices) {
   if (debug > 1) std::cout << "[DEBUG 1] Merging CALO IP Tag Info " << std::endl;
 
   reco::TrackIPTagInfoCollection::const_iterator ipInfoIter = ipTagInfo.begin(); 
@@ -442,10 +420,10 @@ void DisplacedJetEvent::mergeCaloIPTagInfo(const reco::TrackIPTagInfoCollection 
     // add the track and ip info 
     djet.addIPTagInfo(*ipInfoIter);   
     // the track colleciton above can be retrieved and passed to track angles below
-    djet.addHitInfo(djet.getVertexMatchedTracks(), iSetup);    
-    djet.addTrackAngles(djet.getVertexMatchedTracks(), iSetup);    
+    djet.addHitInfo(djet.getVertexMatchedTracks());    
+    djet.addTrackAngles(djet.getVertexMatchedTracks());    
     // calculate the v0 candidates
-    djet.addV0Info(djet.getVertexMatchedTrackRefs(), iSetup);    
+    djet.addV0Info(djet.getVertexMatchedTrackRefs());    
     // calculate alpha for the vertces
     djet.calcJetAlpha(djet.getVertexMatchedTracks(), primaryVertices);
   }
@@ -478,20 +456,6 @@ void DisplacedJetEvent::doGenMatching( const reco::GenParticleCollection& genPar
 				       const bool& doCaloJetMatch = true, const bool& doGenVtxMatch = true, const bool& doGenVtxID = true,
 				       const float& ptMatch = 0.2, const float& dRMatch = 0.7,
 				       const float& vtxMatchThreshold = 0.05) {
-
-  /* reco::VertexCollection::const_iterator pvIter = pVertices.begin(); */
-  /* reco::GenParticleCollection::const_iterator genIter = genParticles.begin(); */
-  /* for(; pvIter != pVertices.end(); ++pvIter) { */
-  /*   for(; genIter != genParticles.end(); ++genIter) { */
-  /*     if (genIter->status() != GEN_STATUS_CODE_MATCH_MOM) continue; */
-      
-  /*   } */
-
-  /*   float x  = pvIter->x(), y = pvIter->y(), z = pvIter->z(); */
-  /*   float dx = x - selPV.x() , dy = y - selPV.y(), dz = z - selPV.z(); */
-  /*   float metric = std::sqrt(((gx-vx)*(gx-vx))/(gx*gx) + ((gy-vy)*(gy-vy))/(gy*gy) + ((gz-vz)*(gz-vz))/(gz*gz));     */
-    
-  /* } */
 
   // fill how many vertices are generator matched
   calcNIVFGenMatched(vtxMatchThreshold, genParticles);

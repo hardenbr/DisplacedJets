@@ -219,7 +219,7 @@ for key in stacks.keys():
         else:
             samp.hist.SetMarkerStyle(4)
 
-        if samp.hist.Integral() > 0 and not samp.isData:
+        if samp.hist.Integral() > 0: # and not samp.isData:
             scale_factor = float(options.lumi) * float(samp.xsec) / float(samp.total_events)
 
             if options.norm1:

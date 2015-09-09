@@ -2,21 +2,21 @@ import FWCore.ParameterSet.Config as cms
 
 #output directories
 base                = '/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDIES/CMSSW_7_4_6_patch2/src/DisplacedJets/'
-#outputDir           = "/afs/cern.ch/work/h/hardenbr/2015/DIJET/DJANALYSIS/MC_ALPHA_AUG13/"
+#outputDir           = "/afs/cern.ch/work/h/hardenbr/2015/DIJET/DJANALYSIS/MC_V0_KSHORT_SEPT6/"
 outputDir           = ""
 
 # output options (to be appended to the file name outputted)
-appendSignal        = "30mm"
+appendSignal        = "xx4j1mm"
 appendData          = ""
 appendBkg           = "qcd470_600"
 ############ FLAGS #############
-debugLevel          = -1
+debugLevel          = 0
 reportEveryNEvents  = 100
 isSignalMC          = True
 isMC                = True
 isData              = not isMC
 doedm               = False
-nevents             = -1
+nevents             = 10
 
 #-------------- globaltags
 #gtag               = "74X_HLT_mcRun2_asymptotic_fromSpring15DR_v0" #spring 15 25ns
@@ -28,14 +28,14 @@ gtag                = "74X_dataRun2_Prompt_v0"  #data
 #JSON               = 'json_DCSONLY_Run2015B.txt'
 JSON                = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-251883_13TeV_PromptReco_Collisions15_JSON.txt'
 #--------------trigger
-trigger_process     = "HLT"
+trigger_process     = "" if isMC else "HLT"
 
 #--------------analysis todos
 doEventPreSelection = False
 doJetPreSelection   = False
 doApplySingleMu     = False
-doApplyTrigger      = False
-dumpGeneralTracks   = False
+doApplyTrigger      = True if isData else False
+dumpGeneralTracks   = True
 # trees to write
 writeTrackTree      = True
 writeV0Tree         = True
@@ -56,20 +56,26 @@ longTagThreshold    = 30
 dHTWorkingPoint     = 2
 
 ######### input lists #########
+
 input_file_list     = None
-#input_file_list    = '/SignalMCLists/740patch1/mx300_100mm_aod.list'
+#----xx4j samples
+#input_file_list    = '/SignalMCLists/740patch1/mx300_1000mm_aod.list'
 #input_file_list    = '/SignalMCLists/740patch1/mx300_300mm_aod.list'
-input_file_list    = '/SignalMCLists/740patch1/mx300_30mm_aod.list'
+#input_file_list    = '/SignalMCLists/740patch1/mx300_100mm_aod.list'
+#input_file_list    = '/SignalMCLists/740patch1/mx300_30mm_aod.list'
+input_file_list    = '/SignalMCLists/740patch1/mx300_1mm_aod.list'
+#input_file_list     = '/SignalMCLists/740patch1/mx300_0p1mm_aod.list'
+
+#----m xx4j ass variants 
 #input_file_list    = '/SignalMCLists/740patch1/mx600_30mm_aod.list'
 #input_file_list    = '/SignalMCLists/740patch1/mx100_30mm_aod.list'
-#input_file_list    = '/SignalMCLists/740patch1/mx300_1mm_aod.list'
 
-#other samples
+#----other samples
 #input_file_list = '/SignalMCLists/DISPLACED_SUSY/displaced_susy.list'
 #input_file_list = '/SignalMCLists/DISPLACED_SUSY/displaced_susy500_10.list'
 #input_file_list = '/SignalMCLists/EMERGING_JETS/emerging_jets.txt'
 
-#gun samples
+#-----gun samples
 #input_file_list = 'SignalMCLists/DIJET_GUN/dijet_gun_m300_ctau30mm.list'
 #input_file_list = 'SignalMCLists/DIJET_GUN/dijet_gun_m300_ctau0mm.list'
 #input_file_list = 'SignalMCLists/DIJET_GUN/dijet_gun_m300_ctau300mm.list'
@@ -77,7 +83,7 @@ input_file_list    = '/SignalMCLists/740patch1/mx300_30mm_aod.list'
 #input_file_list = 'SignalMCLists/DIJET_GUN/dijet_gun_m300_flat_1mm_1000mm.list'
 #input_file_list = 'SignalMCLists/DIJET_GUN/dijet_gun_m300_ctau0mm_bbar.list'
 
-#data samples
+#----data samples
 #input_file_list = 'DataSampleLists/PD_DisplacedJet_Jul17AOD.txt'
 #input_file_list = 'DataSampleLists/PD_JetHT_Jul17AOD.txt'
 #input_file_list = 'DataSampleLists/PD_HTMHT_Jul17AOD.txt'
@@ -95,7 +101,7 @@ if input_file_list != None:
 #fillter for the file list
 if isSignalMC and input_file_list == None :
    myfilelist = cms.untracked.vstring()
-   print "NO SIGNAL INPUT" 
+   print "NO SIGNAL INPUT.....Exiting" 
    exit(1)
 #   myfilelist.extend(['file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/MC_PRODUCTION/XXTo4J_M-300_CTau_30mm/AODSIM/XXTo4J_M-300_CTau-30mm_reco_102_1_ne5.root',
  #                     'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/MC_PRODUCTION/XXTo4J_M-300_CTau_30mm/AODSIM/XXTo4J_M-300_CTau-30mm_reco_105_1_1MO.root' ])
@@ -106,8 +112,8 @@ if not isSignalMC and input_file_list == None and not isData:
 #   myfilelist.extend(['root://xrootd-cms.infn.it//store/mc/Fall13dr/QCD_Pt-470to600_Tune4C_13TeV_pythia8/AODSIM/castor_tsg_PU20bx25_POSTLS162_V2-v1/00000/005646AA-EB79-E311-A788-00304867924E.root'])
 #   myfilelist.extend(['root://xrootd-cms.infn.it//store/mc/Phys14DR/QCD_Pt-470to600_Tune4C_13TeV_pythia8/AODSIM/AVE20BX25_tsg_castor_PHYS14_25_V3-v1/00000/1E538A06-988E-E411-8F36-0025905B8562.root']
    myfilelist.extend(['/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/00000/00D76158-CCFC-E411-89EA-AC853DA06B56.root'])
-if isData and input_file_list == None:
-   myfilelist.extend(['/store/data/Run2015B/SingleMuon/AOD/PromptReco-v1/000/251/162/00000/C2C5E84D-4227-E511-8878-02163E01280D.root'])
+#if isData and input_file_list == None:
+#   myfilelist.extend(['/store/data/Run2015B/SingleMuon/AOD/PromptReco-v1/000/251/162/00000/C2C5E84D-4227-E511-8878-02163E01280D.root'])
 #   myfilelist.extend(['file:pickevents.root'])
 
 process = cms.Process("ANA")

@@ -63,6 +63,11 @@ parser.add_option( "--square", dest="square",
 		                    help="use a square canvas",
 		                    action="store_true" )
 
+parser.add_option( "--black", dest="black",
+		                    help="draw black and white",
+		                    action="store_true" )
+
+
 
 parser.add_option( "--ymin", dest="ymin",
 		                    help="minimum y for variable",
@@ -249,7 +254,7 @@ for key in stacks.keys():
 
 print "length of draw_rest", len(draw_rest)
 
-draw_first.Draw("colz")
+draw_first.Draw("" if options.black else "colz")
 draw_first.GetXaxis().SetLimits(options.xmin, options.xmax)
 draw_first.GetYaxis().SetLimits(options.ymin, options.ymax)
 
@@ -265,4 +270,4 @@ split_var = options.var.split(":")
 
 plot_name = "%s_%s_%s.pdf" % (options.file, split_var[0], split_var[1])
 
-canvas.Print(plot_name)
+#canvas.Print(plot_name)

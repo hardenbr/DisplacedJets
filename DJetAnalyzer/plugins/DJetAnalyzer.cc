@@ -104,6 +104,7 @@
 
 // user defined includes
 #include "DisplacedJets/DisplacedJetSVAssociator/interface/JetVertexAssociation.h"
+#include "DisplacedJets/DisplacedJet/interface/DisplacedTrack.h"
 #include "DisplacedJets/DisplacedJet/interface/DisplacedJet.h"
 #include "DisplacedJets/DisplacedJet/interface/DisplacedJetEvent.h"
 #include "DisplacedJets/DJetAnalyzer/interface/DJetAnalyzer.h"
@@ -163,8 +164,6 @@ DJetAnalyzer::DJetAnalyzer(const edm::ParameterSet& iConfig)
   tag_inclusiveSecondaryVertices_ = iConfig.getUntrackedParameter<edm::InputTag>("inclusiveVertexSecondary"); 
   tag_offlinePrimaryVertices_	  = iConfig.getUntrackedParameter<edm::InputTag>("offlinePrimaryVertices"); 
 
-  // alpha for vertex jet association
-  tag_alpha_                   = iConfig.getUntrackedParameter<edm::InputTag>("jetVertexAssociation");
   
   //cuts 
   cut_jetPt  = iConfig.getUntrackedParameter<double>("jetPt");
@@ -306,9 +305,6 @@ void DJetAnalyzer::fillHandles(const edm::Event & iEvent ) {
   // trigger info
   iEvent.getByLabel(tag_triggerResults_, triggerResults);  
 
-  // Alpha for vertex association
-  iEvent.getByLabel(tag_alpha_, alpha);
-
   // and sim matching quantities related to MC
   if(isMC_) {    
     if(doGenMatch_) iEvent.getByLabel(tag_genParticles_, genParticles);
@@ -344,7 +340,6 @@ void  DJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   const reco::GenParticleCollection &		    genCollection	   = *(genParticles.product());     
   const edm::SimVertexContainer &		    simVtxCollection	   = *(simVertices.product()); 
   const reco::TrackCollection &                     generalTracks	   = *(gTracks.product());
-  const std::vector<double> &                       alphaCollection	   = *(alpha.product());
   // track associatiosns
   const reco::JetTracksAssociationCollection &      caloTrackAssociation   = *(caloMatchedTracks.product());
   const reco::JetTracksAssociationCollection &      vertexTrackAssociation = *(vertexMatchedTracks.product());
@@ -353,7 +348,7 @@ void  DJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   if(debug > 0) std::cout << "[----------------- HANDLES RETRIEVED -------------------] " <<std::endl;
 
   // build the displaced event from the calo jet collection and kinematic cuts
-  DisplacedJetEvent djEvent(isMC_, caloJets, alphaCollection, pvCollection, cut_jetPt, cut_jetEta, debug);
+  DisplacedJetEvent djEvent(isMC_, caloJets, pvCollection, cut_jetPt, cut_jetEta, iSetup, debug);
 
   // pull out the first primary vertex in the collection (the default PV)
   const reco::Vertex & firstPV = *pvCollection.begin(); 
@@ -374,7 +369,7 @@ void  DJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   djEvent.mergeTrackAssociations(caloTrackAssociation, vertexTrackAssociation);
 
   // 2. merge in the event info MUST BE DONE AFTER ASSOCIATIONS
-  djEvent.mergeCaloIPTagInfo(lifetimeTagInfo, pvCollection, iSetup); // add the ip info built from the JTA
+  djEvent.mergeCaloIPTagInfo(lifetimeTagInfo, pvCollection); // add the ip info built from the JTA
 
   // dump information related to the preselection
   dumpPreSelection(djEvent);
@@ -667,7 +662,6 @@ void DJetAnalyzer::beginJob()
   jetTree_->Branch("anyTightTag", &anyTightTag, "AnyTightTag[nCaloJets]/I");
 
 
-
   //////////////// CALO JETS ///////////////////
   
   //jet kinematics
@@ -911,6 +905,18 @@ void DJetAnalyzer::beginJob()
   jetTree_->Branch("jetLooseNuclear", &jetLooseNuclear,"jetLooseNuclear[nCaloJets]/I");
   jetTree_->Branch("jetNV0HitBehindVertex", &jetNV0HitBehindVertex,"jetNV0HitBehindVertex[nCaloJets]/I");
   jetTree_->Branch("jetNV0NoHitBehindVertex", &jetNV0NoHitBehindVertex,"jetNV0NoHitBehindVertex[nCaloJets]/I");
+  jetTree_->Branch("jetV0HIndex", &jetV0HIndex,"jetV0HIndex[nCaloJets]/I");
+  jetTree_->Branch("jetNV0KShort", &jetNV0KShort,"jetNV0KShort[nCaloJets]/I");
+
+  // CLUSTER RELATED
+  jetTree_->Branch("jetV0ClusterSize", &jetV0ClusterSize,"jetV0ClusterSize[nCaloJets]/I");
+  jetTree_->Branch("jetV0ClusterLxy", &jetV0ClusterLxy,"jetV0ClusterLxy[nCaloJets]/F");
+  jetTree_->Branch("jetV0ClusterLxySig", &jetV0ClusterLxySig,"jetV0ClusterLxySig[nCaloJets]/F");
+  jetTree_->Branch("jetV0ClusterLxyz", &jetV0ClusterLxyz,"jetV0ClusterLxyz[nCaloJets]/F");
+  jetTree_->Branch("jetV0ClusterLxyzSig", &jetV0ClusterLxyzSig,"jetV0ClusterLxyzSig[nCaloJets]/F");
+  jetTree_->Branch("jetV0ClusterX", &jetV0ClusterX,"jetV0ClusterX[nCaloJets]/F");
+  jetTree_->Branch("jetV0ClusterY", &jetV0ClusterY,"jetV0ClusterY[nCaloJets]/F");
+  jetTree_->Branch("jetV0ClusterZ", &jetV0ClusterZ,"jetV0ClusterZ[nCaloJets]/F");
 
   ///////////  ///////////  ///////////  ///////////  ///////////  ///////////  ////
   //////////////////////////////// V0 Candidate QUANITIES ////////////////////////
@@ -965,6 +971,7 @@ void DJetAnalyzer::beginJob()
   v0Tree_->Branch("v0IsFake",&v0IsFake , "v0IsFake[nV0]/F");
   // kinematics
   v0Tree_->Branch("v0LambdaMass", &v0LambdaMass , "v0LambdaMass[nV0]/F");
+  v0Tree_->Branch("v0LambdaMassNoRefit", &v0LambdaMassNoRefit , "v0LambdaMassNoRefit[nV0]/F");
   v0Tree_->Branch("v0Mass",&v0Mass , "v0Mass[nV0]/F");
   v0Tree_->Branch("v0Pt",&v0Pt , "v0Pt[nV0]/F");
   v0Tree_->Branch("v0Px",&v0Px , "v0Px[nV0]/F");
@@ -972,6 +979,7 @@ void DJetAnalyzer::beginJob()
   v0Tree_->Branch("v0Pz",&v0Pz , "v0Pz[nV0]/F");
   // opening angle
   v0Tree_->Branch("v0DR", &v0DR , "v0DR[nV0]/F");
+  v0Tree_->Branch("v0DRNoRefit", &v0DRNoRefit , "v0DRNoRefit[nV0]/F");
   // positions
   v0Tree_->Branch("v0Eta", &v0Eta , "v0Eta[nV0]/F");
   v0Tree_->Branch("v0Phi",&v0Phi , "v0Phi[nV0]/F");
@@ -985,6 +993,16 @@ void DJetAnalyzer::beginJob()
   v0Tree_->Branch("v0Lxyz",&v0Lxyz , "v0Lxyz[nV0]/F");
   v0Tree_->Branch("v0LxySig",&v0LxySig , "v0LxySig[nV0]/F");
   v0Tree_->Branch("v0LxyzSig",&v0LxyzSig , "v0LxyzSig[nV0]/F");
+  v0Tree_->Branch("v0Track1Chi2",&v0Track1Chi2 , "v0Track1Chi2[nV0]/F");
+  v0Tree_->Branch("v0Track2Chi2",&v0Track2Chi2 , "v0Track2Chi2[nV0]/F");
+  v0Tree_->Branch("v0Track1Pt",&v0Track1Pt , "v0Track1Pt[nV0]/F");
+  v0Tree_->Branch("v0Track2Pt",&v0Track2Pt , "v0Track2Pt[nV0]/F");
+  v0Tree_->Branch("v0Track1NoRefitPt",&v0Track1NoRefitPt , "v0Track1NoRefitPt[nV0]/F");
+  v0Tree_->Branch("v0Track2NoRefitPt",&v0Track2NoRefitPt , "v0Track2NoRefitPt[nV0]/F");
+  v0Tree_->Branch("v0Track1Dxy",&v0Track1Dxy , "v0Track1Dxy[nV0]/F");
+  v0Tree_->Branch("v0Track1DxySig",&v0Track1DxySig , "v0Track1DxySig[nV0]/F");
+  v0Tree_->Branch("v0Track2Dxy",&v0Track2Dxy , "v0Track2Dxy[nV0]/F");
+  v0Tree_->Branch("v0Track2DxySig",&v0Track2DxySig , "v0Track2DxySig[nV0]/F");
 
 
   ///////////  ///////////  ///////////  ///////////  ///////////  ///////////  ////
@@ -2090,6 +2108,17 @@ void DJetAnalyzer::dumpV0Info(DisplacedJetEvent & djEvent) {
     jetLooseNuclear[jj]		= djet->jetLooseNuclear;
     jetNV0HitBehindVertex[jj]	= djet->jetNV0HitBehindVertex;
     jetNV0NoHitBehindVertex[jj] = djet->jetNV0NoHitBehindVertex;
+    jetV0HIndex[jj]             = djet->jetV0HIndex;
+    jetNV0KShort[jj]            = djet->jetNV0KShort; 
+    // size of the cluster
+    jetV0ClusterSize[jj]	= djet->jetV0ClusterSize;
+    jetV0ClusterLxy[jj]		= djet->jetV0ClusterLxy;
+    jetV0ClusterLxySig[jj]	= djet->jetV0ClusterLxySig;
+    jetV0ClusterLxyzSig[jj]	= djet->jetV0ClusterLxyzSig;
+    jetV0ClusterLxyz[jj]	= djet->jetV0ClusterLxyz;
+    jetV0ClusterX[jj]		= djet->jetV0ClusterX;
+    jetV0ClusterY[jj]		= djet->jetV0ClusterY;                                                                                                                
+    jetV0ClusterZ[jj]		= djet->jetV0ClusterZ;
 
     /////////////////VERTEX BASED CALCULATIONS////////////////
     reco::VertexCollection::const_iterator vtx = djet->v0vtxVector.begin();    
@@ -2119,6 +2148,9 @@ void DJetAnalyzer::dumpV0Info(DisplacedJetEvent & djEvent) {
       reco::Track track1 = vtx->refittedTracks()[0];
       reco::Track track2 = vtx->refittedTracks()[1];
 
+      reco::Track orig_track1 = **(vtx->tracks_begin());
+      reco::Track orig_track2 = **(vtx->tracks_begin() + 1);
+
       if(debug > 5 ) std::cout << "[DEBUG 5] V0 Filling Vertex" << std::endl;     
       // build the positions and errors
       float x = vtx->x(), y = vtx->y(), z = vtx->z();
@@ -2138,6 +2170,9 @@ void DJetAnalyzer::dumpV0Info(DisplacedJetEvent & djEvent) {
       ROOT::Math::LorentzVector<ROOT::Math::PxPyPzM4D<double>> vec1;
       ROOT::Math::LorentzVector<ROOT::Math::PxPyPzM4D<double>> vec2;
 
+      ROOT::Math::LorentzVector<ROOT::Math::PxPyPzM4D<double>> vec1_norefit;
+      ROOT::Math::LorentzVector<ROOT::Math::PxPyPzM4D<double>> vec2_norefit;
+
       // the  pion Q = -1
       vec1.SetPx(track1.px());
       vec1.SetPy(track1.py());
@@ -2146,7 +2181,16 @@ void DJetAnalyzer::dumpV0Info(DisplacedJetEvent & djEvent) {
       vec2.SetPx(track2.px());
       vec2.SetPy(track2.py());
       vec2.SetPz(track2.pz());
-      
+
+      // the  pion Q = -1
+      vec1_norefit.SetPx(orig_track1.px());
+      vec1_norefit.SetPy(orig_track1.py());
+      vec1_norefit.SetPz(orig_track1.pz());
+      // the proton Q = +1
+      vec2_norefit.SetPx(orig_track2.px());
+      vec2_norefit.SetPy(orig_track2.py());
+      vec2_norefit.SetPz(orig_track2.pz());
+
       //calculate the lambda mass
       if (track1.pt() > track2.pt() && sum_charge == 0 ){
 	vec1.SetM(0.938272); // proton mass
@@ -2160,9 +2204,30 @@ void DJetAnalyzer::dumpV0Info(DisplacedJetEvent & djEvent) {
 	vec1.SetM(0);
 	vec2.SetM(0);
       }
+
+      //calculate the lambda mass for the non refit case
+      if (track1.pt() > track2.pt() && sum_charge == 0 ){
+	vec1_norefit.SetM(0.938272); // proton mass
+	vec2_norefit.SetM(0.139570); // pion
+      }
+      else if (track1.pt() < track2.pt() && sum_charge == 0) {
+	vec1_norefit.SetM(0.139570); // pi 
+	vec2_norefit.SetM(0.938272); // proton 	
+      }	
+      else { 
+	vec1_norefit.SetM(0);
+	vec2_norefit.SetM(0);
+      }
+      
+      // refit labmda
       math::XYZTLorentzVectorD sumLambda;
       sumLambda+=vec1;
       sumLambda+=vec2;
+
+      // no refit lambda
+      math::XYZTLorentzVectorD sumLambda_norefit;
+      sumLambda_norefit+=vec1_norefit;
+      sumLambda_norefit+=vec2_norefit;
             
       // associated jet information
       v0JetEta[nV0]		 = djet->caloEta;
@@ -2179,6 +2244,7 @@ void DJetAnalyzer::dumpV0Info(DisplacedJetEvent & djEvent) {
       v0IsFake[nV0]		 = vtx->isFake();
       v0NTracks[nV0]		 = vtx->nTracks();
       v0LambdaMass[nV0]		 = sumLambda.mass();
+      v0LambdaMassNoRefit[nV0]	 = sumLambda_norefit.mass();	// no refit
       v0Mass[nV0]		 = vtx->p4().mass();
       v0Pt[nV0]			 = vtx->p4().pt();
       v0Px[nV0]			 = vtx->p4().px();
@@ -2186,6 +2252,7 @@ void DJetAnalyzer::dumpV0Info(DisplacedJetEvent & djEvent) {
       v0Pz[nV0]			 = vtx->p4().pz();
       // opening angle
       v0DR[nV0]                  = reco::deltaR(track1.eta(), track1.phi(), track2.eta(), track2.phi());
+      v0DRNoRefit[nV0]           = reco::deltaR(orig_track1.eta(), orig_track1.phi(), orig_track2.eta(), orig_track2.phi());
       // positions      
       v0Eta[nV0]		 = vtx->p4().eta();
       v0Phi[nV0]		 = vtx->p4().Phi();
@@ -2202,6 +2269,18 @@ void DJetAnalyzer::dumpV0Info(DisplacedJetEvent & djEvent) {
       // significances
       v0LxySig[nV0]		 = std::sqrt( dx * dx + dy * dy ) / std::sqrt(xE * xE + yE * yE);
       v0LxyzSig[nV0]		 = std::sqrt( dx * dx + dy * dy + dz * dz) / std::sqrt(xE * xE + yE * yE + zE * zE);
+      v0Track1Chi2[nV0]          = track1.chi2();
+      v0Track2Chi2[nV0]          = track2.chi2();
+      v0Track1Pt[nV0]            = track1.pt();
+      v0Track2Pt[nV0]            = track2.pt();
+      v0Track1NoRefitPt[nV0]     = orig_track1.pt();
+      v0Track2NoRefitPt[nV0]     = orig_track2.pt();
+      // impact parameter 
+      v0Track1Dxy[nV0]		 = track1.dxy(selPV.position());
+      v0Track1DxySig[nV0]	 = track1.dxy(selPV.position()) / track1.dxyError();
+      v0Track2Dxy[nV0]		 = track2.dxy(selPV.position());
+      v0Track2DxySig[nV0]	 = track2.dxy(selPV.position()) / track2.dxyError();
+
       if(debug > 5 ) std::cout << "[DEBUG 5] V0 Mass" << vtx->p4().mass() << std::endl;     
       //increment the counter
       nV0++;

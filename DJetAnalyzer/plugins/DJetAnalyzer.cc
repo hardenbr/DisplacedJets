@@ -72,6 +72,9 @@
 #include "RecoVertex/VertexPrimitives/interface/ConvertToFromReco.h"
 #include  "DataFormats/VertexReco/interface/Vertex.h"
 
+//impact parameter calculation
+#include "TrackingTools/IPTools/interface/IPTools.h"
+
 //vertex
 #include "DataFormats/VertexReco/interface/Vertex.h"
 #include "DataFormats/BTauReco/interface/VertexTypes.h"

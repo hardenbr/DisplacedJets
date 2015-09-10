@@ -233,7 +233,7 @@ class DisplacedJet {
   
   // jet info extraction
 
-  DisplacedTrackCollection getDisplacedtracks() { return displacedTracks; }
+  DisplacedTrackCollection getDisplacedTracks() { return displacedTracks; }
   reco::TrackCollection getCaloMatchedTracks() { return caloMatchedTracks; }
   reco::TrackCollection getVertexMatchedTracks() { return vertexMatchedTracks; }
   reco::TrackRefVector  getVertexMatchedTrackRefs() { return vertexMatchedTrackRefs; }
@@ -386,7 +386,6 @@ class DisplacedJet {
 
   //////////////TRACK ANGLE VARIABLES
   
-
   // pt weighted
   float ptSumCosTheta2D, ptSumCosTheta3D;
   float ptSumCosThetaDet2D, ptSumCosThetaDet3D;
@@ -880,7 +879,6 @@ void DisplacedJet::calcClusterSize(const std::vector<TransientVertex> vertices, 
 
   // check every vertex in a jet for the largest number of vertices within an error window
   // call the vertexing being checked the center
-  std::cout << "BEGIN CENTER LOOP" << std::endl;
   for(int center = 0; center < nVtx; ++center) {
     reco::Vertex centerVtx = vertices[center];
     const math::XYZPoint & cPos  = centerVtx.position();
@@ -892,10 +890,10 @@ void DisplacedJet::calcClusterSize(const std::vector<TransientVertex> vertices, 
     // we arent concerned with clustering outside of the pixel layers 
     if(std::sqrt(cx*cx + cy*cy) > 5) continue;
 
-    std::cout << "\n center #" << center << std::endl;
-    std::cout << "center position x: " << cx << " y: " << cy << " z: " << cz << std::endl;
-    std::cout << "center error xE: " << cxE << " yE: " << cyE << " zE: " << czE << std::endl;
-    std::cout << "-------------------" << std::endl;
+    /* std::cout << "\n center #" << center << std::endl; */
+    /* std::cout << "center position x: " << cx << " y: " << cy << " z: " << cz << std::endl; */
+    /* std::cout << "center error xE: " << cxE << " yE: " << cyE << " zE: " << czE << std::endl; */
+    /* std::cout << "-------------------" << std::endl; */
 
     int tempClusterSize = 0;
     // loop over all the possible neighbors
@@ -914,11 +912,11 @@ void DisplacedJet::calcClusterSize(const std::vector<TransientVertex> vertices, 
       // add it to the cluster
       if(sig < errorWindow) { 
 	tempClusterSize++;
-	std::cout << " KEEP NEIGHBOR: " << std::endl;
-	std::cout << "neighb num" << neighbor << std::endl;
-	std::cout << "neighb position x: " << nx << " y: " << ny << " z: " << nz << std::endl;
-	std::cout << "neighb error xE: " << nxE << " yE: " << nyE << " zE: " << nzE << std::endl;
-	std::cout << "distance : " << distance << " significance: " << sig << " cluster temp size: " << tempClusterSize << std::endl;
+	/* std::cout << " KEEP NEIGHBOR: " << std::endl; */
+	/* std::cout << "neighb num" << neighbor << std::endl; */
+	/* std::cout << "neighb position x: " << nx << " y: " << ny << " z: " << nz << std::endl; */
+	/* std::cout << "neighb error xE: " << nxE << " yE: " << nyE << " zE: " << nzE << std::endl; */
+	/* std::cout << "distance : " << distance << " significance: " << sig << " cluster temp size: " << tempClusterSize << std::endl; */
       }
     } // end neighbor loop
 
@@ -940,10 +938,10 @@ void DisplacedJet::calcClusterSize(const std::vector<TransientVertex> vertices, 
   // total 3D error
   float lxyzE_tot = std::sqrt(mxE*mxE + pvxE*pvxE + myE*myE + pvyE*pvyE + mzE*mzE + pvzE*pvzE);
   
-  std::cout << "@@@@@@@@@@@@@@@@@@@@" << std::endl;
-  std::cout << "max cluster size " << maxClusterSize << std::endl;
-  std::cout << "max cluster x " << maxX << " y: " << maxY << " z: " << maxZ << std::endl;
-  std::cout << "@@@@@@@@@@@@@@@@@@@@\n" << std::endl;
+  /* std::cout << "@@@@@@@@@@@@@@@@@@@@" << std::endl; */
+  /* std::cout << "max cluster size " << maxClusterSize << std::endl; */
+  /* std::cout << "max cluster x " << maxX << " y: " << maxY << " z: " << maxZ << std::endl; */
+  /* std::cout << "@@@@@@@@@@@@@@@@@@@@\n" << std::endl; */
 
   // set quantities related to the max cluster
   jetV0ClusterSize    = maxClusterSize;
@@ -1703,8 +1701,8 @@ std::vector<bool> DisplacedJet::passShortTag(const std::vector<float> thres, flo
   std::vector<float>::const_iterator thresIter = thres.begin();
   for(; thresIter != thres.end(); ++thresIter) {
     bool didPass = false;
-    if( (jetPtSumTracksNoPixel/ sumTrackPt) < .4 && nTracks > 0 && medianIPLogSig2D > (*thresIter - 1)
-	&& (alphaMax / sumTrackPt) < .2 && jetNV0NoHitBehindVertex > 3) didPass = true;
+    if( (jetPtSumTracksNoPixel/ sumTrackPt) < 0.4 && nTracks > 0 && medianIPLogSig2D > (*thresIter - 1)
+	&& (alphaMax / sumTrackPt) < 0.2 && jetV0ClusterSize > 3) didPass = true;
     passResults.push_back(didPass);
   }
   shortTagsVector = passResults;
@@ -1716,8 +1714,8 @@ std::vector<bool> DisplacedJet::passMediumTag(const std::vector<float> thres, fl
   std::vector<float>::const_iterator thresIter = thres.begin();
   for(; thresIter != thres.end(); ++thresIter) {
     bool didPass = false;
-    if((jetPtSumTracksNoPixel/ sumTrackPt) < .4  && nTracks > 0 && medianIPLogSig2D > *thresIter
-       && (alphaMax / sumTrackPt) < .2 &&  jetNV0NoHitBehindVertex <= 3) didPass = true;
+    if((jetPtSumTracksNoPixel/ sumTrackPt) < 0.4  && nTracks > 0 && medianIPLogSig2D > *thresIter
+       && (alphaMax / sumTrackPt) < 0.1 &&  jetV0ClusterSize <= 3) didPass = true;
     passResults.push_back(didPass);
   }
   mediumTagsVector = passResults;
@@ -1729,7 +1727,7 @@ std::vector<bool> DisplacedJet::passLongTag(const std::vector<float> thres, floa
   std::vector<float>::const_iterator thresIter = thres.begin();
   for(; thresIter != thres.end(); ++thresIter) {
     bool didPass = false;
-    if((jetPtSumTracksNoPixel/ sumTrackPt) > .4 && medianIPLogSig2D > *thresIter && (alphaMax / sumTrackPt) < .1) didPass = true;
+    if((jetPtSumTracksNoPixel/ sumTrackPt) > 0.4 && medianIPLogSig2D > *thresIter && (alphaMax / sumTrackPt) < .1) didPass = true;
     passResults.push_back(didPass);
   }
   longTagsVector = passResults;

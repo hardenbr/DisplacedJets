@@ -1,3 +1,6 @@
+// container for tracks with all the necessary resources for impact parmameter 
+// and hit related calculations 
+
 
 class DisplacedTrack {
  public:    
@@ -31,7 +34,6 @@ class DisplacedTrack {
     edm::ESHandle<TransientTrackBuilder> builder;
     iSetup.get<TransientTrackRecord>().get("TransientTrackBuilder", builder);
     transientTrack = builder->build(*ref);        
-
     // trajectory information for acessing hits
     static GetTrackTrajInfo getTrackTrajInfo;
     std::vector<GetTrackTrajInfo::Result> trajInfo = getTrackTrajInfo.analyze(iSetup, track);   
@@ -40,13 +42,20 @@ class DisplacedTrack {
     // if the hits are valid fill the information
     if(trajInfo[0].valid  && trajInfo[1].valid && trajInfo.back().valid ) {
       validHits	    = true;
-      // detector layers
-      // DetLayer detLayerInner = *(trajInfo[0].detLayer);
-      // DetLayer detLayerNext  = *(trajInfo[1].detLayer);
       // trajectory state on surface
       tsosInnerHit  = trajInfo[0].detTSOS;
       tsosNextHit   = trajInfo[1].detTSOS;            
       tsosLastHit   = trajInfo.back().detTSOS;            
+      // get the detector layer from the trajectory information
+      const DetLayer &  detLayerInner	 = *(trajInfo[0].detLayer); 
+      const DetLayer &  detLayerOuter	 = *(trajInfo.back().detLayer); 
+      // detector layers
+      GeomDetEnumerators::SubDetector subDetLayerInner = detLayerInner.subDetector();
+      GeomDetEnumerators::SubDetector subDetLayerOuter = detLayerOuter.subDetector();
+      // check if the track has pixel hits
+      hasPixelHits = subDetLayerInner == GeomDetEnumerators::PixelBarrel 
+	|| subDetLayerInner == GeomDetEnumerators::PixelEndcap;
+     
       // positions
       innerPos	    = tsosInnerHit.globalPosition();
       nextPos	    = tsosNextHit.globalPosition();
@@ -72,6 +81,16 @@ class DisplacedTrack {
     }
 
     ///@@@@@@@@@@@@@@@@@@@@@ IP CALCULATION @@@@@@@@@@@@@@@@@@@@@@@@@@@
+    if(transientTrack.isValid()) {
+      // separate measurements for the transverse and 3d impact parameter measurements
+      std::pair< bool, Measurement1D > ip2dMeasurement = IPTools::absoluteTransverseImpactParameter(transientTrack, selPV);
+      std::pair< bool, Measurement1D > ip3dMeasurement = IPTools::absoluteImpactParameter3D(transientTrack, selPV);
+
+      ip2d    = ip2dMeasurement.second.value();
+      ip2dSig = ip2dMeasurement.second.significance();
+      ip3d    = ip3dMeasurement.second.value();
+      ip3dSig = ip3dMeasurement.second.significance();
+    }      
   }  
  
   // info
@@ -85,6 +104,9 @@ class DisplacedTrack {
   int algoInt;
   // quality information
   float nLostHits, nValidHits;
+
+  // detector related information
+  bool hasPixelHits;
 
   // impact related
   float dxy, dz;
@@ -101,10 +123,10 @@ class DisplacedTrack {
   float lastR2D, lastR3D;  
 
   // constructor initialized 
-  const reco::TrackRef &		trackRef;
-  const reco::Vertex &			selPV;
-  const reco::Track &			track;
-  const int				debug;
+  const reco::TrackRef &    trackRef;
+  const reco::Vertex &	    selPV;
+  const reco::Track &	    track;
+  const int		    debug;
 
   // track associated objects
   reco::Vertex::Point			pvPos;
@@ -127,5 +149,5 @@ class DisplacedTrack {
   }
   float metric3D(float x, float y, float z) {
     return std::sqrt(x*x + y*y + z*z);
-  }
+  }  
 };

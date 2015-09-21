@@ -15,11 +15,21 @@ python plot1D.py -f xx4j.list -v "jetMedianJetDist" -c "1" -t jets --xmin 0 --xm
 python plot1D.py -f xx4j.list -v "caloJetEFrac" -c "1" -t jets --xmin 0 --xmax 1 --nbins 40 --xlabel "Hadronic Energy Fraction " -o test.root --log
 python plot1D.py -f gun.list -v "(jetMedianIPSig2D)" -c "jetNTracks > 0" -t jets --xmin 0 --xmax 1000 --nbins 100 --xlabel "Jet Median 2D IP Significance" -o test.root  --log
 python plot1D.py -f xx4j.list -v "jetPtSumTracksNoPixel/sumTrackPt" -c "1" -t jets --xmin 0 --xmax 1 --nbins 100 --xlabel "No Pixel Track P_{t} Fraction " -o test.root --log
-python plot1D.py -f xx4j.list -v "jetNV0NoHitBehindVertex" -c "1" -t jets --xmin 0 --xmax 50 --nbins 100 --xlabel "Combinatorial Vertices " -o test.root --log
+
+
+######## v0 related
+python plot1D.py -f xx4j.list -v "jetNV0NoHitBehindVertex" -c "1" -t jets --xmin 0 --xmax 500 --nbins 100 --xlabel "Combinatorial Vertices " -o test.root --log
 python plot1D.py -f xx4j.list -v "jetNV0HitBehindVertex" -c "1" -t jets --xmin 0 --xmax 10 --nbins 100 --xlabel "Fake Vertices " -o test.root --log
+python plot1D.py -f xx4j.list -v "jetV0ClusterSize" -c "1" -t jets --xmin 0 --xmax 500 --nbins 100 --xlabel "Cluster Size " -o test.root --log
+python plot1D.py -f xx4j.list -v "jetV0ClusterSize/jetNV0NoHitBehindVertex" -c "1" -t jets --xmin 0 --xmax 1 --nbins 100 --xlabel "Cluster Size / N V0 Candidates " -o test.root --log
+python plot1D.py -f xx4j.list -v "jetTwoTrackNuclearCount" -c "1" -t jets --xmin 0 --xmax 50 --nbins 50 --xlabel "Two Track Nuclear Candidate " -o test.root --log
+python plot1D.py -f xx4j.list -v "jetOneTrackNuclearCount" -c "1" -t jets --xmin 0 --xmax 50 --nbins 50 --xlabel "One Track Nuclear Candidate " -o test.root --log
+python plot1D.py -f xx4jv0.list -v "v0Mass" -c "v0isOS == 0 && v0LxySig > 5 && v0Track1Pt > 1 && v0Track2Pt > 1 && v0Chi2 < 5" -t v0 --xmin .4 --xmax .7 --nbins 50 --xlabel "K_{S} Candidate Mass [GeV]" -o test.root  --norm1
+python plot1D.py -f xx4jv0.list -v "v0Lxy" -c "v0JetClusterSize>10" -t v0 --xmin 0 --xmax 40 --nbins 100 --xlabel "Cluster V0 L_{xy} [cm]" -o test.root  --norm1
 
 
-########guns
+
+######## guns
 python plot1D.py -f gun.list -v "log10(jetMeanJetDist)" -c "1" -t jets --xmin -4.5 --xmax 8 --nbins 100 --xlabel "log_{10} (Jet Mean Track Distance [cm])" -o test.root  --log
 python plot1D.py -f gun.list -v "log10(jetMedianJetDist)" -c "1" -t jets --xmin -4.5 --xmax 8 --nbins 100 --xlabel "log_{10} (Jet Median Track Distance [cm])" -o test.root  --log
 python plot1D.py -f gun.list -v "jetMedianIPSig2D" -c "jetNTracks > 0" -t jets --xmin 0 --xmax 1000 --nbins 100 --xlabel "Jet Median 2D IP Significance" -o test.root --varbins 5 --log
@@ -54,6 +64,7 @@ python plot1D.py -f guntracks.list --ylabel "N Tracks" -v "trValidFraction" -c "
 python plot1D.py -f gun.list -v "jetSvLxyz / genMomLxyz" -c "jetNTracks > 0" -t jets --xmin 0 --xmax 5 --nbins 100 --xlabel "Jet SV L_{xyz} / gen L_{xyz}" -o test.root --log
 
 
+
 ######2d distribution
 python plot2D.py -f xx4j2D.list -v "caloJetAlphaMax/sumTrackPt:log10(jetMedianIPSig2D)" -c "jetNTracks > 0" -t jets --xmin -2 --xmax 5 --nxbins 40  --xlabel "log_{10} (Jet Median 2D IP_{sig})" --ymin 0  --ymax 1 --nybins 40 --ylabel "Jet #alpha_{max}" -o test.root
 python plot2D.py -f xx4j2D.list -v "caloJetAlphaMax/caloJetPt:log10(jetMedianIPSig2D)" -c "jetNTracks > 0" -t jets --xmin -2 --xmax 5 --nxbins 40  --xlabel "log_{10} (Jet Median 2D IP_{sig})" --ymin 0  --ymax 1 --nybins 40 --ylabel "Jet #beta_{max}" -o test.root
@@ -86,6 +97,8 @@ python plot1D.py -f xx4j_data.list -v "eventNTotalTags[3]" -c "passDisplaced500_
 
 # nuclear interactions
 python plot2D.py -f data2D.list -v "v0Y:v0X" -c "v0Lxy/v0LxySig < 0.05" -t v0 --xmin -10 --xmax 10 --nxbins 10000  --xlabel "Combinatorial Vertex X [cm]" --ymin -10  --ymax 10 --nybins 10000 --ylabel "Combinatorial Vertex Y [cm]" -o test.root --square --black
+python plot2D.py -f signal2D.list -v "v0Y:v0X" -c "v0JetCluster>40" -t v0 --xmin -10 --xmax 10 --nxbins 10000  --xlabel "Combinatorial Vertex X [cm]" --ymin -10  --ymax 10 --nybins 10000 --ylabel "Combinatorial Vertex Y [cm]" -o test.root --square --black
+
 python plot2D.py -f data2D.list -v "v0Lxy:v0Lxy/v0LxySig" -c "v0Lxy/v0LxySig < 0.5" -t v0 --xmin 0 --xmax 0.5 --nxbins 10000  --xlabel "Vertex L_{xy} Error [cm]" --ymin 0  --ymax 10 --nybins 10000 --ylabel "Vertex L_{xy} [cm]" -o test.root --square --black
 python plot2D.py -f data2D.list -v "v0Lxy:v0LxySig" -c "1" -t v0 --xmin 0 --xmax 1000 --nxbins 10000  --xlabel "Vertex L_{xy} Significance" --ymin 0  --ymax 10 --nybins 10000 --ylabel "Vertex L_{xy} [cm]" -o test.root --square --black
 

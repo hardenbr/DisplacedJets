@@ -2,13 +2,13 @@ from CRABClient.UserUtilities import config, getUsernameFromSiteDB
 config = config()
 
 config.General.requestName = 'QCD_SPRING15'
-config.General.workArea = 'CRAB3_QCD_SPRING15_5UNITS'
+config.General.workArea = 'CRAB3_QCD_SPRING15'
 config.General.transferOutputs = True
 config.General.transferLogs = False
 
 config.JobType.pluginName = 'Analysis'
 config.JobType.psetName = 'dev.py'
-config.JobType.outputFiles = ['qcd.root']
+config.JobType.outputFiles = ['djana.root']
 
 #config.Data.inputDataset = '/MinimumBias/Commissioning2015-v1/RAW'
 config.Data.inputDBS = 'global'
@@ -17,7 +17,7 @@ config.Data.unitsPerJob = 5
 config.Data.totalUnits = -1 #config.Data.unitsPerJob * NJOBS
 #config.Data.lumiMask = 'https://cms-service-dqm.web.cern.ch/cms-service-dqm/CAF/certification/Collisions12/8TeV/Prompt/Cert_190456-208686_8TeV_PromptReco_Collisions12_JSON.txt'
 #config.Data.runRange = '193093-193999' # '193093-194075'
-config.Data.outLFNDirBase = '/store/group/phys_susy/razor/josh/RAZOR_DIJET/DJANALYSIS/SPRING15/'
+config.Data.outLFNDirBase = '/store/group/phys_susy/razor/josh/RAZOR_DIJET/DJANALYSIS/SPRING15_sept17/'
 config.Data.publication = False
 #config.Data.publishDataName = 'CRAB3_tutorial_May2015_Data_analysis'
 config.Site.storageSite = 'T2_CH_CERN'

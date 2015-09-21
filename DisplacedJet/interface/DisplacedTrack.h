@@ -41,7 +41,7 @@ class DisplacedTrack {
     ///@@@@@@@@@@@@@@@@@@@@@ HIT INFORMATION @@@@@@@@@@@@@@@@@@@@@@@@@@@
     // if the hits are valid fill the information
     if(trajInfo[0].valid  && trajInfo[1].valid && trajInfo.back().valid ) {
-      validHits	    = true;
+      isValid	    = true;
       // trajectory state on surface
       tsosInnerHit  = trajInfo[0].detTSOS;
       tsosNextHit   = trajInfo[1].detTSOS;            
@@ -51,7 +51,7 @@ class DisplacedTrack {
       const DetLayer &  detLayerOuter	 = *(trajInfo.back().detLayer); 
       // detector layers
       GeomDetEnumerators::SubDetector subDetLayerInner = detLayerInner.subDetector();
-      GeomDetEnumerators::SubDetector subDetLayerOuter = detLayerOuter.subDetector();
+      //GeomDetEnumerators::SubDetector subDetLayerOuter = detLayerOuter.subDetector();
       // check if the track has pixel hits
       hasPixelHits = subDetLayerInner == GeomDetEnumerators::PixelBarrel 
 	|| subDetLayerInner == GeomDetEnumerators::PixelEndcap;
@@ -77,7 +77,7 @@ class DisplacedTrack {
       lastR3D  = metric3D(lastX, lastY, lastZ);
     }
     else {
-      validHits = false;
+      isValid = false;
     }
 
     ///@@@@@@@@@@@@@@@@@@@@@ IP CALCULATION @@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -86,15 +86,22 @@ class DisplacedTrack {
       std::pair< bool, Measurement1D > ip2dMeasurement = IPTools::absoluteTransverseImpactParameter(transientTrack, selPV);
       std::pair< bool, Measurement1D > ip3dMeasurement = IPTools::absoluteImpactParameter3D(transientTrack, selPV);
 
-      ip2d    = ip2dMeasurement.second.value();
-      ip2dSig = ip2dMeasurement.second.significance();
-      ip3d    = ip3dMeasurement.second.value();
-      ip3dSig = ip3dMeasurement.second.significance();
-    }      
+      ip2d					       = ip2dMeasurement.second.value();
+      ip2dSig					       = ip2dMeasurement.second.significance();
+      ip3d					       = ip3dMeasurement.second.value();
+      ip3dSig					       = ip3dMeasurement.second.significance();
+
+      if(debug > 6) std::cout << "[DEBUG 6] 2dip " << ip2d << " 2dipsig " << ip2dSig << std::endl;
+      if(debug > 6) std::cout << "[DEBUG 6] 3dip " << ip3d << " 3dipsig " << ip3dSig << std::endl;
+
+    }
+    else {
+      isValid = false;
+    }
   }  
  
   // info
-  bool validHits; // has valid hits from hit pattern
+  bool isValid; // has valid hits from hit pattern
     
   // kinematics
   float pt, eta, phi;
@@ -130,7 +137,7 @@ class DisplacedTrack {
 
   // track associated objects
   reco::Vertex::Point			pvPos;
-  reco::TransientTrack			transientTrack ;
+  reco::TransientTrack			transientTrack;
   std::vector<GetTrackTrajInfo::Result> trajInfo;
 
   // position of the hits

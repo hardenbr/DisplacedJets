@@ -1,4 +1,5 @@
 typedef std::vector<DisplacedTrack> DisplacedTrackCollection;
+typedef std::vector<Displaced2TrackVertex> DisplacedV0Collection;
 
 class DisplacedJet {
  public:
@@ -160,6 +161,7 @@ class DisplacedJet {
     // NUCLEAR INTERACTION RELATED
     jetOneTrackNuclearCount	   = 0;
     jetTwoTrackNuclearCount	   = 0;
+    jetTwoTrackInnerHitFake        = 0;
     jetVertexNearBPIX1		   = 0;
     jetVertexNearBPIX2		   = 0;
     jetVertexNearBPIX3		   = 0;
@@ -181,6 +183,8 @@ class DisplacedJet {
     jetV0ClusterX		   = 0;
     jetV0ClusterY		   = 0;
     jetV0ClusterZ		   = 0;
+
+
 
   } // class declaration end
 
@@ -218,10 +222,10 @@ class DisplacedJet {
   // clique vertexing 
   vertexGraph buildInputGraph(const std::vector<std::pair<int,int> > & graph_edges, const std::vector<int> & uniq_tracks, const bool & print);
   void findVertexCliques();
-  int findRefTrack(const reco::TrackBaseRef ref, const reco::TrackRefVector vector);
+  int findRefTrack(const reco::TrackRef ref, const reco::TrackRefVector vector);
   int calcHIndex(const vertexGraph & graph);
-  void calcClusterSize(const std::vector<TransientVertex> vertices, float errorWindow);
-  
+  void calcClusterSize(const DisplacedV0Collection& vertices, const float & errorWindow);
+  //  void calcNJetClusterSize(DisplacedJetCollection& djets, const float & errorWindow);  
 
   //////////////////////////////////////////////
 
@@ -254,7 +258,7 @@ class DisplacedJet {
   const reco::CaloJet	    jet;
   const bool		    isMC;
   const int		    jetID;
-  const reco::Vertex	    selPV;
+  const reco::Vertex	    selPV;  
 
   //////////////CALO INFORMATION////////////
   // track association variables
@@ -334,6 +338,7 @@ class DisplacedJet {
   ////////////// NUCLEAR INTERACTION /////////
 
   int jetOneTrackNuclearCount, jetTwoTrackNuclearCount;
+  int jetTwoTrackInnerHitFake;
   int jetVertexNearBPIX1, jetVertexNearBPIX2, jetVertexNearBPIX3, jetVertexNearBPIX;
   int jetTightNuclear, jetLooseNuclear;
   int jetNV0NoHitBehindVertex, jetNV0HitBehindVertex;
@@ -427,27 +432,26 @@ class DisplacedJet {
   std::vector<bool> mediumTagsVector;
   std::vector<bool> longTagsVector;
   
+  // combinatorial vertices for the jet
   vertexGraph v0Graph;
-  
-  std::vector<reco::Vertex> v0vtxVector;
-  std::vector<reco::Vertex> v0vtxVectorCleaned;
+  DisplacedV0Collection displacedV0Vector;
+  DisplacedV0Collection displacedV0VectorCleaned;  
   std::vector<TransientVertex> transientV0Vector;
   std::vector<TransientVertex> transientV0VectorCleaned;
+
+  
   
   // related vertices
-  reco::Vertex selIVF;
   bool selIVFIsPV;
   float selIVFIsPVScore;
+  reco::Vertex selIVF;
   reco::Vertex selSV;
-
 
  private: 
 
   static const int GEN_STATUS_CODE_MATCH = 23; 
   const float FAKE_HIGH_NUMBER = 999999999;
   // calo jet the displaced jet is built upon
-
-
 
   // related track collections
   DisplacedTrackCollection displacedTracks;
@@ -462,6 +466,15 @@ class DisplacedJet {
 
   // cos related
   std::vector<float> cosTheta2DVector, cosThetaDet2DVector, cosTheta3DVector, cosThetaDet3DVector; 
+
+  // simplify quadrature calculations
+  float metric2D(float x, float y) {
+    return std::sqrt(x*x + y*y);
+  }
+  float metric3D(float x, float y, float z) {
+    return std::sqrt(x*x + y*y + z*z);
+  }  
+
 };
 
 float DisplacedJet::genMatchMetric(const reco::GenParticle & particle, const reco::Vertex& vertex) {
@@ -739,7 +752,7 @@ void DisplacedJet::addIVFCollection(const reco::VertexCollection & vertices, con
   ivfMatchingScore = bestVertexScore;
 }
 
-int DisplacedJet::findRefTrack(const reco::TrackBaseRef ref, const reco::TrackRefVector vector) {
+int DisplacedJet::findRefTrack(const reco::TrackRef ref, const reco::TrackRefVector vector) {
   reco::TrackRefVector::const_iterator iter = vector.begin();
   int ii = 0;
   bool found = false;
@@ -756,6 +769,8 @@ int DisplacedJet::findRefTrack(const reco::TrackBaseRef ref, const reco::TrackRe
 }
 
 DisplacedJet::vertexGraph DisplacedJet::buildInputGraph(const std::vector<std::pair<int,int> > & graph_edges, const std::vector<int> & uniq_tracks_, const bool & print) {
+  if (debug > 4) std::cout << "[DEBUG 4]  Building Input Graph for h index" << std::endl;  
+
   std::vector<int> uniq_tracks(uniq_tracks_.begin(), uniq_tracks_.end());
   int ntracks = uniq_tracks.size();
 
@@ -812,24 +827,17 @@ DisplacedJet::vertexGraph DisplacedJet::buildInputGraph(const std::vector<std::p
 
 // build a graph of track fit associations based on cleaned transient vertices
 void DisplacedJet::findVertexCliques() {
-  
+  if (debug > 4) std::cout << "[DEBUG 4]  Finding Vertex Cliques" << std::endl;  
   // store the two tracks of the vertex as a graph edge
   std::vector<std::pair<int,int> > graph_edges;
   std::vector<int> uniq_tracks;
   
-  //  reco::TrackRefVector::const_iterator trackRef = vertexMatchedTrackRefs
   // loop over each vertex in the jet
-  std::vector<TransientVertex>::const_iterator vtxIter = transientV0VectorCleaned.begin();  
-  for(; vtxIter != transientV0VectorCleaned.end(); ++vtxIter) {
-    // these better be track pairs
-    assert(vtxIter->originalTracks().size() == 2);
+  DisplacedV0Collection::const_iterator vtxIter = displacedV0VectorCleaned.begin();  
+  for(; vtxIter != displacedV0VectorCleaned.end(); ++vtxIter) {
 
-    // get the transienttrack from the transient vertex
-    reco::TransientTrack    track1     = (vtxIter->originalTracks())[0];
-    reco::TransientTrack    track2     = (vtxIter->originalTracks())[1];
-    // base references
-    reco::TrackBaseRef	    track_ref1 = track1.trackBaseRef();
-    reco::TrackBaseRef	    track_ref2 = track2.trackBaseRef();
+    reco::TrackRef	    track_ref1 = (vtxIter->track1).trackRef;
+    reco::TrackRef	    track_ref2 = (vtxIter->track2).trackRef;
 
     // interpret the index in the array
     int refIndex1 = findRefTrack(track_ref1, vertexMatchedTrackRefs); 
@@ -868,49 +876,51 @@ void DisplacedJet::findVertexCliques() {
   jetV0HIndex = calcHIndex(v0Graph);
   
 }
+/* void DisplacedJet::calcNJetClusterSize(const DisplacedJetCollection& djets, const float& errorWindow) { */
+/*   if (debug > 4) std::cout << "[DEBUG 4]  Finding N Jet Cluster Size" << std::endl;   */
 
-void DisplacedJet::calcClusterSize(const std::vector<TransientVertex> vertices, float errorWindow) {
-  int maxClusterSize = 0;
-  reco::Vertex maxVertex;
-  int nVtx = vertices.size();
 
+/* } */
+
+void DisplacedJet::calcClusterSize(const DisplacedV0Collection& vertices, const float& errorWindow) {
+  if (debug > 4) std::cout << "[DEBUG 4]  Finding Cluster Size" << std::endl;  
+  
+  const int nVtx = vertices.size();
   // nothing to do if there are no vertices
   if (nVtx == 0) return;
 
+  int maxClusterSize = 1;  // there is always at least the 1 vertex
+  const Displaced2TrackVertex * maxVertex = &vertices[0];
+
   // check every vertex in a jet for the largest number of vertices within an error window
   // call the vertexing being checked the center
+  if (debug > 4) std::cout << "[DEBUG 4]  Looping Center" << std::endl;  
   for(int center = 0; center < nVtx; ++center) {
-    reco::Vertex centerVtx = vertices[center];
-    const math::XYZPoint & cPos  = centerVtx.position();
-    
-    float cx = cPos.x(), cy = cPos.y(), cz = cPos.z();
-    float cxE = centerVtx.xError(), cyE = centerVtx.yError(), czE = centerVtx.zError();
-    float cE_tot = std::sqrt(cxE*cxE + cyE*cyE);//+ czE*czE);
+    Displaced2TrackVertex centerVtx = vertices[center];
 
-    // we arent concerned with clustering outside of the pixel layers 
-    if(std::sqrt(cx*cx + cy*cy) > 5) continue;
+    if(!centerVtx.isValid) continue;
+    // if we arent concerned with clustering outside of the pixel layers
+    // if(centerVtx.lxy > 5) continue;
 
-    /* std::cout << "\n center #" << center << std::endl; */
-    /* std::cout << "center position x: " << cx << " y: " << cy << " z: " << cz << std::endl; */
-    /* std::cout << "center error xE: " << cxE << " yE: " << cyE << " zE: " << czE << std::endl; */
-    /* std::cout << "-------------------" << std::endl; */
-
-    int tempClusterSize = 0;
+    int tempClusterSize = 1; // count the center in the cluster
+    if (debug > 4) std::cout << "[DEBUG 4]  Looping Neighbors" << std::endl;  
     // loop over all the possible neighbors
     for(int neighbor = 0; neighbor < nVtx; ++neighbor) {
       if (center == neighbor) continue; // dont count the center itself
-      reco::Vertex neighVtx = vertices[neighbor];
-      const math::XYZPoint & nPos  = neighVtx.position();    
-      float nx = nPos.x(), ny = nPos.y(), nz = nPos.z();
-      float nxE = neighVtx.xError(), nyE = neighVtx.yError(), nzE = neighVtx.zError();
-      float nE_tot = std::sqrt(nxE*nxE + nyE*nyE);// + nzE*nzE);
+      Displaced2TrackVertex neighVtx = vertices[neighbor];
 
-      float dx = cx - nx, dy = cy - ny;//, dz = cz - nz;
-      float distance = std::sqrt(dx*dx + dy*dy);// + dz*dz);
-      float sig = distance / std::sqrt(cE_tot*cE_tot + nE_tot*nE_tot);
+      if(!neighVtx.isValid) continue;            
+      // check the distance from the center
+      float dx	     = centerVtx.x - neighVtx.x, dy = centerVtx.y - neighVtx.y;	//, dz = cz - nz;
+      float distance = metric2D(dx, dy);
+      float sig	     = distance / metric2D(neighVtx.tot_xyE, centerVtx.tot_xyE);
+
+      // make stricter requirements for vertices outside of the pixel layers
+      bool pass_short = sig < errorWindow && centerVtx.lxy < 5;
+      bool pass_long  = sig < (errorWindow) && centerVtx.lxy > 5;
 
       // add it to the cluster
-      if(sig < errorWindow) { 
+      if(pass_short || pass_long) { 
 	tempClusterSize++;
 	/* std::cout << " KEEP NEIGHBOR: " << std::endl; */
 	/* std::cout << "neighb num" << neighbor << std::endl; */
@@ -923,38 +933,30 @@ void DisplacedJet::calcClusterSize(const std::vector<TransientVertex> vertices, 
     // set the max cluster
     if(tempClusterSize > maxClusterSize) {
       maxClusterSize = tempClusterSize;
-      maxVertex	     = vertices[center];
+      maxVertex	     = &vertices[center];
     } 
   } // end center loop
-
-  // absolute position
-  float maxX = maxVertex.x(), maxY = maxVertex.y(), maxZ = maxVertex.z();
-  // distance from the primary vertex of the center
-  float maxdX = maxVertex.x() - selPV.x(), maxdY = maxVertex.y() - selPV.y(), maxdZ = maxVertex.z() - selPV.z();
-  float mxE = maxVertex.xError(), myE = maxVertex.yError(), mzE = maxVertex.zError();
-  float pvxE = selPV.xError(), pvyE = selPV.yError(), pvzE = selPV.zError();
-  // total 2D error
-  float lxyE_tot = std::sqrt(mxE*mxE + pvxE*pvxE + myE*myE + pvyE*pvyE);
-  // total 3D error
-  float lxyzE_tot = std::sqrt(mxE*mxE + pvxE*pvxE + myE*myE + pvyE*pvyE + mzE*mzE + pvzE*pvzE);
   
   /* std::cout << "@@@@@@@@@@@@@@@@@@@@" << std::endl; */
   /* std::cout << "max cluster size " << maxClusterSize << std::endl; */
   /* std::cout << "max cluster x " << maxX << " y: " << maxY << " z: " << maxZ << std::endl; */
   /* std::cout << "@@@@@@@@@@@@@@@@@@@@\n" << std::endl; */
+  if (debug > 4) std::cout << "[DEBUG 4]  Assigning Max Vertex Information" << std::endl;  
 
   // set quantities related to the max cluster
   jetV0ClusterSize    = maxClusterSize;
-  jetV0ClusterLxy     = std::sqrt(maxdX*maxdX + maxdY*maxdY);
-  jetV0ClusterLxyz    = std::sqrt(maxdX*maxdX + maxdY*maxdY + maxdZ*maxdZ);
-  jetV0ClusterLxySig  = std::sqrt(maxdX*maxdX + maxdY*maxdY) / lxyE_tot;
-  jetV0ClusterLxyzSig = std::sqrt(maxdX*maxdX + maxdY*maxdY + maxdZ*maxdZ) / lxyzE_tot;
-  jetV0ClusterX	      = maxX;
-  jetV0ClusterY	      = maxY;
-  jetV0ClusterZ	      = maxZ;
+  jetV0ClusterLxy     = maxVertex->lxy;
+  jetV0ClusterLxyz    = maxVertex->lxyz;
+  jetV0ClusterLxySig  = maxVertex->lxySig;
+  jetV0ClusterLxyzSig = maxVertex->lxyzSig;
+  jetV0ClusterX	      = maxVertex->x;
+  jetV0ClusterY	      = maxVertex->y;
+  jetV0ClusterZ	      = maxVertex->z;
 }
 
 int DisplacedJet::calcHIndex(const DisplacedJet::vertexGraph & v0Graph) {
+  if (debug > 4) std::cout << "[DEBUG 4]  calculating h index for graph" << std::endl;  
+
   int nTracks = v0Graph.size();
   std::vector<int> trackOccurances;
 
@@ -992,204 +994,50 @@ void DisplacedJet::addV0Info(const reco::TrackRefVector trackRefs) {
   if (debug > 5) std::cout << "[DEBUG 5]  V0 candidate Tracks to Build: " << trackRefs.size() << std::endl;
 
   // loop over all pairs of tracks
-  reco::TrackRefVector::const_iterator tIter1 = trackRefs.begin();
-  reco::TrackRefVector::const_iterator tIter2 = trackRefs.begin();
-
-  int tt1 = 0;
-  for(; tIter1 != trackRefs.end(); ++tIter1, ++tt1){
+  int nTracks = displacedTracks.size();
+  for(int tt1 = 0; tt1 < nTracks; ++tt1) {
     // build the first track
     // loop over second track
-    int tt2 = 0;
-    tIter2 = trackRefs.begin();
-    for(; tIter2 != trackRefs.end(); ++tIter2, ++tt2){
-      if(debug > 5) std::cout << "[DEBUG 5]  V0 candidate tt1: " << tt1 << " tt2 " <<  tt2 << std::endl;
+    for(int tt2 = 0; tt2 < nTracks; ++tt2) {
       if(tt1 == tt2 || tt2 < tt1) continue;
-      if(debug > 5) std::cout << "[DEBUG 5]  V0 candidate Building Tracks " << tt1 << " " << tt2 << std::endl;
-   
-      reco::TransientTrack transientTrack1 = builder->build(*tIter1);
-      reco::TransientTrack transientTrack2 = builder->build(*tIter2);
+
+      DisplacedTrack track1 = displacedTracks[tt1];
+      DisplacedTrack track2 = displacedTracks[tt2];
+      if (!track1.isValid || !track2.isValid) continue;
+
+      // require 2d ip significance of 2 for each track
+      if (fabs(track1.ip2dSig) < 2 || fabs(track2.ip2dSig) < 2) continue;
+						      
+      Displaced2TrackVertex vertex(track1, track2, selPV, iSetup, debug);   
+
+      if(vertex.chi2 > 20 || !vertex.isValid) continue;                           
       
-      if(!transientTrack1.isValid()) continue;
-      if(!transientTrack2.isValid()) continue;
-      
-      // build the pair
-      std::vector<reco::TransientTrack> trackPair;    
-      trackPair.push_back(transientTrack1);
-      trackPair.push_back(transientTrack2);
-      
-      // fit the vertex
-      if (debug > 5) std::cout << "[DEBUG 5] Fitting V0 candidate  " << std::endl;
-      //AdaptiveVertexFitter fitter;
-      KalmanVertexFitter fitter(true); //(bool useSmoothing = true);
-      TransientVertex v0cand = fitter.vertex(trackPair);
-
-      if (debug > 5) std::cout << "[DEBUG 5] candidate is valid?  " << v0cand.isValid() << std::endl;
-      if(!(v0cand.isValid())) continue;
-
-      // convert the transient vertex and add to the vector
-      if (debug > 5) std::cout << "[DEBUG 5] Adding V0 candidate  " << std::endl;
-      if (debug > 5) std::cout << "[DEBUG 5]  V0 candidate has refittedtracks?  " << v0cand.hasRefittedTracks() << std::endl;
-      if (debug > 5) std::cout << "[DEBUG 5]  V0 candidate position?  " << v0cand.position().x() <<  std::endl;
-      reco::Vertex v0vtx = v0cand;  
-
-      // make checks on the valididty of the conversion
-      if (debug > 5) std::cout << "[DEBUG 5] V0 Is Valid?  " << v0vtx.isValid() << std::endl;
-      if(!(v0vtx.isValid())) continue;
-      if (debug > 5) std::cout << "[DEBUG 5] V0 N tracks?  " << v0vtx.tracksSize() << std::endl;
-      if ( v0vtx.tracksSize() < 2 ) continue;
-      assert(v0vtx.tracksSize() == 2 );
-      if (debug > 5) std::cout << "[DEBUG 5] v0 Mass  " << v0vtx.p4().mass() << std::endl;
-
-      if(v0vtx.chi2() > 100) continue;                           
-      // keep all the vector
-      v0vtxVector.push_back(v0vtx);      
-      transientV0Vector.push_back(v0cand);      
+      displacedV0Vector.push_back(vertex);
     } // end loop over second track
   } // end loop over first track
 
 
+  int v0VectorSize = displacedV0Vector.size();
+  if (debug > 5) std::cout << "[DEBUG 5]  looping over reconstructed vertices" << std::endl;
   // loop over the reconstructed vertices
-  // check for nuclear interactions: inner hits near vertices, and vertices near BPIX layers
-  reco::VertexCollection::const_iterator vtxIter = v0vtxVector.begin();
-  int index = 0;
-  for(; vtxIter != v0vtxVector.end(); ++vtxIter, ++index) {
-    const math::XYZPoint & vtxPosition  = vtxIter->position();
-    
-    if(debug > 5) std::cout << "[DEBUG 5] refitted track sanity check. Has refitted? " << vtxIter->hasRefittedTracks() << std::endl;
-    if(debug > 5) std::cout << "[DEBUG 5] refitted track sanity check. size? " << vtxIter->refittedTracks().size() << std::endl;
-    if(!vtxIter->hasRefittedTracks() || (vtxIter->refittedTracks().size() < 2)) continue;
+  for(int vv = 0; vv < v0VectorSize; ++vv){
 
-    // exclude  poor fits
-    if(vtxIter->chi2() > 20) continue;                     
-   
-    //get the track references from the vertex fit for the orignal tracks
-    reco::TrackRef ref_track1 = vertexMatchedTrackRefs[findRefTrack(*vtxIter->tracks_begin(), vertexMatchedTrackRefs)];
-    reco::TrackRef ref_track2 = vertexMatchedTrackRefs[findRefTrack(*(vtxIter->tracks_begin()+1), vertexMatchedTrackRefs)];
-    // build the transient tracks
-    reco::TransientTrack transientTrack1 = builder->build(ref_track1);
-    reco::TransientTrack transientTrack2 = builder->build(ref_track2);
-    // use the transient track to get the impact point parameters
-    TransverseImpactPointExtrapolator extrapolator1(transientTrack1.field());
-    TransverseImpactPointExtrapolator extrapolator2(transientTrack2.field());
-    // use the extrapolator to get the trajectory state on surface
-    TrajectoryStateOnSurface tsosClosestToPV2D_1 = extrapolator1.extrapolate(transientTrack1.impactPointState(), RecoVertex::convertPos(selPV.position()));
-    TrajectoryStateOnSurface tsosClosestToPV2D_2 = extrapolator2.extrapolate(transientTrack2.impactPointState(), RecoVertex::convertPos(selPV.position()));
-    // build vectors to calculate the transverse impact parameters 
-    const GlobalPoint &   closestToPVTransverse_1 = tsosClosestToPV2D_1.globalPosition();
-    const GlobalPoint &   closestToPVTransverse_2 = tsosClosestToPV2D_2.globalPosition();
-    TVector3 ipv2_1( closestToPVTransverse_1.x() - selPV.x(), closestToPVTransverse_1.y() - selPV.y(), 0);
-    TVector3 ipv2_2( closestToPVTransverse_2.x() - selPV.x(), closestToPVTransverse_2.y() - selPV.y(), 0);
+    Displaced2TrackVertex vertex = displacedV0Vector[vv];
 
-
-    // parse the original tracks form the references
-    const reco::Track &	const_track1 = *ref_track1;
-    const reco::Track &	const_track2 = *ref_track2;
-
-    // exclude tracks with transverse impact paramter less than 0.5 mm
-    if(ipv2_1.Mag() < -1.00 || ipv2_2.Mag() < -1.00) continue; 
-
-    // parse the refitted tracks using the orignal track references
-    const reco::Track &	refit_track1 = vtxIter->refittedTrack(ref_track1);
-    const reco::Track &	refit_track2 =  vtxIter->refittedTrack(ref_track2);
-
-    // get the trajectory info 
-    static GetTrackTrajInfo getTrackTrajInfo;
-    if(debug > 5) std::cout << "[DEBUG 5] access trajectory info" << std::endl;
-    std::vector<GetTrackTrajInfo::Result> trajInfo1 = getTrackTrajInfo.analyze(iSetup, const_track1);
-    std::vector<GetTrackTrajInfo::Result> trajInfo2 = getTrackTrajInfo.analyze(iSetup, const_track2);
-    
-    // must have valid trajectory info otherwise you __will__ segfault
-    if(!trajInfo1[0].valid  || !trajInfo2[0].valid || !trajInfo1[1].valid || !trajInfo2[1].valid ) continue;
-    // only keep vertices with tracks which could have been used the IP calculations
-    // if(const_track1.pt() < 1 && const_track2.pt() < 1) continue;
-
-    // require two hits for each track (to be able to do inner and nex hit
-    if(trajInfo1.size() < 2 || trajInfo2.size() < 2) continue;
-
-    // get the tsos state for hit pattern information 
-    const TrajectoryStateOnSurface& tsosInnerHit1 = trajInfo1[0].detTSOS;
-    const TrajectoryStateOnSurface& tsosInnerHit2 = trajInfo2[0].detTSOS;
-    const TrajectoryStateOnSurface& tsosNextHit1  = trajInfo1[1].detTSOS;
-    const TrajectoryStateOnSurface& tsosNextHit2  = trajInfo2[1].detTSOS;
-    // position of the hits
-    const GlobalPoint &             innerPos1     = tsosInnerHit1.globalPosition();
-    const GlobalPoint &             innerPos2     = tsosInnerHit2.globalPosition();
-    const GlobalPoint &             nextPos1      = tsosNextHit1.globalPosition();
-    const GlobalPoint &             nextPos2      = tsosNextHit2.globalPosition();
-
-    // parse the detector layer information for each track
-    const DetLayer &  detLayerInner1	 = *(trajInfo1[0].detLayer); 
-    const DetLayer &  detLayerInner2	 = *(trajInfo2[0].detLayer); 
-    // GeomDetEnumerators::SubDetector subDetLayerInner1 = detLayerInner1.subDetector();
-    // GeomDetEnumerators::SubDetector subDetLayerInner2 = detLayerInner2.subDetector();
-    // pixel barrel layer check
-    //bool isBarrelPixelInner1 = subDetLayerInner1 == GeomDetEnumerators::PixelBarrel;
-    //bool isBarrelPixelInner2 = subDetLayerInner2 == GeomDetEnumerators::PixelBarrel;       
-
-    TVector3 vector_track1(refit_track1.px(), refit_track1.py(), refit_track1.pz());
-    TVector3 vector_track2(refit_track2.px(), refit_track2.py(), refit_track2.pz());
-    // vertex position and errors
-    float vx = vtxPosition.x(), vy = vtxPosition.y(), vz = vtxPosition.z();
-    float vxE = vtxIter->xError(), vyE = vtxIter->yError();//, vzE = vtxIter->zError();
-    // errors related to PV                                                                                                                                                                                                          
-    float pvxE = selPV.xError(), pvyE = selPV.yError();//, pvzE = selPV.zError();
-    // combined error                                                                                                                                                                                                                
-    float     tot_xE = std::sqrt(vxE * vxE + pvxE * pvxE);
-    float     tot_yE = std::sqrt(vyE * vyE + pvyE * pvyE);
-    // float     tot_zE = std::sqrt(vZE * vZE + pvzE * pvzE);
-
-    // inner hit position
-    float tx1 = innerPos1.x(), ty1 = innerPos1.y(), tz1 = innerPos1.z();
-    float tx2 = innerPos2.x(), ty2 = innerPos2.y(), tz2 = innerPos2.z();
-    // the hit after the inner hit (tracks 1 and 2)
-    float tx1_2 = nextPos1.x(), ty1_2 = nextPos1.y(), tz1_2 = nextPos1.z();
-    float tx2_2 = nextPos2.x(), ty2_2 = nextPos2.y(), tz2_2 = nextPos2.z();
-
-    // make the vectors pointing form the vertex to the inner and next hit
-    TVector3 vertex_to_innerHit1(tx1-vx, ty1-vy, tz1-vz);
-    TVector3 vertex_to_innerHit2(tx2-vx, ty2-vy, tz2-vz);
-    // next hit after inner hit
-    TVector3 vertex_to_nextHit1(tx1_2-vx, ty1_2-vy, tz1_2-vz);
-    TVector3 vertex_to_nextHit2(tx2_2-vx, ty2_2-vy, tz2_2-vz);
-
-    //float vr2D = std::sqrt(vx*vx + vy*vy);  // radial distance of the vertex
-    // distances from the vertex
-    float dx1 = tx1 - vx, dy1 = ty1 - vy, dz1 =tz1 - vz; // distance in each dimension from vertex track 1
-    float dx2 = tx2 - vx, dy2 = ty2 - vy, dz2 =tz2 - vz; // and for track 2
-    // distance from the vertex for the inner hits
-    float delta1 = std::sqrt(dx1*dx1 + dy1*dy1 + dz1*dz1); // distance in 3D from vertex
-    float delta2 = std::sqrt(dx2*dx2 + dy2*dy2 + dz2*dz2); // and for track 2
-
-    float   vtx_dx	 = vx - selPV.x() , vtx_dy = vy - selPV.y();	//vtx_dz = vz - selPV.z();
-    float   vtx_lxy	 = std::sqrt(vtx_dx*vtx_dx + vtx_dy*vtx_dy);
-    float   vtx_lxyError = std::sqrt(tot_xE * tot_xE + tot_yE * tot_yE);
-    float   vtx_lxySig	 = vtx_lxy / vtx_lxyError;
-    //float vtx_lxyz = std::sqrt(vtx_dx*vtx_dx + vtx_dy*vtx_dy + vtx_dz*vtx_dz);
-
-    // distance from each BPIX double layer for the vertex
-    /* float deltaBPIX1_1 = fabs(4.18 - vtx_lxy); */
-    /* float deltaBPIX1_2 = fabs(4.64 - vtx_lxy); */
-    /* float deltaBPIX2_1 = fabs(7.07 - vtx_lxy); */
-    /* float deltaBPIX2_2 = fabs(7.535 - vtx_lxy); */
-    /* float deltaBPIX3_1 = fabs(9.935 - vtx_lxy); */
-    /* float deltaBPIX3_2 = fabs(10.405 - vtx_lxy); */
-
+    // checks that the inner hits are not consistent with nuclear interactions
+    // the vertex should not be close to the inner hit in the layer
     static const float MIN_DISTANCE = 0.05;    
-    bool oneTrackNuclear = (delta1 < MIN_DISTANCE) || (delta2 < MIN_DISTANCE);
-    bool twoTrackNuclear = (delta1 < MIN_DISTANCE) && (delta2 < MIN_DISTANCE);
+    bool    oneTrackNuclear	 = (vertex.dInnerHitTrack1 < MIN_DISTANCE) || (vertex.dInnerHitTrack2 < MIN_DISTANCE);
+    bool    twoTrackNuclear	 = (vertex.dInnerHitTrack1 < MIN_DISTANCE) && (vertex.dInnerHitTrack2 < MIN_DISTANCE);
+    //bool    twoTrackInnerHitFake = vertex.dInnerHitTrack1Track2 < MIN_DISTANCE;
 
     // make sure the track inner hits are in the pixel barrel and the the vertex is 
     // transversely close to a given layer 
-    bool    vertexNearBeamPipe = vtx_lxy < 2.3 && vtx_lxy > 2.1;
-    bool    vertexNearBPIX1    = vtx_lxy < 5 && vtx_lxy > 4 && vtx_lxyError < 0.05;
-    bool    vertexNearBPIX2    = vtx_lxy > 6.8 && vtx_lxy < 7.8 && vtx_lxyError < 0.05;
+    bool    vertexNearBeamPipe = vertex.lxy < 2.3 && vertex.lxy > 2.1 && vertex.tot_xyE < 0.03;
+    bool    vertexNearBPIX1    = vertex.lxy < 5 && vertex.lxy > 4 && vertex.tot_xyE < 0.03;
+    bool    vertexNearBPIX2    = vertex.lxy > 6.8 && vertex.lxy < 7.8 && vertex.tot_xyE < 0.03;
     bool    vertexNearBPIX3    = false;
     bool    vertexNearBPIX     = vertexNearBeamPipe || vertexNearBPIX1 || vertexNearBPIX2 || vertexNearBPIX3;
-
-    // sign given by cos(theta) where theta is the angle between the inner hit and the next hit with 
-    // the vertex as the origin 
-    bool    innerHitBehindVertex1 = (vertex_to_nextHit1 * vertex_to_innerHit1) < 0;
-    bool    innerHitBehindVertex2 = (vertex_to_nextHit2 * vertex_to_innerHit2) < 0;
 
     if(oneTrackNuclear) jetOneTrackNuclearCount++;
     if(twoTrackNuclear) jetTwoTrackNuclearCount++;
@@ -1200,31 +1048,27 @@ void DisplacedJet::addV0Info(const reco::TrackRefVector trackRefs) {
     if(vertexNearBPIX && twoTrackNuclear) jetTightNuclear++;
     if(vertexNearBPIX && oneTrackNuclear) jetLooseNuclear++;
     // restrict the inner hit behind calls to tracks that can enter the medianip significance calcualtion
-    if((innerHitBehindVertex1)  && (innerHitBehindVertex2)) jetNV0HitBehindVertex++;
+    if((vertex.innerHitBehindVertex1)  && (vertex.innerHitBehindVertex2)) jetNV0HitBehindVertex++;
+    //if(twoTrackInnerHitFake) 
     // count all vertices (including the ones from tracks which do not enter medianip significance caluclation)
     // require the vertices arent fake with hits behind the position
     // must have 2D significance of at least 1 as to not be consistent with the beamspot
     // must be outside .5 mm 
-    if(!innerHitBehindVertex1 && !innerHitBehindVertex2 && vtxIter->chi2() < 10 && vtx_lxy > 0.05 && fabs(vtx_lxySig) > 3) {
-      jetNV0NoHitBehindVertex++;
-      v0vtxVectorCleaned.push_back(*vtxIter);      
-      transientV0VectorCleaned.push_back(transientV0Vector[index]);
+    if(!vertex.innerHitBehindVertex1 && !vertex.innerHitBehindVertex2 && vertex.chi2 < 20 && vertex.lxy > 0.05 && fabs(vertex.lxySig) > 3) {
+      jetNV0NoHitBehindVertex++;      
+      displacedV0VectorCleaned.push_back(vertex);
     }
 
-    // check a mass window around the kshort
-    // opposite charge
-    if((fabs((vtxIter->p4()).mass() - .493) < .03) && 
-       ((const_track1.charge() + const_track2.charge()) == 0) && 
-       (const_track1.pt() > 1 && const_track2.pt() > 1) && 
-       (vtx_lxySig > 50)) {
-      jetNV0KShort += 1;
-    }
+    // particle comparisons
+    jetNV0KShort += vertex.isKShort ? 1 : 0;
+    jetNV0Lambda += vertex.isLambda ? 1 : 0;
+
   } // end loop on v0 candiate vertices  
 
   // create the graph of vertex association and find the h index
-  findVertexCliques();
+  //  findVertexCliques();
   // fill information for the clsutering of the vertices
-  calcClusterSize(transientV0VectorCleaned, 1);  
+  calcClusterSize(displacedV0VectorCleaned, 2);  
 }
 
 
@@ -1689,7 +1533,7 @@ std::vector<bool> DisplacedJet::passNoVtxTag(const std::vector<float> thres){
   std::vector<float>::const_iterator thresIter = thres.begin();
   for(; thresIter != thres.end(); ++thresIter) {
     bool didPass = false;
-    if( nTracks == 0 && caloHadEnergyFrac > 0.95) didPass = true;
+    if( nTracks == 0 && jetV0ClusterSize == 0 && caloHadEnergyFrac > 0.95) didPass = true;
     passResults.push_back(didPass);
   }
   noVertexTagsVector = passResults;
@@ -1701,8 +1545,8 @@ std::vector<bool> DisplacedJet::passShortTag(const std::vector<float> thres, flo
   std::vector<float>::const_iterator thresIter = thres.begin();
   for(; thresIter != thres.end(); ++thresIter) {
     bool didPass = false;
-    if( (jetPtSumTracksNoPixel/ sumTrackPt) < 0.4 && nTracks > 0 && medianIPLogSig2D > (*thresIter - 1)
-	&& (alphaMax / sumTrackPt) < 0.2 && jetV0ClusterSize > 3) didPass = true;
+    if( (jetPtSumTracksNoPixel/ sumTrackPt) < 0.7 && nTracks > 0 && medianIPLogSig2D > (*thresIter - 2)
+	&& (alphaMax / sumTrackPt) < 0.2 && jetV0ClusterSize > 15) didPass = true;
     passResults.push_back(didPass);
   }
   shortTagsVector = passResults;
@@ -1714,8 +1558,8 @@ std::vector<bool> DisplacedJet::passMediumTag(const std::vector<float> thres, fl
   std::vector<float>::const_iterator thresIter = thres.begin();
   for(; thresIter != thres.end(); ++thresIter) {
     bool didPass = false;
-    if((jetPtSumTracksNoPixel/ sumTrackPt) < 0.4  && nTracks > 0 && medianIPLogSig2D > *thresIter
-       && (alphaMax / sumTrackPt) < 0.1 &&  jetV0ClusterSize <= 3) didPass = true;
+    if((jetPtSumTracksNoPixel/ sumTrackPt) < 0.7  && nTracks > 0 && medianIPLogSig2D > *thresIter
+       && (alphaMax / sumTrackPt) < 0.05 &&  jetV0ClusterSize <= 15) didPass = true;
     passResults.push_back(didPass);
   }
   mediumTagsVector = passResults;
@@ -1727,7 +1571,7 @@ std::vector<bool> DisplacedJet::passLongTag(const std::vector<float> thres, floa
   std::vector<float>::const_iterator thresIter = thres.begin();
   for(; thresIter != thres.end(); ++thresIter) {
     bool didPass = false;
-    if((jetPtSumTracksNoPixel/ sumTrackPt) > 0.4 && medianIPLogSig2D > *thresIter && (alphaMax / sumTrackPt) < .1) didPass = true;
+    if((jetPtSumTracksNoPixel/ sumTrackPt) > 0.7 && medianIPLogSig2D > *thresIter && (alphaMax / sumTrackPt) < 0.05) didPass = true;
     passResults.push_back(didPass);
   }
   longTagsVector = passResults;
@@ -1774,7 +1618,7 @@ float DisplacedJet::getJetMedian(const std::vector<float>& values, bool is_signe
     assert( dMedian >= 0 ); 
   }
 
-  if (debug > 4) std::cout << "[DEBUG] jet median:  " << dMedian << std::endl;
+  //  if (debug > 4) std::cout << "[DEBUG] jet median:  " << dMedian << std::endl;
   return dMedian;
 }
 
@@ -1786,7 +1630,7 @@ float DisplacedJet::getJetMean(const std::vector<float> & values, bool is_signed
   for (; val != values.end(); ++val) sum += is_signed ? *val : fabs(*val);  
 
   float mean = sum / float(values.size());
-  if (debug > 4) std::cout << "[DEBUG] jet mean:  " << mean << std::endl;
+  //  if (debug > 4) std::cout << "[DEBUG] jet mean:  " << mean << std::endl;
   return mean;
 }
 
@@ -1806,7 +1650,7 @@ float DisplacedJet::getJetVariance(const std::vector<float>& values, bool is_sig
   if(!is_signed ) { assert( sum >= 0 ); }
   float variance = std::sqrt(sum / float((values.size() - 1.0)));
 
-  if (debug > 4) std::cout << "[DEBUG] jet variance:  " << variance << std::endl;
+  //if (debug > 4) std::cout << "[DEBUG] jet variance:  " << variance << std::endl;
   return variance;
 }
 
@@ -1856,4 +1700,7 @@ void DisplacedJet::calcJetAlpha(const reco::TrackCollection& tracks, const reco:
 
   alpha	   = sumJetPt;
   alphaMax = sumJetPtMax;
+
 }
+
+

@@ -108,9 +108,11 @@
 // user defined includes
 #include "DisplacedJets/DisplacedJetSVAssociator/interface/JetVertexAssociation.h"
 #include "DisplacedJets/DisplacedJet/interface/DisplacedTrack.h"
+#include "DisplacedJets/DisplacedJet/interface/Displaced2TrackVertex.h"
 #include "DisplacedJets/DisplacedJet/interface/DisplacedJet.h"
 #include "DisplacedJets/DisplacedJet/interface/DisplacedJetEvent.h"
 #include "DisplacedJets/DJetAnalyzer/interface/DJetAnalyzer.h"
+
 //
 // class declaration
 //
@@ -192,17 +194,24 @@ void DJetAnalyzer::fillTriggerInfo(const edm::Event & iEvent, const edm::Trigger
   nTrig = 0;
 
   //record the trigger results for important triggers
-  passHT200	       = 0;
-  passHT250	       = 0;
-  passHT300	       = 0;
+  // calo HT control triggers
   passHTControl	       = 0;
-  passHT350	       = 0;
-  passHT400	       = 0;
+  passHT200	       = 0;
+  passHT275	       = 0;
+  passHT325	       = 0;
+  passHT425	       = 0;
+  passHT575	       = 0;
+  // pf ht 800
   passHT800	       = 0;
+  // displaced track paths
+  passDisplaced250_40  = 0;
   passDisplaced350_40  = 0;
+  // inclusive paths
+  passDisplaced400_40  = 0;
   passDisplaced500_40  = 0;
   passDisplaced550_40  = 0;
   passDisplacedOR5e33  = 0;
+  // vbf paths
   passVBFHadronic      = 0;
   passVBFDispTrack     = 0;
   passDisplacedOR14e34 = 0;
@@ -216,22 +225,25 @@ void DJetAnalyzer::fillTriggerInfo(const edm::Event & iEvent, const edm::Trigger
     const std::string &name = trigNames.triggerName(i);
     bool fired = trigResults.accept(i);
 
+    if(!fired) continue;
+
     // specific triggers
     std::size_t searchHT350DispTrack40 = name.find("HLT_HT350_DisplacedDijet40_DisplacedTrack_v");
-    std::size_t searchHT350DispTrack80 = name.find("HLT_HT350_DisplacedDijet80_DisplacedTrack_v");
+    //    std::size_t searchHT350DispTrack80 = name.find("HLT_HT350_DisplacedDijet80_DisplacedTrack_v");
     std::size_t searchHT500Inclusive40 = name.find("HLT_HT500_DisplacedDijet40_Inclusive_v");
     std::size_t searchHT550Inclusive40 = name.find("HLT_HT550_DisplacedDijet40_Inclusive_v");
-    std::size_t searchHT650Inclusive80 = name.find("HLT_HT650_DisplacedDijet80_Inclusive_v");
+    //    std::size_t searchHT650Inclusive80 = name.find("HLT_HT650_DisplacedDijet80_Inclusive_v");
     std::size_t searchVBFHadronic      = name.find("HLT_VBF_DisplacedJet40_Hadronic_v");
     std::size_t searchVBFDispTrack     = name.find("HLT_VBF_DisplacedJet40_DisplacedTrack_v");
     // pfht
-    std::size_t searchPFHT800          = name.find("HLT_PFHT800_v");
-    std::size_t searchPFHT200          = name.find("HLT_PFHT200_v");
-    std::size_t searchPFHT250          = name.find("HLT_PFHT250_v");
-    std::size_t searchPFHT300          = name.find("HLT_PFHT300_v");
-    std::size_t searchPFHT350          = name.find("HLT_PFHT350_v");
-    std::size_t searchPFHT400          = name.find("HLT_PFHT400_v");
-    // vbf
+    std::size_t searchPFHT800        = name.find("HLT_PFHT800_v");
+    // calo ht control paths
+    std::size_t searchHT200          = name.find("HLT_HT200_v");
+    std::size_t searchHT275          = name.find("HLT_HT275_v");
+    std::size_t searchHT325          = name.find("HLT_HT325_v");
+    std::size_t searchHT425          = name.find("HLT_HT425_v");
+    std::size_t searchHT575          = name.find("HLT_HT575_v");
+    // vbf control
     std::size_t searchVBFTriple        = name.find("HLT_L1_TripleJet_VBF_v");
     // met triggers
     std::size_t searchPFMET170	       = name.find("HLT_PFMET170_v");
@@ -241,44 +253,50 @@ void DJetAnalyzer::fillTriggerInfo(const edm::Event & iEvent, const edm::Trigger
 
     // build important bits for the tree
     // control
-    bool    pfht800        = searchPFHT800 != std::string::npos && fired;
-    bool    pfht200        = searchPFHT200 != std::string::npos && fired;
-    bool    pfht250        = searchPFHT250 != std::string::npos && fired;
-    bool    pfht300        = searchPFHT300 != std::string::npos && fired;
-    bool    pfht350        = searchPFHT350 != std::string::npos && fired;
-    bool    pfht400        = searchPFHT400 != std::string::npos && fired;    
+    bool    pfht800      = searchPFHT800 != std::string::npos ;
+    bool    ht200        = searchHT200 != std::string::npos ;
+    bool    ht275        = searchHT275 != std::string::npos ;
+    bool    ht325        = searchHT325 != std::string::npos ;
+    bool    ht425        = searchHT425 != std::string::npos ;
+    bool    ht575        = searchHT575 != std::string::npos ;    
     // displaced triggers
-    bool    ht350_40       = searchHT350DispTrack40 != std::string::npos && fired;
-    bool    ht350_80       = searchHT350DispTrack80 != std::string::npos && fired;
-    bool    ht500_40       = searchHT500Inclusive40 != std::string::npos && fired;
-    bool    ht550_40       = searchHT550Inclusive40 != std::string::npos && fired;
-    bool    ht650_80       = searchHT650Inclusive80 != std::string::npos && fired;
+    // displaced track
+    bool    ht250_40       = name.find("HLT_HT250_DisplacedDijet40_DisplacedTrack_v") != std::string::npos ;
+    bool    ht350_40       = searchHT350DispTrack40 != std::string::npos ;
+    //    bool    ht350_80       = searchHT350DispTrack80 != std::string::npos ;
+    // inclusive
+    bool    ht400_40       = name.find("HLT_HT400_DisplacedDijet40_Inclusive_v") != std::string::npos ;
+    bool    ht500_40       = searchHT500Inclusive40 != std::string::npos ;
+    bool    ht550_40       = searchHT550Inclusive40 != std::string::npos ;
+    //    bool    ht650_80       = searchHT650Inclusive80 != std::string::npos ;
     // vbf displaced
-    bool    vbfHadronic    = searchVBFHadronic  != std::string::npos && fired;
-    bool    vbfDispTrack   = searchVBFDispTrack != std::string::npos && fired;
-    bool    vbfTriple      = searchVBFTriple != std::string::npos && fired;
+    bool    vbfHadronic    = searchVBFHadronic  != std::string::npos ;
+    bool    vbfDispTrack   = searchVBFDispTrack != std::string::npos ;
+    bool    vbfTriple      = searchVBFTriple != std::string::npos ;
     // pure pfmet
-    bool    pfmet170       = searchPFMET170 != std::string::npos && fired;
-    bool    pfmet170nc     = searchPFMET170NC != std::string::npos && fired;
-    bool    mu20           = searchMu20 != std::string::npos && fired;
+    bool    pfmet170       = searchPFMET170 != std::string::npos ;
+    bool    pfmet170nc     = searchPFMET170NC != std::string::npos ;
+    bool    mu20           = searchMu20 != std::string::npos ;
 
     // record the trigger results for important triggers
-    passHTControl	 = ((passHTControl) || pfht200 || pfht250 || pfht300 || pfht350 || pfht400) ;
+    passHTControl	 = ((passHTControl) || ht200 || ht275 || ht325 || ht425 || ht575) ;
     passHT800		 = (passHT800) || pfht800;
-    passHT200		 = (passHT200) || pfht200;
-    passHT250		 = (passHT250) || pfht250;
-    passHT300		 = (passHT300) || pfht300;
-    passHT350		 = (passHT350) || pfht350;
-    passHT400		 = (passHT400) || pfht400;
-    passDisplacedOR5e33	 = (passDisplacedOR5e33) || ht350_40 || ht500_40;
-    passDisplacedOR14e34 = (passDisplacedOR14e34) || ht350_80 || ht650_80;
+    passHT200		 = (passHT200)   || ht200;
+    passHT275		 = (passHT275)   || ht275;
+    passHT325		 = (passHT325)   || ht325;
+    passHT425		 = (passHT425)   || ht425;
+    passHT575		 = (passHT575)   || ht575;
+    passDisplacedOR5e33	 = (passDisplacedOR5e33) || ht250_40 || ht400_40;
+    passDisplacedOR14e34 = (passDisplacedOR14e34) || ht350_40 || ht500_40;
+    passDisplaced250_40  = passDisplaced250_40 || ht250_40; 
     passDisplaced350_40  = passDisplaced350_40 || ht350_40; 
+    passDisplaced400_40  = passDisplaced400_40 || ht400_40; 
     passDisplaced500_40  = passDisplaced500_40 || ht500_40;
     passDisplaced550_40  = passDisplaced550_40 || ht550_40;
     passVBFHadronic      = passVBFHadronic || vbfHadronic;
     passVBFDispTrack     = passVBFDispTrack || vbfDispTrack;
     passVBFTriple        = passVBFTriple || vbfTriple;
-    passBigOR            = passBigOR || ht500_40 || ht350_40 || pfht800;
+    passBigOR            = passBigOR || ht500_40 || ht350_40 || ht250_40 || ht400_40 || pfht800;
     passPFMET170         = passPFMET170 || pfmet170;
     passPFMET170NC       = passPFMET170NC || pfmet170nc;
     passMu20		 = passMu20 || mu20;
@@ -368,10 +386,10 @@ void  DJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   // ncalo jets indexes every jet branch
   nCaloJets = djEvent.getNJets();   
 
-  // 1. add the track associations
+  // add the track associations
   djEvent.mergeTrackAssociations(caloTrackAssociation, vertexTrackAssociation);
 
-  // 2. merge in the event info MUST BE DONE AFTER ASSOCIATIONS
+  // merge in the event info MUST BE DONE AFTER ASSOCIATIONS
   djEvent.mergeCaloIPTagInfo(lifetimeTagInfo, pvCollection); // add the ip info built from the JTA
 
   // dump information related to the preselection
@@ -518,15 +536,17 @@ void DJetAnalyzer::beginJob()
   eventTree_->Branch("passDisplacedOR14e34", &passDisplacedOR14e34, "passDisplacedOR14e34/I");
   eventTree_->Branch("passHTControl", &passHTControl, "passHTControl/I");
   eventTree_->Branch("passHT200", &passHT200, "passHT200/I");
-  eventTree_->Branch("passHT250", &passHT250, "passHT250/I");
-  eventTree_->Branch("passHT300", &passHT300, "passHT300/I");
-  eventTree_->Branch("passHT350", &passHT350, "passHT350/I");
-  eventTree_->Branch("passHT400", &passHT400, "passHT400/I");
+  eventTree_->Branch("passHT275", &passHT275, "passHT275/I");
+  eventTree_->Branch("passHT325", &passHT325, "passHT325/I");
+  eventTree_->Branch("passHT425", &passHT425, "passHT425/I");
+  eventTree_->Branch("passHT575", &passHT575, "passHT575/I");
+  eventTree_->Branch("passDisplaced250_40", &passDisplaced250_40, "passDisplaced250_40/I");
   eventTree_->Branch("passDisplaced350_40", &passDisplaced350_40, "passDisplaced350_40/I");
+  eventTree_->Branch("passDisplaced400_40", &passDisplaced400_40, "passDisplaced400_40/I");
   eventTree_->Branch("passDisplaced500_40", &passDisplaced500_40, "passDisplaced500_40/I");
   eventTree_->Branch("passDisplaced550_40", &passDisplaced550_40, "passDisplaced550_40/I");
   eventTree_->Branch("passBigOR", &passBigOR, "passBigOR/I");
-  eventTree_->Branch("passHT800", &passHT800, "passHT800/I");
+  eventTree_->Branch("passPFHT800", &passHT800, "passPFHT800/I");
   eventTree_->Branch("passVBFHadronic", &passVBFHadronic, "passVBFHadronic/I");
   eventTree_->Branch("passVBFDispTrack", &passVBFDispTrack, "passVBFDispTrack/I");
   eventTree_->Branch("passVBFTriple", &passVBFTriple, "passVBFTriple/I");
@@ -623,14 +643,17 @@ void DJetAnalyzer::beginJob()
   jetTree_->Branch("passDisplacedOR14e34", &passDisplacedOR14e34, "passDisplacedOR14e34/I");
   jetTree_->Branch("passHTControl", &passHTControl, "passHTControl/I");
   jetTree_->Branch("passHT200", &passHT200, "passHT200/I");
-  jetTree_->Branch("passHT250", &passHT250, "passHT250/I");
-  jetTree_->Branch("passHT300", &passHT300, "passHT300/I");
-  jetTree_->Branch("passHT400", &passHT400, "passHT400/I");
+  jetTree_->Branch("passHT275", &passHT275, "passHT275/I");
+  jetTree_->Branch("passHT325", &passHT325, "passHT325/I");
+  jetTree_->Branch("passHT425", &passHT425, "passHT425/I");
+  jetTree_->Branch("passHT575", &passHT575, "passHT575/I");
+  jetTree_->Branch("passDisplaced250_40", &passDisplaced250_40, "passDisplaced250_40/I");
   jetTree_->Branch("passDisplaced350_40", &passDisplaced350_40, "passDisplaced350_40/I");
+  jetTree_->Branch("passDisplaced400_40", &passDisplaced400_40, "passDisplaced400_40/I");
   jetTree_->Branch("passDisplaced500_40", &passDisplaced500_40, "passDisplaced500_40/I");
   jetTree_->Branch("passDisplaced550_40", &passDisplaced550_40, "passDisplaced550_40/I");
   jetTree_->Branch("passBigOR", &passBigOR, "passBigOR/I");
-  jetTree_->Branch("passHT800", &passHT800, "passHT800/I");
+  jetTree_->Branch("passPFHT800", &passHT800, "passPFHT800/I");
   jetTree_->Branch("passVBFHadronic", &passVBFHadronic, "passVBFHadronic/I");
   jetTree_->Branch("passVBFDispTrack", &passVBFDispTrack, "passVBFDispTrack/I");
   jetTree_->Branch("passVBFTriple", &passVBFTriple, "passVBFTriple/I");
@@ -900,6 +923,7 @@ void DJetAnalyzer::beginJob()
 
   jetTree_->Branch("jetOneTrackNuclearCount", &jetOneTrackNuclearCount,"jetOneTrackNuclearCount[nCaloJets]/I");
   jetTree_->Branch("jetTwoTrackNuclearCount", &jetTwoTrackNuclearCount,"jetTwoTrackNuclearCount[nCaloJets]/I");
+  jetTree_->Branch("jetTwoTrackInnerHitFake", &jetTwoTrackInnerHitFake,"jetTwoTrackInnerHitfake[nCaloJets]/I");
   jetTree_->Branch("jetVertexNearBPIX1", &jetVertexNearBPIX1,"jetVertexNearBPIX1[nCaloJets]/I");
   jetTree_->Branch("jetVertexNearBPIX2", &jetVertexNearBPIX2,"jetVertexNearBPIX2[nCaloJets]/I");
   jetTree_->Branch("jetVertexNearBPIX3", &jetVertexNearBPIX3,"jetVertexNearBPIX3[nCaloJets]/I");
@@ -910,6 +934,7 @@ void DJetAnalyzer::beginJob()
   jetTree_->Branch("jetNV0NoHitBehindVertex", &jetNV0NoHitBehindVertex,"jetNV0NoHitBehindVertex[nCaloJets]/I");
   jetTree_->Branch("jetV0HIndex", &jetV0HIndex,"jetV0HIndex[nCaloJets]/I");
   jetTree_->Branch("jetNV0KShort", &jetNV0KShort,"jetNV0KShort[nCaloJets]/I");
+  jetTree_->Branch("jetNV0Lambda", &jetNV0Lambda,"jetNV0Lambda[nCaloJets]/I");
 
   // CLUSTER RELATED
   jetTree_->Branch("jetV0ClusterSize", &jetV0ClusterSize,"jetV0ClusterSize[nCaloJets]/I");
@@ -934,26 +959,33 @@ void DJetAnalyzer::beginJob()
   v0Tree_->Branch("event", &event, "event/I");
   v0Tree_->Branch("evNum", &evNum, "evNum/I");  
   // trigger 
+
+  // trigger 
   v0Tree_->Branch("nTrig", &nTrig, "nTrig/I");
+  //v0Tree_->Branch("triggerNames", &triggerNames);
+  //v0Tree_->Branch("triggerPass", &triggerPass, "triggerPass[nTrig]/I");
   v0Tree_->Branch("passDisplacedOR5e33", &passDisplacedOR5e33, "passDisplacedOR5e33/I");
   v0Tree_->Branch("passDisplacedOR14e34", &passDisplacedOR14e34, "passDisplacedOR14e34/I");
   v0Tree_->Branch("passHTControl", &passHTControl, "passHTControl/I");
   v0Tree_->Branch("passHT200", &passHT200, "passHT200/I");
-  v0Tree_->Branch("passHT250", &passHT250, "passHT250/I");
-  v0Tree_->Branch("passHT300", &passHT300, "passHT300/I");
-  v0Tree_->Branch("passHT350", &passHT350, "passHT350/I");
-  v0Tree_->Branch("passHT400", &passHT400, "passHT400/I");
+  v0Tree_->Branch("passHT275", &passHT275, "passHT275/I");
+  v0Tree_->Branch("passHT325", &passHT325, "passHT325/I");
+  v0Tree_->Branch("passHT425", &passHT425, "passHT425/I");
+  v0Tree_->Branch("passHT575", &passHT575, "passHT575/I");
+  v0Tree_->Branch("passDisplaced250_40", &passDisplaced250_40, "passDisplaced250_40/I");
   v0Tree_->Branch("passDisplaced350_40", &passDisplaced350_40, "passDisplaced350_40/I");
+  v0Tree_->Branch("passDisplaced400_40", &passDisplaced400_40, "passDisplaced400_40/I");
   v0Tree_->Branch("passDisplaced500_40", &passDisplaced500_40, "passDisplaced500_40/I");
   v0Tree_->Branch("passDisplaced550_40", &passDisplaced550_40, "passDisplaced550_40/I");
   v0Tree_->Branch("passBigOR", &passBigOR, "passBigOR/I");
-  v0Tree_->Branch("passHT800", &passHT800, "passHT800/I");
+  v0Tree_->Branch("passPFHT800", &passHT800, "passPFHT800/I");
   v0Tree_->Branch("passVBFHadronic", &passVBFHadronic, "passVBFHadronic/I");
   v0Tree_->Branch("passVBFDispTrack", &passVBFDispTrack, "passVBFDispTrack/I");
   v0Tree_->Branch("passVBFTriple", &passVBFTriple, "passVBFTriple/I");
   v0Tree_->Branch("passPFMET170", &passPFMET170, "passPFMET170/I");
   v0Tree_->Branch("passPFMET170NC", &passPFMET170NC, "passPFMET170NC/I");
   v0Tree_->Branch("passMu20", &passMu20, "passMu20/I");
+
 
   // jet tree
   v0Tree_->Branch("nCaloJets", &nCaloJets, "nCaloJets/I");
@@ -965,7 +997,10 @@ void DJetAnalyzer::beginJob()
   v0Tree_->Branch("v0JetAlphaMax",&v0JetAlphaMax, "v0JetAlphaMax[nV0]/F");
   v0Tree_->Branch("v0JetNV0",&v0JetNV0, "v0JetNV0[nV0]/F");
   v0Tree_->Branch("v0JetNV0AboveP1",&v0JetNV0AboveP1, "v0JetNV0AboveP1[nV0]/F");
-  
+  v0Tree_->Branch("v0JetSumLostHits",&v0JetNV0AboveP1, "v0JetNV0AboveP1[nV0]/F");
+  v0Tree_->Branch("v0JetClusterSize",&v0JetClusterSize, "v0JetClusterSize[nV0]/I");
+  v0Tree_->Branch("v0SumLostHits",&v0SumLostHits, "v0SumLostHits[nV0]/I");
+  v0Tree_->Branch("v0SumValidHits",&v0SumValidHits, "v0SumValidHits[nV0]/I");
   // info
   v0Tree_->Branch("v0NTracks",&v0NTracks, "v0NTracks[nV0]/I");
   v0Tree_->Branch("v0isOS",&v0isOS, "v0isOS[nV0]/I");
@@ -1006,6 +1041,15 @@ void DJetAnalyzer::beginJob()
   v0Tree_->Branch("v0Track1DxySig",&v0Track1DxySig , "v0Track1DxySig[nV0]/F");
   v0Tree_->Branch("v0Track2Dxy",&v0Track2Dxy , "v0Track2Dxy[nV0]/F");
   v0Tree_->Branch("v0Track2DxySig",&v0Track2DxySig , "v0Track2DxySig[nV0]/F");
+  // impact parameters
+  v0Tree_->Branch("v0Track1IP2D",&v0Track1IP2D , "v0Track1IP2D[nV0]/F");
+  v0Tree_->Branch("v0Track1IP2DSig",&v0Track1IP2DSig , "v0Track1IP2DSig[nV0]/F");
+  v0Tree_->Branch("v0Track2IP2D",&v0Track2IP2D , "v0Track2IP2D[nV0]/F");
+  v0Tree_->Branch("v0Track2IP2DSig",&v0Track2IP2DSig , "v0Track2IP2DSig[nV0]/F");
+  v0Tree_->Branch("v0Track1IP3D",&v0Track1IP3D , "v0Track1IP3D[nV0]/F");
+  v0Tree_->Branch("v0Track1IP3DSig",&v0Track1IP3DSig , "v0Track1IP3DSig[nV0]/F");
+  v0Tree_->Branch("v0Track2IP3D",&v0Track2IP3D , "v0Track2IP3D[nV0]/F");
+  v0Tree_->Branch("v0Track2IP3DSig",&v0Track2IP3DSig , "v0Track2IP3DSig[nV0]/F");
 
 
   ///////////  ///////////  ///////////  ///////////  ///////////  ///////////  ////
@@ -1040,20 +1084,6 @@ void DJetAnalyzer::beginJob()
   trackTree_->Branch("run", &run, "run/I");
   trackTree_->Branch("lumi", &lumi, "lumi/I");
   trackTree_->Branch("event", &event, "event/I");
-
-  // trigger related
-  trackTree_->Branch("nTrig", &nTrig, "nTrig/I");
-  //trackTree_->Branch("triggerNames", &triggerNames);
-  //trackTree_->Branch("triggerPass", &triggerPass, "triggerPass[nTrig]/I");
-  trackTree_->Branch("passDisplacedOR5e33", &passDisplacedOR5e33, "passDisplacedOR5e33/O");
-  trackTree_->Branch("passDisplacedOR14e34", &passDisplacedOR14e34, "passDisplacedOR14e34/O");
-  trackTree_->Branch("passHTControl", &passHTControl, "passHTControl/O");
-  trackTree_->Branch("passDisplaced350_40", &passDisplaced350_40, "passDisplaced350_40/O");
-  trackTree_->Branch("passDisplaced500_40", &passDisplaced500_40, "passDisplaced500_40/O");  
-  trackTree_->Branch("passBigOR", &passBigOR, "passBigOR/O");
-  trackTree_->Branch("passHT800", &passHT800, "passHT800/O");
-  trackTree_->Branch("passVBFHadronic", &passVBFHadronic, "passVBFHadronic/O");
-  trackTree_->Branch("passVBFDispTrack", &passVBFDispTrack, "passVBFDispTrack/O");
 
   ////////////////////////////// Calo Jet Information////////////////////////
   
@@ -1161,16 +1191,25 @@ void DJetAnalyzer::beginJob()
   vertexTree_->Branch("lumi", &lumi, "lumi/I");
   vertexTree_->Branch("event", &event, "event/I");
 
+  // trigger 
+  vertexTree_->Branch("nTrig", &nTrig, "nTrig/I");
+  //vertexTree_->Branch("triggerNames", &triggerNames);
+  //vertexTree_->Branch("triggerPass", &triggerPass, "triggerPass[nTrig]/I");
+  vertexTree_->Branch("passDisplacedOR5e33", &passDisplacedOR5e33, "passDisplacedOR5e33/I");
+  vertexTree_->Branch("passDisplacedOR14e34", &passDisplacedOR14e34, "passDisplacedOR14e34/I");
   vertexTree_->Branch("passHTControl", &passHTControl, "passHTControl/I");
   vertexTree_->Branch("passHT200", &passHT200, "passHT200/I");
-  vertexTree_->Branch("passHT250", &passHT250, "passHT250/I");
-  vertexTree_->Branch("passHT300", &passHT300, "passHT300/I");
-  vertexTree_->Branch("passHT400", &passHT400, "passHT400/I");
+  vertexTree_->Branch("passHT275", &passHT275, "passHT275/I");
+  vertexTree_->Branch("passHT325", &passHT325, "passHT325/I");
+  vertexTree_->Branch("passHT425", &passHT425, "passHT425/I");
+  vertexTree_->Branch("passHT575", &passHT575, "passHT575/I");
+  vertexTree_->Branch("passDisplaced250_40", &passDisplaced250_40, "passDisplaced250_40/I");
   vertexTree_->Branch("passDisplaced350_40", &passDisplaced350_40, "passDisplaced350_40/I");
+  vertexTree_->Branch("passDisplaced400_40", &passDisplaced400_40, "passDisplaced400_40/I");
   vertexTree_->Branch("passDisplaced500_40", &passDisplaced500_40, "passDisplaced500_40/I");
   vertexTree_->Branch("passDisplaced550_40", &passDisplaced550_40, "passDisplaced550_40/I");
   vertexTree_->Branch("passBigOR", &passBigOR, "passBigOR/I");
-  vertexTree_->Branch("passHT800", &passHT800, "passHT800/I");
+  vertexTree_->Branch("passPFHT800", &passHT800, "passPFHT800/I");
   vertexTree_->Branch("passVBFHadronic", &passVBFHadronic, "passVBFHadronic/I");
   vertexTree_->Branch("passVBFDispTrack", &passVBFDispTrack, "passVBFDispTrack/I");
   vertexTree_->Branch("passVBFTriple", &passVBFTriple, "passVBFTriple/I");
@@ -1375,17 +1414,25 @@ void DJetAnalyzer::beginJob()
   trackTree_->Branch("lumi",  &lumi,  "lumi/I");
   trackTree_->Branch("event",  &event,  "event/I");
 
-
+  //trigger
+  trackTree_->Branch("nTrig", &nTrig, "nTrig/I");
+  //trackTree_->Branch("triggerNames", &triggerNames);
+  //trackTree_->Branch("triggerPass", &triggerPass, "triggerPass[nTrig]/I");
+  trackTree_->Branch("passDisplacedOR5e33", &passDisplacedOR5e33, "passDisplacedOR5e33/I");
+  trackTree_->Branch("passDisplacedOR14e34", &passDisplacedOR14e34, "passDisplacedOR14e34/I");
   trackTree_->Branch("passHTControl", &passHTControl, "passHTControl/I");
   trackTree_->Branch("passHT200", &passHT200, "passHT200/I");
-  trackTree_->Branch("passHT250", &passHT250, "passHT250/I");
-  trackTree_->Branch("passHT300", &passHT300, "passHT300/I");
-  trackTree_->Branch("passHT400", &passHT400, "passHT400/I");
+  trackTree_->Branch("passHT275", &passHT275, "passHT275/I");
+  trackTree_->Branch("passHT325", &passHT325, "passHT325/I");
+  trackTree_->Branch("passHT425", &passHT425, "passHT425/I");
+  trackTree_->Branch("passHT575", &passHT575, "passHT575/I");
+  trackTree_->Branch("passDisplaced250_40", &passDisplaced250_40, "passDisplaced250_40/I");
   trackTree_->Branch("passDisplaced350_40", &passDisplaced350_40, "passDisplaced350_40/I");
+  trackTree_->Branch("passDisplaced400_40", &passDisplaced400_40, "passDisplaced400_40/I");
   trackTree_->Branch("passDisplaced500_40", &passDisplaced500_40, "passDisplaced500_40/I");
   trackTree_->Branch("passDisplaced550_40", &passDisplaced550_40, "passDisplaced550_40/I");
   trackTree_->Branch("passBigOR", &passBigOR, "passBigOR/I");
-  trackTree_->Branch("passHT800", &passHT800, "passHT800/I");
+  trackTree_->Branch("passPFHT800", &passHT800, "passPFHT800/I");
   trackTree_->Branch("passVBFHadronic", &passVBFHadronic, "passVBFHadronic/I");
   trackTree_->Branch("passVBFDispTrack", &passVBFDispTrack, "passVBFDispTrack/I");
   trackTree_->Branch("passVBFTriple", &passVBFTriple, "passVBFTriple/I");
@@ -2100,9 +2147,12 @@ void DJetAnalyzer::dumpV0Info(DisplacedJetEvent & djEvent) {
   // loop over each jet
   int jj = 0; 
   for(; djet != djetCollection.end(); ++djet, ++jj) {        
+
+    if(debug > 1 ) std::cout << "[DEBUG] jet dumping for v0" << std::endl;
     /////////////////JET DUMP NUCLEAR INTERACTIONS////////////
     jetOneTrackNuclearCount[jj] = djet->jetOneTrackNuclearCount;
     jetTwoTrackNuclearCount[jj] = djet->jetTwoTrackNuclearCount;
+    jetTwoTrackInnerHitFake[jj] = djet->jetTwoTrackInnerHitFake;
     jetVertexNearBPIX1[jj]	= djet->jetVertexNearBPIX1;
     jetVertexNearBPIX2[jj]	= djet->jetVertexNearBPIX2;
     jetVertexNearBPIX3[jj]	= djet->jetVertexNearBPIX3;
@@ -2113,6 +2163,7 @@ void DJetAnalyzer::dumpV0Info(DisplacedJetEvent & djEvent) {
     jetNV0NoHitBehindVertex[jj] = djet->jetNV0NoHitBehindVertex;
     jetV0HIndex[jj]             = djet->jetV0HIndex;
     jetNV0KShort[jj]            = djet->jetNV0KShort; 
+    jetNV0Lambda[jj]            = djet->jetNV0Lambda; 
     // size of the cluster
     jetV0ClusterSize[jj]	= djet->jetV0ClusterSize;
     jetV0ClusterLxy[jj]		= djet->jetV0ClusterLxy;
@@ -2120,174 +2171,103 @@ void DJetAnalyzer::dumpV0Info(DisplacedJetEvent & djEvent) {
     jetV0ClusterLxyzSig[jj]	= djet->jetV0ClusterLxyzSig;
     jetV0ClusterLxyz[jj]	= djet->jetV0ClusterLxyz;
     jetV0ClusterX[jj]		= djet->jetV0ClusterX;
-    jetV0ClusterY[jj]		= djet->jetV0ClusterY;                                                                                                                
+    jetV0ClusterY[jj]		= djet->jetV0ClusterY;
     jetV0ClusterZ[jj]		= djet->jetV0ClusterZ;
 
     /////////////////VERTEX BASED CALCULATIONS////////////////
-    reco::VertexCollection::const_iterator vtx = djet->v0vtxVector.begin();    
-    reco::Vertex selPV = djet->selPV;
+    
+    //    DisplacedV0Collection::iterator vtx = djet->displacedV0VectorCleaned.begin();    
     int nJetV0 = 0;
     int nJetV0Above0p1 = 0;
-    // count vertex quantities
-    for(; vtx != djet->v0vtxVector.end(); ++vtx) {
-      if (vtx->nTracks() != 2) continue;
-      float x = vtx->x(), y = vtx->y(); //, z = vtx->z();
-      float dx = x - selPV.x() , dy = y - selPV.y();//, dz = z - selPV.z();
-      //float lxyz = std::sqrt(dx*dx + dy*dy + dz*dz);
-      float lxy = std::sqrt(dx*dx + dy*dy);
-      
+    // count vertex quantities for the jet from the cleaned collection
+    int count_vtx_cleaned = djet->displacedV0VectorCleaned.size();
+    for(int vv = 0; vv < count_vtx_cleaned; ++vv) {     
       nJetV0++;
-      if (lxy > 0.1) nJetV0Above0p1++;
+      if ((djet->displacedV0VectorCleaned)[vv].lxy > 0.1) nJetV0Above0p1++;
     }
 
-    // reset the iterator
-    vtx = djet->v0vtxVector.begin();
     // loop over each vertex candidate in the jet
-    for(; vtx != djet->v0vtxVector.end(); ++vtx) {
-      if (vtx->nTracks() != 2) continue;
-      if (vtx->refittedTracks().size() < 2) continue;
+    if(debug > 1 ) std::cout << "[DEBUG 1] displaced v0 vector dumping" << std::endl;
+    int count_vtx = djet->displacedV0Vector.size();
+    for(int vv = 0; vv < count_vtx; ++vv) {      
+      //if(debug > 3 ) std::cout << "[DEBUG 3] displaced track parse from vertex" << std::endl;
 
-      //float lxyz = std::sqrt(dx*dx + dy*dy + dz*dz);
-      reco::Track track1 = vtx->refittedTracks()[0];
-      reco::Track track2 = vtx->refittedTracks()[1];
+      Displaced2TrackVertex vertex = (djet->displacedV0Vector)[vv];
+      // if(!vertex.isValid) continue;
 
-      reco::Track orig_track1 = **(vtx->tracks_begin());
-      reco::Track orig_track2 = **(vtx->tracks_begin() + 1);
+      //DisplacedTrack& track1 = vertex.track1;
+      //DisplacedTrack& track2 = vertex.track2;
 
-      if(debug > 5 ) std::cout << "[DEBUG 5] V0 Filling Vertex" << std::endl;     
-      // build the positions and errors
-      float x = vtx->x(), y = vtx->y(), z = vtx->z();
-      float v0XE = vtx->xError(), v0YE = vtx->yError(), v0ZE = vtx->zError();
-      // errors related to PV
-      float pvxE = selPV.xError(), pvyE = selPV.yError(), pvzE = selPV.zError();
-      // combined error
-      float	xE = std::sqrt(v0XE * v0XE + pvxE * pvxE);
-      float	yE = std::sqrt(v0YE * v0YE + pvyE * pvyE);
-      float	zE = std::sqrt(v0ZE * v0ZE + pvzE * pvzE);
-      // difference in position
-      float dx = x - selPV.x() , dy = y - selPV.y(), dz = z - selPV.z();
-      float lxyz = std::sqrt(dx*dx + dy*dy + dz*dz);
-      Int_t sum_charge = (track1.charge() + track2.charge());
+      if(debug > 3 ) std::cout << "[DEBUG 3] filling info" << std::endl;
 
-      if(debug > 5 ) std::cout << "[DEBUG 5] Track Charge 1  Q= " << track1.charge() << " track 2 Q=" << track2.charge() << " sum " << sum_charge << std::endl;           
-      ROOT::Math::LorentzVector<ROOT::Math::PxPyPzM4D<double>> vec1;
-      ROOT::Math::LorentzVector<ROOT::Math::PxPyPzM4D<double>> vec2;
-
-      ROOT::Math::LorentzVector<ROOT::Math::PxPyPzM4D<double>> vec1_norefit;
-      ROOT::Math::LorentzVector<ROOT::Math::PxPyPzM4D<double>> vec2_norefit;
-
-      // the  pion Q = -1
-      vec1.SetPx(track1.px());
-      vec1.SetPy(track1.py());
-      vec1.SetPz(track1.pz());
-      // the proton Q = +1
-      vec2.SetPx(track2.px());
-      vec2.SetPy(track2.py());
-      vec2.SetPz(track2.pz());
-
-      // the  pion Q = -1
-      vec1_norefit.SetPx(orig_track1.px());
-      vec1_norefit.SetPy(orig_track1.py());
-      vec1_norefit.SetPz(orig_track1.pz());
-      // the proton Q = +1
-      vec2_norefit.SetPx(orig_track2.px());
-      vec2_norefit.SetPy(orig_track2.py());
-      vec2_norefit.SetPz(orig_track2.pz());
-
-      //calculate the lambda mass
-      if (track1.pt() > track2.pt() && sum_charge == 0 ){
-	vec1.SetM(0.938272); // proton mass
-	vec2.SetM(0.139570); // pion
-      }
-      else if (track1.pt() < track2.pt() && sum_charge == 0) {
-	vec1.SetM(0.139570); // pi 
-	vec2.SetM(0.938272); // proton 	
-      }	
-      else { 
-	vec1.SetM(0);
-	vec2.SetM(0);
-      }
-
-      //calculate the lambda mass for the non refit case
-      if (track1.pt() > track2.pt() && sum_charge == 0 ){
-	vec1_norefit.SetM(0.938272); // proton mass
-	vec2_norefit.SetM(0.139570); // pion
-      }
-      else if (track1.pt() < track2.pt() && sum_charge == 0) {
-	vec1_norefit.SetM(0.139570); // pi 
-	vec2_norefit.SetM(0.938272); // proton 	
-      }	
-      else { 
-	vec1_norefit.SetM(0);
-	vec2_norefit.SetM(0);
-      }
-      
-      // refit labmda
-      math::XYZTLorentzVectorD sumLambda;
-      sumLambda+=vec1;
-      sumLambda+=vec2;
-
-      // no refit lambda
-      math::XYZTLorentzVectorD sumLambda_norefit;
-      sumLambda_norefit+=vec1_norefit;
-      sumLambda_norefit+=vec2_norefit;
-            
       // associated jet information
       v0JetEta[nV0]		 = djet->caloEta;
       v0JetPhi[nV0]		 = djet->caloPhi;
       v0JetPt[nV0]		 = djet->caloPt;
       v0JetMedianIPLogSig2D[nV0] = djet->medianIPLogSig2D;
       v0JetAlphaMax[nV0]	 = djet->alphaMax / djet->sumTrackPt;
+      v0JetClusterSize[nV0]	 = djet->jetV0ClusterSize;
       v0JetNV0[nV0]		 = nJetV0;
       v0JetNV0AboveP1[nV0]       = nJetV0Above0p1;
+      v0SumLostHits[nV0]         = vertex.sumLostHits;
+      v0SumValidHits[nV0]        = vertex.sumValidHits;
       // kinematics
-      v0isOS[nV0]		 = sum_charge;
-      v0Chi2[nV0]		 = vtx->chi2();
-      v0NChi2[nV0]		 = vtx->normalizedChi2();
-      v0IsFake[nV0]		 = vtx->isFake();
-      v0NTracks[nV0]		 = vtx->nTracks();
-      v0LambdaMass[nV0]		 = sumLambda.mass();
-      v0LambdaMassNoRefit[nV0]	 = sumLambda_norefit.mass();	// no refit
-      v0Mass[nV0]		 = vtx->p4().mass();
-      v0Pt[nV0]			 = vtx->p4().pt();
-      v0Px[nV0]			 = vtx->p4().px();
-      v0Py[nV0]			 = vtx->p4().py();
-      v0Pz[nV0]			 = vtx->p4().pz();
+      v0isOS[nV0]		 = vertex.charge;
+      v0Chi2[nV0]		 = vertex.chi2;
+      v0NChi2[nV0]		 = vertex.chi2;
+      v0IsFake[nV0]		 = 0;//vertex.vertex.isFake();
+      v0NTracks[nV0]		 = 2;//vertex.vertex.nTracks();
+      v0LambdaMass[nV0]		 = vertex.massLambda;
+      v0LambdaMassNoRefit[nV0]	 = -1;
+      v0Mass[nV0]		 = vertex.mass;
+      v0Pt[nV0]			 = vertex.pt;
+      v0Px[nV0]			 = vertex.px;
+      v0Py[nV0]			 = vertex.py;
+      v0Pz[nV0]			 = vertex.pz;
       // opening angle
-      v0DR[nV0]                  = reco::deltaR(track1.eta(), track1.phi(), track2.eta(), track2.phi());
-      v0DRNoRefit[nV0]           = reco::deltaR(orig_track1.eta(), orig_track1.phi(), orig_track2.eta(), orig_track2.phi());
+      v0DR[nV0]                  = vertex.dr;
+      v0DRNoRefit[nV0]           = -1;
       // positions      
-      v0Eta[nV0]		 = vtx->p4().eta();
-      v0Phi[nV0]		 = vtx->p4().Phi();
-      v0X[nV0]			 = x;
-      v0Y[nV0]			 = y;
-      v0Z[nV0]			 = z;
+      v0Eta[nV0]		 = vertex.eta;
+      v0Phi[nV0]		 = vertex.phi;
+      v0X[nV0]			 = vertex.x;
+      v0Y[nV0]			 = vertex.y;
+      v0Z[nV0]			 = vertex.z;
       // erors
-      v0XError[nV0]		 = v0XE;
-      v0YError[nV0]		 = v0YE;
-      v0ZError[nV0]		 = v0ZE;
+      v0XError[nV0]		 = vertex.xE;
+      v0YError[nV0]		 = vertex.yE;
+      v0ZError[nV0]		 = vertex.zE;
       // positions
-      v0Lxy[nV0]		 = std::sqrt( dx * dx + dy * dy );
-      v0Lxyz[nV0]		 = lxyz;
+      v0Lxy[nV0]		 = vertex.lxy;
+      v0Lxyz[nV0]		 = vertex.lxyz;
       // significances
-      v0LxySig[nV0]		 = std::sqrt( dx * dx + dy * dy ) / std::sqrt(xE * xE + yE * yE);
-      v0LxyzSig[nV0]		 = std::sqrt( dx * dx + dy * dy + dz * dz) / std::sqrt(xE * xE + yE * yE + zE * zE);
-      v0Track1Chi2[nV0]          = track1.chi2();
-      v0Track2Chi2[nV0]          = track2.chi2();
-      v0Track1Pt[nV0]            = track1.pt();
-      v0Track2Pt[nV0]            = track2.pt();
-      v0Track1NoRefitPt[nV0]     = orig_track1.pt();
-      v0Track2NoRefitPt[nV0]     = orig_track2.pt();
-      // impact parameter 
-      v0Track1Dxy[nV0]		 = track1.dxy(selPV.position());
-      v0Track1DxySig[nV0]	 = track1.dxy(selPV.position()) / track1.dxyError();
-      v0Track2Dxy[nV0]		 = track2.dxy(selPV.position());
-      v0Track2DxySig[nV0]	 = track2.dxy(selPV.position()) / track2.dxyError();
+      v0LxySig[nV0]		 = vertex.lxySig;
+      v0LxyzSig[nV0]		 = vertex.lxyzSig;
+      v0Track1Chi2[nV0]          = vertex.track1.chi2;
+      v0Track2Chi2[nV0]          = vertex.track2.chi2;
+      v0Track1Pt[nV0]            = vertex.track1.pt;
+      v0Track2Pt[nV0]            = vertex.track2.pt;
+      v0Track1NoRefitPt[nV0]     = 0;
+      v0Track2NoRefitPt[nV0]     = 0;
+      // dxy
+      v0Track1Dxy[nV0]		 = vertex.track1.dxy;
+      v0Track1DxySig[nV0]	 = vertex.track1.dxySig;
+      v0Track2Dxy[nV0]		 = vertex.track2.dxy;
+      v0Track2DxySig[nV0]	 = vertex.track2.dxySig;
+      // impact parameter
+      // 2d
+      v0Track1IP2D[nV0]          = vertex.track1.ip2d;
+      v0Track1IP2DSig[nV0]       = vertex.track1.ip2dSig;
+      v0Track2IP2D[nV0]          = vertex.track2.ip2d;
+      v0Track2IP2DSig[nV0]       = vertex.track2.ip2dSig;
+      // 3d
+      v0Track1IP3D[nV0]          = vertex.track1.ip3d;
+      v0Track1IP3DSig[nV0]       = vertex.track1.ip3dSig;
+      v0Track2IP3D[nV0]          = vertex.track2.ip3d;
+      v0Track2IP3DSig[nV0]       = vertex.track2.ip3dSig;
 
-      if(debug > 5 ) std::cout << "[DEBUG 5] V0 Mass" << vtx->p4().mass() << std::endl;     
       //increment the counter
       nV0++;
-
     }
   }
 }

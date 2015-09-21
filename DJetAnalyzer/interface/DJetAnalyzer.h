@@ -453,7 +453,10 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   Float_t v0JetNV0AboveP1[MAX_V0];
   Float_t v0JetMedianIPLogSig2D[MAX_V0];
   Float_t v0JetAlphaMax[MAX_V0];
+  Int_t   v0JetClusterSize[MAX_V0];
   // info
+  Int_t  v0SumValidHits[MAX_V0];
+  Int_t  v0SumLostHits[MAX_V0];
   Int_t  nV0;
   Int_t  v0NTracks[MAX_V0];
   Float_t v0isOS[MAX_V0];
@@ -495,12 +498,24 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   Float_t v0Track2Dxy[MAX_V0];
   Float_t v0Track1DxySig[MAX_V0];
   Float_t v0Track2DxySig[MAX_V0];
+  // impact parameter
+  // 2d
+  Float_t v0Track1IP2D[MAX_V0];
+  Float_t v0Track1IP2DSig[MAX_V0];
+  Float_t v0Track2IP2D[MAX_V0];
+  Float_t v0Track2IP2DSig[MAX_V0];
+  // 3d
+  Float_t v0Track1IP3D[MAX_V0];
+  Float_t v0Track1IP3DSig[MAX_V0];
+  Float_t v0Track2IP3D[MAX_V0];
+  Float_t v0Track2IP3DSig[MAX_V0];
 
 
   ///////////////// NUCLEAR INTERACTIONS
 
   Int_t jetOneTrackNuclearCount[MAX_JETS];
   Int_t jetTwoTrackNuclearCount[MAX_JETS];
+  Int_t jetTwoTrackInnerHitFake[MAX_JETS];
   Int_t jetVertexNearBPIX1[MAX_JETS];
   Int_t jetVertexNearBPIX2[MAX_JETS];
   Int_t jetVertexNearBPIX3[MAX_JETS];
@@ -510,6 +525,7 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   Int_t jetNV0HitBehindVertex[MAX_JETS];
   Int_t jetNV0NoHitBehindVertex[MAX_JETS];
   Int_t jetNV0KShort[MAX_JETS];
+  Int_t jetNV0Lambda[MAX_JETS];
   Int_t jetV0HIndex[MAX_JETS];
   Int_t jetV0ClusterSize[MAX_JETS];
   Float_t jetV0ClusterLxy[MAX_JETS];
@@ -840,11 +856,13 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   Int_t         passDisplacedOR14e34;
   Int_t         passHTControl; 
   Int_t         passHT200; 
-  Int_t         passHT250; 
-  Int_t         passHT300; 
-  Int_t         passHT350; 
-  Int_t         passHT400; 
-  Int_t         passDisplaced350_40; 
+  Int_t         passHT275; 
+  Int_t         passHT325; 
+  Int_t         passHT425; 
+  Int_t         passHT575; 
+  Int_t         passDisplaced250_40; 
+  Int_t         passDisplaced350_40;
+  Int_t         passDisplaced400_40; 
   Int_t         passDisplaced500_40;
   Int_t         passDisplaced550_40;
   Int_t         passVBFHadronic;

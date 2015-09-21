@@ -1,12 +1,12 @@
 import FWCore.ParameterSet.Config as cms
 
 #output directories
-base                = '/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDIES/CMSSW_7_4_6_patch2/src/DisplacedJets/'
-outputDir           = "/afs/cern.ch/work/h/hardenbr/2015/DIJET/DJANALYSIS/DATA_SEPT21/"
-#outputDir           = ""
+base                = '/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDIES/CMSSW_7_4_10_patch1/src/DisplacedJets/'
+#outputDir           = "/afs/cern.ch/work/h/hardenbr/2015/DIJET/DJANALYSIS/DATA_SEPT21/"
+outputDir           = ""
 
 # output options (to be appended to the file name outputted)
-appendSignal        = "xx4j300mm"
+appendSignal        = ""
 appendData          = ""
 appendBkg           = ""
 ############ FLAGS #############
@@ -16,7 +16,7 @@ isSignalMC          = False
 isMC                = False
 isData              = not isMC
 doedm               = False
-nevents             = 100
+nevents             = -1
 
 #-------------- globaltags
 #gtag               = "74X_HLT_mcRun2_asymptotic_fromSpring15DR_v0" #spring 15 25ns
@@ -86,7 +86,7 @@ input_file_list     = None
 #input_file_list = 'SignalMCLists/DIJET_GUN/dijet_gun_m300_ctau0mm_bbar.list'
 
 #----data samples
-#input_file_list  = 'DataSampleLists/PD_DisplacedJet_Run2012D_Sept21.txt'
+input_file_list  = 'DataSampleLists/PD_DisplacedJet_Run2015D_Sept21.txt'
 #input_file_list = 'DataSampleLists/PD_DisplacedJet_Jul17AOD.txt'
 #input_file_list = 'DataSampleLists/PD_JetHT_Jul17AOD.txt'
 #input_file_list = 'DataSampleLists/PD_HTMHT_Jul17AOD.txt'
@@ -136,7 +136,9 @@ process.load('Configuration.StandardSequences.MagneticField_AutoFromDBCurrent_cf
 #process.load('Configuration.StandardSequences.MagneticField_38T_PostLS1_cff')
 #global tag
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_condDBv2_cff')
-process.load('JetMETCorrections.Configuration.JetCorrectorsForReco_cff')
+#process.load('JetMETCorrections.Configuration.JetCorrectorsForReco_cff')
+#process.load('JetMETCorrections.Configuration.JetCorrectionServicesAllAlgos_cff')
+process.load('JetMETCorrections.Configuration.DefaultJEC_cff')
 process.load('JetMETCorrections.Configuration.CorrectedJetProducers_cff')
 
 process.GlobalTag.globaltag = gtag
@@ -146,34 +148,13 @@ process.source = cms.Source("PoolSource", fileNames = myfilelist )
 
 # add a JSON for data
 import FWCore.PythonUtilities.LumiList as LumiList
-#if isData:
-#  process.source.lumisToProcess = LumiList.LumiList(filename = JSON).getVLuminosityBlockRange()
+if isData:
+ process.source.lumisToProcess = LumiList.LumiList(filename = JSON).getVLuminosityBlockRange()
 
 ################################################################################################
 
-# add the jet corrections
-# process.hltAK4CaloFastJetCorrector  = cms.EDProducer( "L1FastjetCorrectorProducer",
-#     srcRho                          = cms.InputTag( "fixedGridRhoFastjetAllCalo" ), #modified by me
-#     algorithm                       = cms.string( "AK4CaloHLT" ),
-#     level                           = cms.string( "L1FastJet" )
-# )
-# process.hltAK4CaloRelativeCorrector = cms.EDProducer( "LXXXCorrectorProducer",
-#     algorithm                       = cms.string( "AK4CaloHLT" ),
-#     level                           = cms.string( "L2Relative" )
-# )
-# process.hltAK4CaloAbsoluteCorrector = cms.EDProducer( "LXXXCorrectorProducer",
-#     algorithm                       = cms.string( "AK4CaloHLT" ),
-#     level                           = cms.string( "L3Absolute" )
-# )
-# process.hltAK4CaloCorrector         = cms.EDProducer( "ChainedJetCorrectorProducer",
-#     correctors                      = cms.VInputTag( 'hltAK4CaloFastJetCorrector','hltAK4CaloRelativeCorrector','hltAK4CaloAbsoluteCorrector' )
-# )
-# process.ak4CaloJetsCorrected        = cms.EDProducer( "CorrectedCaloJetProducer",
-#     src                             = cms.InputTag( "ak4CaloJets" ),
-#     correctors                      = cms.VInputTag( 'hltAK4CaloCorrector' )
-# )
-# process.correctJets = cms.Sequence( process.hltAK4CaloFastJetCorrector + process.hltAK4CaloRelativeCorrector + process.hltAK4CaloAbsoluteCorrector + process.hltAK4CaloCorrector + process.ak4CaloJetsCorrected)
-
+#jet corrections taken from the global tag
+process.correctJets = cms.Sequence( process.ak4CaloL2L3CorrectorChain * process.ak4CaloJetsL2L3)
 
 #configure the analyzers
 process.analyzerVTX = cms.EDAnalyzer('DJetAnalyzer')
@@ -192,7 +173,7 @@ elif not isSignalMC and isMC:
    process.analyzerCALO.outputFileName = cms.untracked.string("%sdjana.root" % outputDir)
 else:
    process.analyzerVTX.outputFileName  = cms.untracked.string('dataVTX%s.root' % appendData)
-   process.analyzerCALO.outputFileName = cms.untracked.string('%sdata%s.root' % (outputDir, appendData))   
+   process.analyzerCALO.outputFileName = cms.untracked.string('%data%s.root' % (outputDir, appendData))   
 
 
 #tree names
@@ -242,7 +223,7 @@ process.analyzerVTX.generalTracks                  = cms.untracked.InputTag('gen
 process.analyzerVTX.ak4CaloJets                    = cms.untracked.InputTag('ak4CaloJets', '', '')
 process.analyzerVTX.genParticles                   = cms.untracked.InputTag('genParticles', '', '')
 process.analyzerCALO.generalTracks                 = cms.untracked.InputTag('generalTracks', '', '')
-process.analyzerCALO.ak4CaloJets                   = cms.untracked.InputTag('ak4CaloJetsL1L2L3', '', '')
+process.analyzerCALO.ak4CaloJets                   = cms.untracked.InputTag('ak4CaloJetsL2L3', '', '')
 process.analyzerCALO.genParticles                  = cms.untracked.InputTag('genParticles', '', '')
 process.analyzerCALO.caloMatchedTrackAssociation   = cms.untracked.InputTag('displacedAk4JetTracksAssociatorAtCaloFace','','ANA')
 process.analyzerCALO.vertexMatchedTrackAssociation = cms.untracked.InputTag('displacedAk4JetTracksAssociatorAtVertex','','ANA')
@@ -255,7 +236,7 @@ process.analyzerCALO.longTagThreshold   = cms.untracked.double(longTagThreshold)
 process.analyzerCALO.dHTWorkingPoint    = cms.untracked.int32(dHTWorkingPoint)
 
 # jet alpha 
-process.analyzerCALO.jetVertexAssociation = cms.untracked.InputTag("displacedJetVertexAssociation","Var","ANA")
+#process.analyzerCALO.jetVertexAssociation = cms.untracked.InputTag("displacedJetVertexAssociation","Var","ANA")
 
 # vertex matched ip info
 process.analyzerVTX.secondaryVertexTagInfo    = cms.untracked.InputTag('displacedSecondaryVertexTagInfosNoPV', '', 'ANA')
@@ -411,11 +392,11 @@ if doApplyTrigger: #apply the triggers and run dj tagging
    # if doApplySingleMu: 
    #    process.p *= process.doApplySingleMu
    if isMC:
-      process.p *= process.mcTriggerSelection *  process.ak4CaloJetsL1L2L3 * process.djtagging
+      process.p *= process.mcTriggerSelection *  process.correctJets * process.djtagging
    else:
-      process.p *= process.triggerSelection *  process.ak4CaloJetsL1L2L3 * process.djtagging
+      process.p *= process.triggerSelection *  process.correctJets * process.djtagging
 else: #just run the tagging sequence
-   process.p *=  process.ak4CaloJetsL1L2L3 * process.djtagging
+   process.p *=  process.correctJets * process.djtagging
 
 if doedm: #just dump the edm output of the djtagging sequence no analyzer
     process.btag_output = cms.EndPath(process.test_output)

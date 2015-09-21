@@ -7,7 +7,7 @@ from RecoJets.JetAssociationProducers.j2tParametersVX_cfi import *
 
 displacedAk4JetTracksAssociatorAtVertex = cms.EDProducer("JetTracksAssociatorAtVertex",
     j2tParametersVX,
-    jets = cms.InputTag("ak4CaloJetsCorrected")
+    jets = cms.InputTag("ak4CaloJetsL2L3")
 )
 
 # ak4JetTracksAssociatorAtVertexPF = cms.EDProducer("JetTracksAssociatorAtVertex",
@@ -23,7 +23,7 @@ displacedAk4JetTracksAssociatorAtVertex = cms.EDProducer("JetTracksAssociatorAtV
 
 displacedAk4JetTracksAssociatorAtCaloFace = cms.EDProducer("JetTracksAssociatorAtCaloFace",
     j2tParametersCALO,
-    jets = cms.InputTag("ak4CaloJetsCorrected")
+    jets = cms.InputTag("ak4CaloJetsL2L3")
 )
 
 # ak4JetExtender = cms.EDProducer("JetExtender",

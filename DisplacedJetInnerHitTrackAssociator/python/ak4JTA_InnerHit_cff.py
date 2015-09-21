@@ -8,7 +8,7 @@ import FWCore.ParameterSet.Config as cms
 displacedAk4JetTracksAssociatorAtInnerHit = cms.EDProducer("JetTracksAssociatorAtInnerHitProducer",
     tracks = cms.InputTag("generalTracks"),
     coneSize = cms.double(0.4),
-    jets = cms.InputTag("ak4CaloJetsCorrected")
+    jets = cms.InputTag("ak4CaloJetsL2L3")
 )
 
 ak4JTA_InnerHit = cms.Sequence(displacedAk4JetTracksAssociatorAtInnerHit)

@@ -183,11 +183,26 @@ class DisplacedJet {
     jetV0ClusterX		   = 0;
     jetV0ClusterY		   = 0;
     jetV0ClusterZ		   = 0;
-
-
-
+    jetV0ClusterChi2		   = 0;
+    jetV0ClusterIntercept	   = 0;
+    jetV0ClusterAngle		   = 0;
+    jetV0ClusterAngleMom           = 0;
+    jetV0ClusterNTracks		   = 0;
+    // N JET CLUSTERS
+    jetV0NJetClusterSize	   = 0;
+    jetV0NJetClusterLxy		   = 0;
+    jetV0NJetClusterLxySig	   = 0;
+    jetV0NJetClusterLxyzSig	   = 0;
+    jetV0NJetClusterLxyz	   = 0;
+    jetV0NJetClusterX		   = 0;
+    jetV0NJetClusterY		   = 0;
+    jetV0NJetClusterZ		   = 0;
+    jetV0NJetClusterChi2	   = -1;
+    jetV0NJetClusterIntercept	   = 0;
+    jetV0NJetClusterAngle	   = 0;
+    jetV0NJetClusterAngleMom	   = 0;
+    jetV0NJetClusterNTracks	   = 0;
   } // class declaration end
-
 
   // tag related
   std::vector<bool> passNoVtxTag(const std::vector<float> thres);
@@ -225,7 +240,7 @@ class DisplacedJet {
   int findRefTrack(const reco::TrackRef ref, const reco::TrackRefVector vector);
   int calcHIndex(const vertexGraph & graph);
   void calcClusterSize(const DisplacedV0Collection& vertices, const float & errorWindow);
-  //  void calcNJetClusterSize(DisplacedJetCollection& djets, const float & errorWindow);  
+  void calcNJetClusterSize(const DisplacedV0Collection& vertices, std::vector<DisplacedJet>& djets, const float & errorWindow);  
 
   //////////////////////////////////////////////
 
@@ -236,7 +251,6 @@ class DisplacedJet {
   float genMatchMetric(const reco::GenParticle & particle, const reco::Vertex& vertex);
   
   // jet info extraction
-
   DisplacedTrackCollection getDisplacedTracks() { return displacedTracks; }
   reco::TrackCollection getCaloMatchedTracks() { return caloMatchedTracks; }
   reco::TrackCollection getVertexMatchedTracks() { return vertexMatchedTracks; }
@@ -354,6 +368,25 @@ class DisplacedJet {
   float jetV0ClusterX;
   float jetV0ClusterY;
   float jetV0ClusterZ;
+  float jetV0ClusterChi2;
+  float jetV0ClusterIntercept;
+  float jetV0ClusterAngle;
+  float jetV0ClusterAngleMom;
+  int   jetV0ClusterNTracks;
+
+  int   jetV0NJetClusterSize;
+  float jetV0NJetClusterLxy;
+  float jetV0NJetClusterLxySig;
+  float jetV0NJetClusterLxyzSig;
+  float jetV0NJetClusterLxyz;
+  float jetV0NJetClusterX;
+  float jetV0NJetClusterY;
+  float jetV0NJetClusterZ;
+  float jetV0NJetClusterChi2;
+  float jetV0NJetClusterIntercept;
+  float jetV0NJetClusterAngle;
+  float jetV0NJetClusterAngleMom;
+  int   jetV0NJetClusterNTracks;
 
   //////////////VERTEX VARIABLES//////////////
 
@@ -437,15 +470,17 @@ class DisplacedJet {
   DisplacedV0Collection displacedV0Vector;
   DisplacedV0Collection displacedV0VectorCleaned;  
   std::vector<TransientVertex> transientV0Vector;
-  std::vector<TransientVertex> transientV0VectorCleaned;
-
-  
+  std::vector<TransientVertex> transientV0VectorCleaned;  
   
   // related vertices
   bool selIVFIsPV;
   float selIVFIsPVScore;
   reco::Vertex selIVF;
   reco::Vertex selSV;
+
+  // clusters
+  DisplacedCluster *v0Cluster = NULL;
+  DisplacedCluster *v0NJetCluster = NULL;
 
  private: 
 
@@ -474,7 +509,6 @@ class DisplacedJet {
   float metric3D(float x, float y, float z) {
     return std::sqrt(x*x + y*y + z*z);
   }  
-
 };
 
 float DisplacedJet::genMatchMetric(const reco::GenParticle & particle, const reco::Vertex& vertex) {
@@ -874,13 +908,86 @@ void DisplacedJet::findVertexCliques() {
   v0Graph = buildInputGraph(graph_edges, uniq_tracks, false); // dont print
   // 
   jetV0HIndex = calcHIndex(v0Graph);
-  
 }
-/* void DisplacedJet::calcNJetClusterSize(const DisplacedJetCollection& djets, const float& errorWindow) { */
-/*   if (debug > 4) std::cout << "[DEBUG 4]  Finding N Jet Cluster Size" << std::endl;   */
 
 
-/* } */
+void DisplacedJet::calcNJetClusterSize(const DisplacedV0Collection& vertices, std::vector<DisplacedJet>& djets, const float & errorWindow) {
+  if (debug > 4) std::cout << "[DEBUG 4]  Finding N Jet Cluster Size" << std::endl;
+
+  if ( vertices.size() == 0 ) return;
+
+  DisplacedCluster * maxCluster = NULL;
+
+  // use each vertex in "this" jet as a center for a cluster, then check all possible vertices
+  // from the jet collection passed to the function
+  const int nVtx = vertices.size();
+  for(int center = 0; center < nVtx; ++center) {
+    Displaced2TrackVertex centerVtx = vertices[center];
+    if(!centerVtx.isValid) continue;
+
+    // create a candidate cluster
+    DisplacedCluster cluster_temp(centerVtx, selPV, iSetup, debug);
+    
+    // check all the vertices in "this jet"
+    for(int neighbor = 0; neighbor < nVtx; ++neighbor) {
+      if (center == neighbor) continue; // dont count the center itself
+
+      Displaced2TrackVertex neighVtx = vertices[neighbor];
+      if(!neighVtx.isValid) continue;            
+      // check the distance from the center
+      float dx	     = centerVtx.x - neighVtx.x, dy = centerVtx.y - neighVtx.y;	//, dz = cz - nz;
+      float distance = metric2D(dx, dy);
+      float sig	     = distance / metric2D(neighVtx.tot_xyE, centerVtx.tot_xyE);
+
+      if(sig < errorWindow) cluster_temp.addVertex(neighVtx);
+    }// end loop over neighbors in this jet
+
+    // check all the vertices in the neighboring jets
+    std::vector<DisplacedJet>::const_iterator djIter = djets.begin();
+    for(; djIter != djets.end(); ++djIter) {
+      // loop over all the vertices in the current neighbor jet
+      int nVtx = djIter->displacedV0VectorCleaned.size();
+      for(int neighbor = 0; neighbor < nVtx; ++neighbor) {	
+	Displaced2TrackVertex neighVtx = djIter->displacedV0VectorCleaned[neighbor];
+	if(!neighVtx.isValid) continue;            
+
+	// check the distance from the center
+	float dx	 = centerVtx.x - neighVtx.x, dy = centerVtx.y - neighVtx.y; //, dz = cz - nz;
+	float distance   = metric2D(dx, dy);
+	float sig	 = distance / metric2D(neighVtx.tot_xyE, centerVtx.tot_xyE);
+
+	if(sig < errorWindow) cluster_temp.addVertex(neighVtx);
+      } // loop over all the candidate neighbors in the jet
+    }  // loop over other displaced jets in the event  
+
+    // check if the resulting cluster has the highest multiplicity
+    if(maxCluster == NULL) { 
+      maxCluster = &cluster_temp;
+      continue;
+    }
+    if(cluster_temp.nV0 > maxCluster->nV0) maxCluster = &cluster_temp;         
+  } // end loop over center vertices in "this" jet
+  
+  // store quatities related to the jet cluster
+  maxCluster->buildClusterQuantities();
+  // set the pointer for the jet to the cluster
+  v0NJetCluster = maxCluster;
+  // fill the related quantities
+  jetV0NJetClusterSize	    = maxCluster->nV0;
+  jetV0NJetClusterLxy	    = maxCluster->center.lxy;
+  jetV0NJetClusterLxySig    = maxCluster->center.lxySig;
+  jetV0NJetClusterLxyzSig   = maxCluster->center.lxyzSig;
+  jetV0NJetClusterLxyz	    = maxCluster->center.lxyz;
+  jetV0NJetClusterX	    = maxCluster->center.x;
+  jetV0NJetClusterY	    = maxCluster->center.y;
+  jetV0NJetClusterZ	    = maxCluster->center.z;
+  jetV0NJetClusterChi2	    = maxCluster->fitChi2;
+  jetV0NJetClusterIntercept = maxCluster->interceptPv;
+  jetV0NJetClusterAngle	    = maxCluster->cosAngleToFit;  
+  jetV0NJetClusterAngleMom  = maxCluster->cosAngleToMomentum;  
+  jetV0NJetClusterNTracks   = maxCluster->nTracks;  
+  if (debug > 4) std::cout << "[DEBUG 4]  End NJet Cluster Calculation" << std::endl;  
+}
 
 void DisplacedJet::calcClusterSize(const DisplacedV0Collection& vertices, const float& errorWindow) {
   if (debug > 4) std::cout << "[DEBUG 4]  Finding Cluster Size" << std::endl;  
@@ -889,20 +996,19 @@ void DisplacedJet::calcClusterSize(const DisplacedV0Collection& vertices, const 
   // nothing to do if there are no vertices
   if (nVtx == 0) return;
 
-  int maxClusterSize = 1;  // there is always at least the 1 vertex
-  const Displaced2TrackVertex * maxVertex = &vertices[0];
+  // start with a NULL cluster
+  DisplacedCluster * maxCluster = NULL;
 
   // check every vertex in a jet for the largest number of vertices within an error window
   // call the vertexing being checked the center
   if (debug > 4) std::cout << "[DEBUG 4]  Looping Center" << std::endl;  
   for(int center = 0; center < nVtx; ++center) {
     Displaced2TrackVertex centerVtx = vertices[center];
-
     if(!centerVtx.isValid) continue;
-    // if we arent concerned with clustering outside of the pixel layers
-    // if(centerVtx.lxy > 5) continue;
 
-    int tempClusterSize = 1; // count the center in the cluster
+    // candidate cluster
+    DisplacedCluster cluster_temp(centerVtx, selPV, iSetup, debug);
+
     if (debug > 4) std::cout << "[DEBUG 4]  Looping Neighbors" << std::endl;  
     // loop over all the possible neighbors
     for(int neighbor = 0; neighbor < nVtx; ++neighbor) {
@@ -915,26 +1021,22 @@ void DisplacedJet::calcClusterSize(const DisplacedV0Collection& vertices, const 
       float distance = metric2D(dx, dy);
       float sig	     = distance / metric2D(neighVtx.tot_xyE, centerVtx.tot_xyE);
 
-      // make stricter requirements for vertices outside of the pixel layers
-      bool pass_short = sig < errorWindow && centerVtx.lxy < 5;
-      bool pass_long  = sig < (errorWindow) && centerVtx.lxy > 5;
-
-      // add it to the cluster
-      if(pass_short || pass_long) { 
-	tempClusterSize++;
-	/* std::cout << " KEEP NEIGHBOR: " << std::endl; */
-	/* std::cout << "neighb num" << neighbor << std::endl; */
-	/* std::cout << "neighb position x: " << nx << " y: " << ny << " z: " << nz << std::endl; */
-	/* std::cout << "neighb error xE: " << nxE << " yE: " << nyE << " zE: " << nzE << std::endl; */
-	/* std::cout << "distance : " << distance << " significance: " << sig << " cluster temp size: " << tempClusterSize << std::endl; */
-      }
+      if(sig < errorWindow) cluster_temp.addVertex(neighVtx);
+      /* std::cout << " KEEP NEIGHBOR: " << std::endl; */
+      /* std::cout << "neighb num" << neighbor << std::endl; */
+      /* std::cout << "neighb position x: " << nx << " y: " << ny << " z: " << nz << std::endl; */
+      /* std::cout << "neighb error xE: " << nxE << " yE: " << nyE << " zE: " << nzE << std::endl; */
+      /* std::cout << "distance : " << distance << " significance: " << sig << " cluster temp size: " << tempClusterSize << std::endl; */      
     } // end neighbor loop
 
-    // set the max cluster
-    if(tempClusterSize > maxClusterSize) {
-      maxClusterSize = tempClusterSize;
-      maxVertex	     = &vertices[center];
-    } 
+    // set the max cluster for the first iteration
+    if(maxCluster == NULL) { 
+      maxCluster = &cluster_temp;
+      continue;
+    }
+    // otherwise, it needs to have more vertices
+    if(cluster_temp.nV0 > maxCluster->nV0) maxCluster = &cluster_temp;
+
   } // end center loop
   
   /* std::cout << "@@@@@@@@@@@@@@@@@@@@" << std::endl; */
@@ -943,15 +1045,25 @@ void DisplacedJet::calcClusterSize(const DisplacedV0Collection& vertices, const 
   /* std::cout << "@@@@@@@@@@@@@@@@@@@@\n" << std::endl; */
   if (debug > 4) std::cout << "[DEBUG 4]  Assigning Max Vertex Information" << std::endl;  
 
+  // build the related cluster quantities
+  maxCluster->buildClusterQuantities();
   // set quantities related to the max cluster
-  jetV0ClusterSize    = maxClusterSize;
-  jetV0ClusterLxy     = maxVertex->lxy;
-  jetV0ClusterLxyz    = maxVertex->lxyz;
-  jetV0ClusterLxySig  = maxVertex->lxySig;
-  jetV0ClusterLxyzSig = maxVertex->lxyzSig;
-  jetV0ClusterX	      = maxVertex->x;
-  jetV0ClusterY	      = maxVertex->y;
-  jetV0ClusterZ	      = maxVertex->z;
+  v0Cluster             = maxCluster;
+  jetV0ClusterSize	= maxCluster->nV0;
+  jetV0ClusterLxy	= maxCluster->center.lxy;
+  jetV0ClusterLxyz	= maxCluster->center.lxyz;
+  jetV0ClusterLxySig	= maxCluster->center.lxySig;
+  jetV0ClusterLxyzSig	= maxCluster->center.lxyzSig;
+  jetV0ClusterX		= maxCluster->center.x;
+  jetV0ClusterY		= maxCluster->center.y;
+  jetV0ClusterZ		= maxCluster->center.z;
+  jetV0ClusterChi2	= maxCluster->fitChi2;
+  jetV0ClusterIntercept = maxCluster->interceptPv;
+  jetV0ClusterAngle	= maxCluster->cosAngleToFit;  
+  jetV0ClusterAngleMom	= maxCluster->cosAngleToMomentum;  
+  jetV0ClusterNTracks   = maxCluster->nTracks;
+
+  if (debug > 4) std::cout << "[DEBUG 4]  End NJet Cluster Calculation" << std::endl;  
 }
 
 int DisplacedJet::calcHIndex(const DisplacedJet::vertexGraph & v0Graph) {
@@ -1684,7 +1796,7 @@ void DisplacedJet::calcJetAlpha(const reco::TrackCollection& tracks, const reco:
 
       // check for matching to the jet
       float dr = reco::deltaR((*tIter)->eta(), (*tIter)->phi(), caloEta, caloPhi);      
-      if (dr < 0.4 ) sumJetPt_temp += (*tIter)->pt() ;
+      if (dr < 0.4 ) sumJetPt_temp += (*tIter)->pt();
     }
 
     // pick the vertex with the highest sum pt^2

@@ -453,7 +453,11 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   Float_t v0JetNV0AboveP1[MAX_V0];
   Float_t v0JetMedianIPLogSig2D[MAX_V0];
   Float_t v0JetAlphaMax[MAX_V0];
+  // cluster size for each vertex
   Int_t   v0JetClusterSize[MAX_V0];
+  Int_t   v0JetNJetClusterSize[MAX_V0];
+  Int_t   v0InCluster[MAX_V0];
+  Int_t   v0InNJetCluster[MAX_V0];
   // info
   Int_t  v0SumValidHits[MAX_V0];
   Int_t  v0SumLostHits[MAX_V0];
@@ -511,30 +515,51 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   Float_t v0Track2IP3DSig[MAX_V0];
 
 
-  ///////////////// NUCLEAR INTERACTIONS
+  ///////////////// V0 Related
 
-  Int_t jetOneTrackNuclearCount[MAX_JETS];
-  Int_t jetTwoTrackNuclearCount[MAX_JETS];
-  Int_t jetTwoTrackInnerHitFake[MAX_JETS];
-  Int_t jetVertexNearBPIX1[MAX_JETS];
-  Int_t jetVertexNearBPIX2[MAX_JETS];
-  Int_t jetVertexNearBPIX3[MAX_JETS];
-  Int_t jetVertexNearBPIX[MAX_JETS];
-  Int_t jetTightNuclear[MAX_JETS];
-  Int_t jetLooseNuclear[MAX_JETS];  
-  Int_t jetNV0HitBehindVertex[MAX_JETS];
-  Int_t jetNV0NoHitBehindVertex[MAX_JETS];
-  Int_t jetNV0KShort[MAX_JETS];
-  Int_t jetNV0Lambda[MAX_JETS];
-  Int_t jetV0HIndex[MAX_JETS];
-  Int_t jetV0ClusterSize[MAX_JETS];
-  Float_t jetV0ClusterLxy[MAX_JETS];
-  Float_t jetV0ClusterLxySig[MAX_JETS];
-  Float_t jetV0ClusterLxyz[MAX_JETS];
-  Float_t jetV0ClusterLxyzSig[MAX_JETS];
-  Float_t jetV0ClusterX[MAX_JETS];
-  Float_t jetV0ClusterY[MAX_JETS];
-  Float_t jetV0ClusterZ[MAX_JETS];
+  // NUCLEAR INTERACTIONS
+  Int_t	    jetOneTrackNuclearCount[MAX_JETS];
+  Int_t	    jetTwoTrackNuclearCount[MAX_JETS];
+  Int_t	    jetTwoTrackInnerHitFake[MAX_JETS];
+  Int_t	    jetVertexNearBPIX1[MAX_JETS];
+  Int_t	    jetVertexNearBPIX2[MAX_JETS];
+  Int_t	    jetVertexNearBPIX3[MAX_JETS];
+  Int_t	    jetVertexNearBPIX[MAX_JETS];
+  Int_t	    jetTightNuclear[MAX_JETS];
+  Int_t	    jetLooseNuclear[MAX_JETS];  
+  Int_t	    jetNV0HitBehindVertex[MAX_JETS];
+  Int_t	    jetNV0NoHitBehindVertex[MAX_JETS];
+  Int_t	    jetNV0KShort[MAX_JETS];
+  Int_t	    jetNV0Lambda[MAX_JETS];
+  Int_t	    jetV0HIndex[MAX_JETS];
+  // CLUSTERS
+  Int_t	    jetV0ClusterSize[MAX_JETS];  
+  Float_t   jetV0ClusterLxy[MAX_JETS];
+  Float_t   jetV0ClusterLxySig[MAX_JETS];
+  Float_t   jetV0ClusterLxyz[MAX_JETS];
+  Float_t   jetV0ClusterLxyzSig[MAX_JETS];
+  Float_t   jetV0ClusterX[MAX_JETS];
+  Float_t   jetV0ClusterY[MAX_JETS];
+  Float_t   jetV0ClusterZ[MAX_JETS];
+  Float_t   jetV0ClusterChi2[MAX_JETS];
+  Float_t   jetV0ClusterIntercept[MAX_JETS];
+  Float_t   jetV0ClusterAngle[MAX_JETS];
+  Float_t   jetV0ClusterAngleMom[MAX_JETS];
+  Int_t	    jetV0ClusterNTracks[MAX_JETS];
+  // N JET CLUSTERS 
+  Int_t	    jetV0NJetClusterSize[MAX_JETS];  
+  Float_t   jetV0NJetClusterLxy[MAX_JETS];
+  Float_t   jetV0NJetClusterLxySig[MAX_JETS];
+  Float_t   jetV0NJetClusterLxyz[MAX_JETS];
+  Float_t   jetV0NJetClusterLxyzSig[MAX_JETS];
+  Float_t   jetV0NJetClusterX[MAX_JETS];
+  Float_t   jetV0NJetClusterY[MAX_JETS];
+  Float_t   jetV0NJetClusterZ[MAX_JETS];
+  Float_t   jetV0NJetClusterChi2[MAX_JETS];
+  Float_t   jetV0NJetClusterIntercept[MAX_JETS];
+  Float_t   jetV0NJetClusterAngle[MAX_JETS];
+  Float_t   jetV0NJetClusterAngleMom[MAX_JETS];
+  Int_t	    jetV0NJetClusterNTracks[MAX_JETS];
 
   ///////////////////////////// IVF ///////////////////////
 

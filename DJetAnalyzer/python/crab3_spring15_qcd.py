@@ -1,10 +1,10 @@
 from CRABClient.UserUtilities import config, getUsernameFromSiteDB
 config = config()
 
-config.General.requestName = 'QCD_SPRING15'
-config.General.workArea = 'CRAB3_QCD_SPRING15'
+config.General.requestName = 'QCD_SPRING15_OCT6_FIX_v2'
+config.General.workArea = 'CRAB3_QCD_SPRING15_OCT6_FIX_v2'
 config.General.transferOutputs = True
-config.General.transferLogs = False
+config.General.transferLogs    = False
 
 config.JobType.pluginName = 'Analysis'
 config.JobType.psetName = 'dev.py'
@@ -17,8 +17,10 @@ config.Data.unitsPerJob = 5
 config.Data.totalUnits = -1 #config.Data.unitsPerJob * NJOBS
 #config.Data.lumiMask = 'https://cms-service-dqm.web.cern.ch/cms-service-dqm/CAF/certification/Collisions12/8TeV/Prompt/Cert_190456-208686_8TeV_PromptReco_Collisions12_JSON.txt'
 #config.Data.runRange = '193093-193999' # '193093-194075'
-config.Data.outLFNDirBase = '/store/group/phys_susy/razor/josh/RAZOR_DIJET/DJANALYSIS/SPRING15_sept17/'
+
+config.Data.outLFNDirBase  = '/store/group/phys_susy/razor/josh/RAZOR_DIJET/DJANALYSIS/QCD_SPRING15_OCT6_FIX_v2'
 config.Data.publication = False
+config.Data.ignoreLocality   = True #seth zenz fix 
 #config.Data.publishDataName = 'CRAB3_tutorial_May2015_Data_analysis'
 config.Site.storageSite = 'T2_CH_CERN'
 
@@ -43,114 +45,119 @@ if __name__ == '__main__':
 
 
     config.General.requestName = 'qcd5_10'
-    config.Data.inputDataset = '/QCD_Pt-5to10_Tune4C_13TeV_pythia8/Spring14dr-castor_PU20bx25_POSTLS170_V5-v1/AODSIM'
+    config.Data.inputDataset = '/QCD_Pt_5to10_TuneCUETP8M1_13TeV_pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v2/AODSIM'
     # config.Data.unitsPerJob = 2
     # =config.Data.totalUnits = 4
     submit(config)
 
     config.General.requestName = 'qcd10_15'
-    config.Data.inputDataset = '/QCD_Pt-10to15_Tune4C_13TeV_pythia8/Spring14dr-castor_PU20bx25_POSTLS170_V5-v1/AODSIM'
+    config.Data.inputDataset = '/QCD_Pt_10to15_TuneCUETP8M1_13TeV_pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v2/AODSIM'
     # config.Data.unitsPerJob = 2
     # =config.Data.totalUnits = 4
     submit(config)
 
     config.General.requestName = 'qcd15_30'
-    config.Data.inputDataset = '/QCD_Pt-15to30_Tune4C_13TeV_pythia8/Spring14dr-castor_PU20bx25_POSTLS170_V5-v1/AODSIM'
+    config.Data.inputDataset = '/QCD_Pt_15to30_TuneCUETP8M1_13TeV_pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v2/AODSIM'
     # config.Data.unitsPerJob = 2
     # =config.Data.totalUnits = 4
     submit(config)
 
     config.General.requestName = 'qcd30_50'
-    config.Data.inputDataset = '/QCD_Pt-30to50_Tune4C_13TeV_pythia8/Spring14dr-castor_PU20bx25_POSTLS170_V5-v1/AODSIM'
+    config.Data.inputDataset = '/QCD_Pt_30to50_TuneCUETP8M1_13TeV_pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v2/AODSIM'
     # config.Data.unitsPerJob = 2
     #config.Data.totalUnits = 4
     submit(config)
 
     config.General.requestName = 'qcd50_80'
-    config.Data.inputDataset = '/QCD_Pt-50to80_Tune4C_13TeV_pythia8/Spring14dr-castor_PU20bx25_POSTLS170_V5-v1/AODSIM'
+    config.Data.inputDataset = '/QCD_Pt_50to80_TuneCUETP8M1_13TeV_pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v2/AODSIM'
     # config.Data.unitsPerJob = 2
     #config.Data.totalUnits = 4
     submit(config)
 
     config.General.requestName = 'qcd80_120'
-    config.Data.inputDataset = '/QCD_Pt-80to120_Tune4C_13TeV_pythia8/Spring14dr-castor_PU20bx25_POSTLS170_V5-v1/AODSIM'
+    config.Data.inputDataset = '/QCD_Pt_80to120_TuneCUETP8M1_13TeV_pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/AODSIM'
     # config.Data.unitsPerJob = 2
     #config.Data.totalUnits = 4
     submit(config)
 
     config.General.requestName = 'qcd120_170'
-    config.Data.inputDataset = '/QCD_Pt-120to170_Tune4C_13TeV_pythia8/Spring14dr-castor_PU20bx25_POSTLS170_V5-v1/AODSIM'
+    config.Data.inputDataset = '/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/AODSIM'
     # config.Data.unitsPerJob = 2
     #config.Data.totalUnits = 4
     submit(config)
 
     config.General.requestName = 'qcd170_300'
-    config.Data.inputDataset = '/QCD_Pt-170to300_Tune4C_13TeV_pythia8/Spring14dr-castor_PU20bx25_POSTLS170_V5-v1/AODSIM'
+    config.Data.inputDataset = '/QCD_Pt_170to300_TuneCUETP8M1_13TeV_pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v2/AODSIM'
     # config.Data.unitsPerJob = 2
     #config.Data.totalUnits = 4
     submit(config)
 
     config.General.requestName = 'qcd300_470'
-    config.Data.inputDataset = '/QCD_Pt-300to470_Tune4C_13TeV_pythia8/Spring14dr-castor_PU20bx25_POSTLS170_V5-v1/AODSIM'
+    config.Data.inputDataset = '/QCD_Pt_300to470_TuneCUETP8M1_13TeV_pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/AODSIM'
     # config.Data.unitsPerJob = 2
     #config.Data.totalUnits = 4
     submit(config)
 
     config.General.requestName = 'qcd470_600'
-    config.Data.inputDataset = '/QCD_Pt-470to600_Tune4C_13TeV_pythia8/Spring14dr-castor_PU20bx25_POSTLS170_V5-v1/AODSIM'
+    config.Data.inputDataset = '/QCD_Pt_470to600_TuneCUETP8M1_13TeV_pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v2/AODSIM'
     # config.Data.unitsPerJob = 2
     #config.Data.totalUnits = 4
     submit(config)
 
     config.General.requestName = 'qcd600_800'
-    config.Data.inputDataset = '/QCD_Pt-600to800_Tune4C_13TeV_pythia8/Spring14dr-castor_PU20bx25_POSTLS170_V5-v1/AODSIM'
+    config.Data.inputDataset = '/QCD_Pt_600to800_TuneCUETP8M1_13TeV_pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v3/AODSIM'
     # config.Data.unitsPerJob = 2
     #config.Data.totalUnits = 4
     submit(config)
 
     config.General.requestName = 'qcd800_1000'
-    config.Data.inputDataset = '/QCD_Pt-800to1000_Tune4C_13TeV_pythia8/Spring14dr-castor_PU20bx25_POSTLS170_V5-v1/AODSIM'
+    config.Data.inputDataset = '/QCD_Pt_800to1000_TuneCUETP8M1_13TeV_pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v2/AODSIM'
     # config.Data.unitsPerJob = 2
     #config.Data.totalUnits = 4
     submit(config)
 
     config.General.requestName = 'qcd1000_1400'
-    config.Data.inputDataset = '/QCD_Pt-1000to1400_Tune4C_13TeV_pythia8/Spring14dr-castor_PU20bx25_POSTLS170_V5-v1/AODSIM'
+    config.Data.inputDataset = '/QCD_Pt_1000to1400_TuneCUETP8M1_13TeV_pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/AODSIM'
     # config.Data.unitsPerJob = 2
     #config.Data.totalUnits = 4
     submit(config)
 
     config.General.requestName = 'qcd1400_1800'
-    config.Data.inputDataset = '/QCD_Pt-1400to1800_Tune4C_13TeV_pythia8/Spring14dr-castor_PU20bx25_POSTLS170_V5-v1/AODSIM'
+    config.Data.inputDataset = '/QCD_Pt_1400to1800_TuneCUETP8M1_13TeV_pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/AODSIM'
     # config.Data.unitsPerJob = 2
     #config.Data.totalUnits = 4
     submit(config)
 
     config.General.requestName = 'qcd1800_2400'
-    config.Data.inputDataset = '/QCD_Pt-1800to2400_Tune4C_13TeV_pythia8/Spring14dr-PU20bx25_POSTLS170_V5-v1/AODSIM'
+    config.Data.inputDataset = '/QCD_Pt_1800to2400_TuneCUETP8M1_13TeV_pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/AODSIM'
     # config.Data.unitsPerJob = 2
     #config.Data.totalUnits = 4
     submit(config)
 
     config.General.requestName = 'qcd2400_3200'
-    config.Data.inputDataset = '/QCD_Pt-2400to3200_Tune4C_13TeV_pythia8/Spring14dr-PU20bx25_POSTLS170_V5-v1/AODSIM'
+    config.Data.inputDataset = '/QCD_Pt_2400to3200_TuneCUETP8M1_13TeV_pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/AODSIM'
     # config.Data.unitsPerJob = 2
     #config.Data.totalUnits = 4
     submit(config)
 
     config.General.requestName = 'qcd3200'
-    config.Data.inputDataset = '/QCD_Pt-3200_Tune4C_13TeV_pythia8/Spring14dr-PU20bx25_POSTLS170_V5-v1/AODSIM'
+    config.Data.inputDataset = '/QCD_Pt_3200toInf_TuneCUETP8M1_13TeV_pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/AODSIM'
     # config.Data.unitsPerJob = 2
     #config.Data.totalUnits = 4
     submit(config)
 
-    config.General.requestName = 'WJetsToLNu'
-    config.Data.inputDataset = '/WJetsToLNu_13TeV-madgraph-pythia8-tauola/Spring14dr-PU20bx25_POSTLS170_V5-v1/AODSIM'
-    # config.Data.unitsPerJob = 2
-    #config.Data.totalUnits = 4
-    submit(config)
+# /QCD_Pt_1000to1400_TuneCUETP8M1_13TeV_pythia8/RunIISpring15Digi74-AVE_40_BX_25ns_tsg_MCRUN2_74_V7-v1/GEN-SIM-RAW
+
+# /QCD_Pt_1400to1800_TuneCUETP8M1_13TeV_pythia8/RunIISpring15Digi74-AVE_40_BX_25ns_tsg_MCRUN2_74_V7-v1/GEN-SIM-RAW
+
+# /QCD_Pt_15to30_TuneCUETP8M1_13TeV_pythia8/RunIISpring15Digi74-AVE_40_BX_25ns_tsg_MCRUN2_74_V7_ext1-v1/GEN-SIM-RAW
+
+# /QCD_Pt_1800to2400_TuneCUETP8M1_13TeV_pythia8/RunIISpring15Digi74-AVE_40_BX_25ns_tsg_MCRUN2_74_V7-v1/GEN-SIM-RAW
+# /QCD_Pt_2400to3200_TuneCUETP8M1_13TeV_pythia8/RunIISpring15Digi74-AVE_40_BX_25ns_tsg_MCRUN2_74_V7-v1/GEN-SIM-RAW
 
 
+# /QCD_Pt_3200toInf_TuneCUETP8M1_13TeV_pythia8/RunIISpring15Digi74-AVE_40_BX_25ns_tsg_MCRUN2_74_V7-v1/GEN-SIM-RAW
 
 
-    
+# /QCD_Pt_600to800_TuneCUETP8M1_13TeV_pythia8/RunIISpring15Digi74-AVE_40_BX_25ns_tsg_MCRUN2_74_V7-v2/GEN-SIM-RAW
+# /QCD_Pt_800to1000_TuneCUETP8M1_13TeV_pythia8/RunIISpring15Digi74-AVE_40_BX_25ns_tsg_MCRUN2_74_V7-v1/GEN-SIM-RAW

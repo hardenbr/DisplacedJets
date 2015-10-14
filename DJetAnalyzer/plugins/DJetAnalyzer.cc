@@ -18,6 +18,8 @@
 #include "TTree.h"                      
 #include "TVector3.h"
 #include "TVector2.h"
+#include "TGraphErrors.h"
+#include "TF1.h"
 
 // system include files                                                                                                                                                 
 #include <vector> 
@@ -109,6 +111,7 @@
 #include "DisplacedJets/DisplacedJetSVAssociator/interface/JetVertexAssociation.h"
 #include "DisplacedJets/DisplacedJet/interface/DisplacedTrack.h"
 #include "DisplacedJets/DisplacedJet/interface/Displaced2TrackVertex.h"
+#include "DisplacedJets/DisplacedJet/interface/DisplacedCluster.h"
 #include "DisplacedJets/DisplacedJet/interface/DisplacedJet.h"
 #include "DisplacedJets/DisplacedJet/interface/DisplacedJetEvent.h"
 #include "DisplacedJets/DJetAnalyzer/interface/DJetAnalyzer.h"
@@ -421,6 +424,9 @@ void  DJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   // ThresDist = Threshold Distance in cm for the vertex used to categorize the jets
   djEvent.doJetTagging(thresholds, thresholds, thresholds, thresholds,
 		       shortTagThresDist, mediumTagThresDist, longTagThresDist, dHTWorkingPoint);
+
+  // do the v0 clustering comparing each jet to all vertices
+  djEvent.doMultiJetClustering();
 
   // fill the leading and subleading jets (pt and hadronic fraction)
   // inclusive requirement and displaced track requirement
@@ -945,6 +951,24 @@ void DJetAnalyzer::beginJob()
   jetTree_->Branch("jetV0ClusterX", &jetV0ClusterX,"jetV0ClusterX[nCaloJets]/F");
   jetTree_->Branch("jetV0ClusterY", &jetV0ClusterY,"jetV0ClusterY[nCaloJets]/F");
   jetTree_->Branch("jetV0ClusterZ", &jetV0ClusterZ,"jetV0ClusterZ[nCaloJets]/F");
+  jetTree_->Branch("jetV0ClusterChi2", &jetV0ClusterChi2,"jetV0ClusterChi2[nCaloJets]/F");
+  jetTree_->Branch("jetV0ClusterIntercept", &jetV0ClusterIntercept,"jetV0ClusterIntercept[nCaloJets]/F");
+  jetTree_->Branch("jetV0ClusterAngle", &jetV0ClusterAngle,"jetV0ClusterAngle[nCaloJets]/F");
+  jetTree_->Branch("jetV0ClusterAngleMom", &jetV0ClusterAngleMom,"jetV0ClusterAngleMom[nCaloJets]/F");
+  jetTree_->Branch("jetV0ClusterNTracks", &jetV0ClusterNTracks,"jetV0ClusterNTracks[nCaloJets]/I");
+  // MULTI JET CLUSTERING
+  jetTree_->Branch("jetV0NJetClusterSize", &jetV0NJetClusterSize,"jetV0NJetClusterSize[nCaloJets]/I");
+  jetTree_->Branch("jetV0NJetClusterLxy", &jetV0NJetClusterLxy,"jetV0NJetClusterLxy[nCaloJets]/F");
+  jetTree_->Branch("jetV0NJetClusterLxySig", &jetV0NJetClusterLxySig,"jetV0NJetClusterLxySig[nCaloJets]/F");
+  jetTree_->Branch("jetV0NJetClusterLxyz", &jetV0NJetClusterLxyz,"jetV0NJetClusterLxyz[nCaloJets]/F");
+  jetTree_->Branch("jetV0NJetClusterLxyzSig", &jetV0NJetClusterLxyzSig,"jetV0NJetClusterLxyzSig[nCaloJets]/F");
+  jetTree_->Branch("jetV0NJetClusterX", &jetV0NJetClusterX,"jetV0NJetClusterX[nCaloJets]/F");
+  jetTree_->Branch("jetV0NJetClusterY", &jetV0NJetClusterY,"jetV0NJetClusterY[nCaloJets]/F");
+  jetTree_->Branch("jetV0NJetClusterZ", &jetV0NJetClusterZ,"jetV0NJetClusterZ[nCaloJets]/F");
+  jetTree_->Branch("jetV0NJetClusterChi2", &jetV0NJetClusterChi2,"jetV0NJetClusterChi2[nCaloJets]/F");
+  jetTree_->Branch("jetV0NJetClusterIntercept", &jetV0NJetClusterIntercept,"jetV0NJetClusterIntercept[nCaloJets]/F");
+  jetTree_->Branch("jetV0NJetClusterAngleMom", &jetV0NJetClusterAngleMom,"jetV0NJetClusterAngleMom[nCaloJets]/F");
+  jetTree_->Branch("jetV0NJetClusterNTracks", &jetV0NJetClusterNTracks,"jetV0NJetClusterNTracks[nCaloJets]/I");
 
   ///////////  ///////////  ///////////  ///////////  ///////////  ///////////  ////
   //////////////////////////////// V0 Candidate QUANITIES ////////////////////////
@@ -986,7 +1010,6 @@ void DJetAnalyzer::beginJob()
   v0Tree_->Branch("passPFMET170NC", &passPFMET170NC, "passPFMET170NC/I");
   v0Tree_->Branch("passMu20", &passMu20, "passMu20/I");
 
-
   // jet tree
   v0Tree_->Branch("nCaloJets", &nCaloJets, "nCaloJets/I");
   v0Tree_->Branch("nV0", &nV0, "nV0/I");
@@ -999,6 +1022,9 @@ void DJetAnalyzer::beginJob()
   v0Tree_->Branch("v0JetNV0AboveP1",&v0JetNV0AboveP1, "v0JetNV0AboveP1[nV0]/F");
   v0Tree_->Branch("v0JetSumLostHits",&v0JetNV0AboveP1, "v0JetNV0AboveP1[nV0]/F");
   v0Tree_->Branch("v0JetClusterSize",&v0JetClusterSize, "v0JetClusterSize[nV0]/I");
+  v0Tree_->Branch("v0InCluster",&v0InCluster, "v0InCluster[nV0]/I");
+  v0Tree_->Branch("v0InNJetCluster",&v0InNJetCluster, "v0InNJetCluster[nV0]/I");
+  v0Tree_->Branch("v0JetNJetClusterSize",&v0JetNJetClusterSize, "v0JetNJetClusterSize[nV0]/I");
   v0Tree_->Branch("v0SumLostHits",&v0SumLostHits, "v0SumLostHits[nV0]/I");
   v0Tree_->Branch("v0SumValidHits",&v0SumValidHits, "v0SumValidHits[nV0]/I");
   // info
@@ -2150,29 +2176,50 @@ void DJetAnalyzer::dumpV0Info(DisplacedJetEvent & djEvent) {
 
     if(debug > 1 ) std::cout << "[DEBUG] jet dumping for v0" << std::endl;
     /////////////////JET DUMP NUCLEAR INTERACTIONS////////////
-    jetOneTrackNuclearCount[jj] = djet->jetOneTrackNuclearCount;
-    jetTwoTrackNuclearCount[jj] = djet->jetTwoTrackNuclearCount;
-    jetTwoTrackInnerHitFake[jj] = djet->jetTwoTrackInnerHitFake;
-    jetVertexNearBPIX1[jj]	= djet->jetVertexNearBPIX1;
-    jetVertexNearBPIX2[jj]	= djet->jetVertexNearBPIX2;
-    jetVertexNearBPIX3[jj]	= djet->jetVertexNearBPIX3;
-    jetVertexNearBPIX[jj]	= djet->jetVertexNearBPIX;
-    jetTightNuclear[jj]		= djet->jetTightNuclear;
-    jetLooseNuclear[jj]		= djet->jetLooseNuclear;
-    jetNV0HitBehindVertex[jj]	= djet->jetNV0HitBehindVertex;
-    jetNV0NoHitBehindVertex[jj] = djet->jetNV0NoHitBehindVertex;
-    jetV0HIndex[jj]             = djet->jetV0HIndex;
-    jetNV0KShort[jj]            = djet->jetNV0KShort; 
-    jetNV0Lambda[jj]            = djet->jetNV0Lambda; 
+    jetOneTrackNuclearCount[jj]	  = djet->jetOneTrackNuclearCount;
+    jetTwoTrackNuclearCount[jj]	  = djet->jetTwoTrackNuclearCount;
+    jetTwoTrackInnerHitFake[jj]	  = djet->jetTwoTrackInnerHitFake;
+    jetVertexNearBPIX1[jj]	  = djet->jetVertexNearBPIX1;
+    jetVertexNearBPIX2[jj]	  = djet->jetVertexNearBPIX2;
+    jetVertexNearBPIX3[jj]	  = djet->jetVertexNearBPIX3;
+    jetVertexNearBPIX[jj]	  = djet->jetVertexNearBPIX;
+    jetTightNuclear[jj]		  = djet->jetTightNuclear;
+    jetLooseNuclear[jj]		  = djet->jetLooseNuclear;
+    jetNV0HitBehindVertex[jj]	  = djet->jetNV0HitBehindVertex;
+    jetNV0NoHitBehindVertex[jj]	  = djet->jetNV0NoHitBehindVertex;
+    jetV0HIndex[jj]		  = djet->jetV0HIndex;
+    jetNV0KShort[jj]		  = djet->jetNV0KShort; 
+    jetNV0Lambda[jj]		  = djet->jetNV0Lambda; 
     // size of the cluster
-    jetV0ClusterSize[jj]	= djet->jetV0ClusterSize;
-    jetV0ClusterLxy[jj]		= djet->jetV0ClusterLxy;
-    jetV0ClusterLxySig[jj]	= djet->jetV0ClusterLxySig;
-    jetV0ClusterLxyzSig[jj]	= djet->jetV0ClusterLxyzSig;
-    jetV0ClusterLxyz[jj]	= djet->jetV0ClusterLxyz;
-    jetV0ClusterX[jj]		= djet->jetV0ClusterX;
-    jetV0ClusterY[jj]		= djet->jetV0ClusterY;
-    jetV0ClusterZ[jj]		= djet->jetV0ClusterZ;
+    jetV0ClusterSize[jj]	  = djet->jetV0ClusterSize;
+    jetV0ClusterLxy[jj]		  = djet->jetV0ClusterLxy;
+    jetV0ClusterLxySig[jj]	  = djet->jetV0ClusterLxySig;
+    jetV0ClusterLxyzSig[jj]	  = djet->jetV0ClusterLxyzSig;
+    jetV0ClusterLxyz[jj]	  = djet->jetV0ClusterLxyz;
+    jetV0ClusterX[jj]		  = djet->jetV0ClusterX;
+    jetV0ClusterY[jj]		  = djet->jetV0ClusterY;
+    jetV0ClusterZ[jj]		  = djet->jetV0ClusterZ;
+    jetV0ClusterZ[jj]		  = djet->jetV0ClusterZ;
+    jetV0ClusterChi2[jj]	  = djet->jetV0ClusterChi2;
+    jetV0ClusterIntercept[jj]	  = djet->jetV0ClusterIntercept;
+    jetV0ClusterAngle[jj]	  = djet->jetV0ClusterAngle;
+    jetV0ClusterAngleMom[jj]	  = djet->jetV0ClusterAngleMom;
+    jetV0ClusterNTracks[jj]	  = djet->jetV0ClusterNTracks;;
+    // multi jet clustering
+    jetV0NJetClusterSize[jj]	  = djet->jetV0NJetClusterSize;
+    jetV0NJetClusterLxy[jj]	  = djet->jetV0NJetClusterLxy;
+    jetV0NJetClusterLxySig[jj]	  = djet->jetV0NJetClusterLxySig;
+    jetV0NJetClusterLxyzSig[jj]	  = djet->jetV0NJetClusterLxyzSig;
+    jetV0NJetClusterLxyz[jj]	  = djet->jetV0NJetClusterLxyz;
+    jetV0NJetClusterX[jj]	  = djet->jetV0NJetClusterX;
+    jetV0NJetClusterY[jj]	  = djet->jetV0NJetClusterY;
+    jetV0NJetClusterZ[jj]	  = djet->jetV0NJetClusterZ;
+    jetV0NJetClusterZ[jj]	  = djet->jetV0NJetClusterZ;
+    jetV0NJetClusterChi2[jj]	  = djet->jetV0NJetClusterChi2;
+    jetV0NJetClusterIntercept[jj] = djet->jetV0NJetClusterIntercept;
+    jetV0NJetClusterAngle[jj]	  = djet->jetV0NJetClusterAngle;
+    jetV0NJetClusterAngleMom[jj]  = djet->jetV0NJetClusterAngleMom;
+    jetV0NJetClusterNTracks[jj]	  = djet->jetV0NJetClusterNTracks;;
 
     /////////////////VERTEX BASED CALCULATIONS////////////////
     
@@ -2206,7 +2253,35 @@ void DJetAnalyzer::dumpV0Info(DisplacedJetEvent & djEvent) {
       v0JetPt[nV0]		 = djet->caloPt;
       v0JetMedianIPLogSig2D[nV0] = djet->medianIPLogSig2D;
       v0JetAlphaMax[nV0]	 = djet->alphaMax / djet->sumTrackPt;
+      // cluster size
       v0JetClusterSize[nV0]	 = djet->jetV0ClusterSize;
+      // bool for if the vertex is in a cluster
+      
+      if(debug > 3 ) std::cout << "[DEBUG 3] filing cluster related" << std::endl;      
+      if(debug > 3 ) std::cout << "[DEBUG 3] checking v0 cluster null " << std::endl;      
+      // check that the pointers aren't null first
+      if(djet->v0Cluster != NULL) {
+	if(debug > 3 ) std::cout << "[DEBUG 3] de-referencing pointer " << std::endl;      
+	//DisplacedCluster cluster = *djet->v0Cluster;
+	if(debug > 3 ) std::cout << "[DEBUG 3] checking containment " << std::endl;      
+	v0InCluster[nV0] = 0;//cluster.containsVertex(vertex);
+      }
+      else{
+	v0InCluster[nV0] = 0;
+      }
+      if(debug > 3 ) std::cout << "[DEBUG 3] checking v0 njet cluster NULL" << std::endl;      
+
+      if(djet->v0NJetCluster != NULL){
+	//DisplacedCluster cluster = *djet->v0NJetCluster;
+	if(debug > 3 ) std::cout << "[DEBUG 3] checking containment" << std::endl;      
+	v0InNJetCluster[nV0] = 0;//cluster.containsVertex(vertex);
+      }
+      else {
+	v0InNJetCluster[nV0] = 0;
+      }
+
+      v0JetNJetClusterSize[nV0]	 = djet->jetV0NJetClusterSize;
+      if(debug > 3 ) std::cout << "[DEBUG 3] filing v0 related" << std::endl;      
       v0JetNV0[nV0]		 = nJetV0;
       v0JetNV0AboveP1[nV0]       = nJetV0Above0p1;
       v0SumLostHits[nV0]         = vertex.sumLostHits;

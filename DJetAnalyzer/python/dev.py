@@ -2,41 +2,43 @@ import FWCore.ParameterSet.Config as cms
 
 #output directories
 base                = '/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDIES/CMSSW_7_4_10_patch1/src/DisplacedJets/'
-#outputDir           = "/afs/cern.ch/work/h/hardenbr/2015/DIJET/DJANALYSIS/DATA_SEPT21/"
+#outputDir           = "/afs/cern.ch/work/h/hardenbr/2015/DIJET/DJANALYSIS/"
 outputDir           = ""
 
 # output options (to be appended to the file name outputted)
-appendSignal        = ""
+appendSignal        = "gunFlat"
 appendData          = ""
 appendBkg           = ""
 ############ FLAGS #############
 debugLevel          = 0
 reportEveryNEvents  = 1000
-isSignalMC          = False
-isMC                = False
+isSignalMC          = True
+isMC                = True
 isData              = not isMC
 doedm               = False
-nevents             = -1
+nevents             = 1000
 
 #-------------- globaltags
 #gtag               = "74X_HLT_mcRun2_asymptotic_fromSpring15DR_v0" #spring 15 25ns
+gtag                = "74X_mcRun2_asymptotic_realisticBS_v1" #realistic beam spot for 74x
 #gtag               = "FALL1374_25V4"
 #gtag               = "PHYS14_25_V1"
 #gtag                = "MCRUN2_74_V9" #guns
-gtag                = "74X_dataRun2_Prompt_v2"  #data
+#gtag                = "74X_dataRun2_Prompt_v2"  #data
 # -------------json
 #JSON               = 'json_DCSONLY_Run2015B.txt'
 #JSON                = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-251883_13TeV_PromptReco_Collisions15_JSON.txt'
-JSON                = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-255031_13TeV_PromptReco_Collisions15_25ns_JSON_v2.txt'
+#JSON                = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-255031_13TeV_PromptReco_Collisions15_25ns_JSON_v2.txt'
+JSON                = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/DCSOnly/json_DCSONLY.txt'
 
 #--------------trigger
-trigger_process     = "" if isMC else "HLT"
+trigger_process     = "HLT" if isMC else "HLT"
 
 #--------------analysis todos
 doEventPreSelection = False
 doJetPreSelection   = False
 doApplySingleMu     = False
-doApplyTrigger      = True  #if isData else False
+doApplyTrigger      = True if isData else False #not isSignalMC
 dumpGeneralTracks   = False
 # trees to write
 writeTrackTree      = False
@@ -80,13 +82,13 @@ input_file_list     = None
 #-----gun samples
 #input_file_list = 'SignalMCLists/DIJET_GUN/dijet_gun_m300_ctau30mm.list'
 #input_file_list = 'SignalMCLists/DIJET_GUN/dijet_gun_m300_ctau0mm.list'
-#input_file_list = 'SignalMCLists/DIJET_GUN/dijet_gun_m300_ctau300mm.list'
+input_file_list = 'SignalMCLists/DIJET_GUN/dijet_gun_m300_ctau300mm.list'
 #input_file_list = 'SignalMCLists/DIJET_GUN/dijet_gun_m300_ctau10mm.list'
 #input_file_list = 'SignalMCLists/DIJET_GUN/dijet_gun_m300_flat_1mm_1000mm.list'
 #input_file_list = 'SignalMCLists/DIJET_GUN/dijet_gun_m300_ctau0mm_bbar.list'
 
 #----data samples
-input_file_list  = 'DataSampleLists/PD_DisplacedJet_Run2015D_Sept21.txt'
+#input_file_list  = 'DataSampleLists/PD_DisplacedJet_Run2015D_Sept21.txt'
 #input_file_list = 'DataSampleLists/PD_DisplacedJet_Jul17AOD.txt'
 #input_file_list = 'DataSampleLists/PD_JetHT_Jul17AOD.txt'
 #input_file_list = 'DataSampleLists/PD_HTMHT_Jul17AOD.txt'
@@ -104,14 +106,25 @@ if input_file_list != None:
 #fillter for the file list
 if isSignalMC and input_file_list == None :
    myfilelist = cms.untracked.vstring()
-   print "NO SIGNAL INPUT.....Exiting" 
-   exit(1)
+   print "NO SIGNAL INPUT?" 
+#   exit(1)
 #   myfilelist.extend(['file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/MC_PRODUCTION/XXTo4J_M-300_CTau_30mm/AODSIM/XXTo4J_M-300_CTau-30mm_reco_102_1_ne5.root',
  #                     'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/MC_PRODUCTION/XXTo4J_M-300_CTau_30mm/AODSIM/XXTo4J_M-300_CTau-30mm_reco_105_1_1MO.root' ])
 if not isSignalMC and input_file_list == None and not isData:
    myfilelist = cms.untracked.vstring()
 #   myfilelist.extend(['file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/data/Run2015B/DisplacedJet/AOD/PromptReco-v1/000/251/562/00000/F6834634-9A2A-E511-9F6F-02163E012402.root'])   
-   myfilelist.extend(['/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/00000/00D76158-CCFC-E411-89EA-AC853DA06B56.root'])
+   qcd_files = ['/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/5E794759-B9FB-E411-99F3-001E67397E90.root',
+                 '/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/5EADB739-17FB-E411-9D85-0025905B858E.root',
+                 '/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/5EC9A83E-FBFA-E411-87B4-002618943925.root',
+                 '/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/62F42BF1-EBFA-E411-8A7E-002590D0B0B6.root',
+                 '/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/6468E4FD-19FB-E411-83B5-0025905A6090.root',
+                 '/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/66AC1E2F-2CFB-E411-8596-002618FDA259.root',
+                 '/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/6A602B0D-0CFB-E411-9A94-00248C55CC3C.root',
+                 '/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/6A65D77E-07FB-E411-95C1-002590D0B002.root',
+                 '/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/70AD84BC-DCFB-E411-BF96-0025904CDDF8.root',
+                 '/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/7444B6BD-DCFB-E411-BD11-0025905C96E8.root']
+   for ff in qcd_files: myfilelist.extend([ff])   
+#   myfilelist.extend(['/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/00000/00D76158-CCFC-E411-89EA-AC853DA06B56.root'])
 if isData and input_file_list == None:
    myfilelist.extend(['/store/data/Run2015C/JetHT/AOD/PromptReco-v1/000/254/905/00000/263140AF-B34B-E511-A678-02163E0146DB.root'])
 #   myfilelist.extend(['file:pickevents.root'])
@@ -149,7 +162,7 @@ process.source = cms.Source("PoolSource", fileNames = myfilelist )
 # add a JSON for data
 import FWCore.PythonUtilities.LumiList as LumiList
 if isData:
- process.source.lumisToProcess = LumiList.LumiList(filename = JSON).getVLuminosityBlockRange()
+   process.source.lumisToProcess = LumiList.LumiList(filename = JSON).getVLuminosityBlockRange()
 
 ################################################################################################
 
@@ -157,7 +170,7 @@ if isData:
 process.correctJets = cms.Sequence( process.ak4CaloL2L3CorrectorChain * process.ak4CaloJetsL2L3)
 
 #configure the analyzers
-process.analyzerVTX = cms.EDAnalyzer('DJetAnalyzer')
+process.analyzerVTX  = cms.EDAnalyzer('DJetAnalyzer')
 process.analyzerCALO = cms.EDAnalyzer('DJetAnalyzer')
 
 process.analyzerVTX.debugLevel  = cms.untracked.int32(debugLevel)
@@ -173,7 +186,7 @@ elif not isSignalMC and isMC:
    process.analyzerCALO.outputFileName = cms.untracked.string("%sdjana.root" % outputDir)
 else:
    process.analyzerVTX.outputFileName  = cms.untracked.string('dataVTX%s.root' % appendData)
-   process.analyzerCALO.outputFileName = cms.untracked.string('%data%s.root' % (outputDir, appendData))   
+   process.analyzerCALO.outputFileName = cms.untracked.string('%sdata%s.root' % (outputDir, appendData))   
 
 
 #tree names

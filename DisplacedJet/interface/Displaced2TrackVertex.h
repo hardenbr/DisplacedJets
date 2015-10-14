@@ -176,5 +176,8 @@ class Displaced2TrackVertex {
   float metric3D(float x, float y, float z) {
     return std::sqrt(x*x + y*y + z*z);
   }
+
+  DisplacedTrack getTrack1() const { return track1; }
+  DisplacedTrack getTrack2() const { return track2; }
   
 };

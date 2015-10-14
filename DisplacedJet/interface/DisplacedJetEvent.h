@@ -105,6 +105,8 @@ class DisplacedJetEvent {
   void mergeCaloIPTagInfo(const reco::TrackIPTagInfoCollection&, const reco::VertexCollection&);
   void mergeSVTagInfo(const reco::SecondaryVertexTagInfoCollection&);
   void fillLeadingSubleadingJets(const bool & isHLT);
+
+  void doMultiJetClustering();
   
   // associated collections
   void addIVFVertices(const reco::VertexCollection & vertices);
@@ -116,10 +118,6 @@ class DisplacedJetEvent {
 
   void doSimMatching(const edm::SimVertexContainer & simVertexCollection);  
   
-  // kinematic cuts for analysis
-
-
-
   // kinematic variables
   float caloHT;
   std::vector<float> caloDHT;
@@ -165,8 +163,6 @@ private:
   int jetIDCounter = 0;     
 
 };
-
-
 
 
 // fill leading sub leading quantities for displaced jets
@@ -483,3 +479,22 @@ void DisplacedJetEvent::doGenMatching( const reco::GenParticleCollection& genPar
 
   }  // end loop over displaced jets
 }
+
+void DisplacedJetEvent::doMultiJetClustering() {
+  // do clustering for each jet in the event
+  std::vector<DisplacedJet>::iterator djetIter = djets.begin();
+  for(; djetIter != djets.end(); ++djetIter) {
+    // clone the list of jets and remove the current jet
+    std::vector<DisplacedJet> temp;
+    std::vector<DisplacedJet>::iterator neighbor = djets.begin();
+    // add all the neighbor jets in the event for the clustering
+    for(; neighbor != djets.end(); ++neighbor) {
+      if (neighbor == djetIter) continue;
+      temp.push_back(*neighbor);
+    }
+    // do the clustering comparing the vertices in the jet to the vertices in 
+    // all other jets in the event
+    djetIter->calcNJetClusterSize(djetIter->displacedV0VectorCleaned, temp, 2);    
+  }  
+}
+

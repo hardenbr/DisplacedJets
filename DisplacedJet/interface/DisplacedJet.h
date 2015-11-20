@@ -85,6 +85,9 @@ class DisplacedJet {
     svLxy = 0, svLxyz = 0;
     svLxySig = 0, svLxyzSig = 0;
     svMass = 0;
+    svAngle3D = 0;
+    svAngle2D = 0;
+    svPt = 0;
     svNTracks = 0;
     svIsGenMatched = false;
     svIsSimMatched = false;
@@ -225,7 +228,7 @@ class DisplacedJet {
   void addSVTagInfo(const reco::SecondaryVertexTagInfo&);
   
   // angular information relative to ejt
-  void addTrackAngles(const reco::TrackCollection tracks);
+  void addTrackAngles(const DisplacedTrackCollection & tracks);
   // information about track inner and outer hits
   void addHitInfo(const reco::TrackCollection tracks);
   // v0 information for pairs of tracks
@@ -408,12 +411,17 @@ class DisplacedJet {
   // sv related variables
   // multiple vertices
   int svNVertex;
+  // kinematics
+  float svPt;
+  float svEta, svPhi;
+  float svAngle2D, svAngle3D;
   // position
   float svX, svY, svZ;
   float svXError, svYError, svZError;  
   float svChi2, svNDof;
   float svLxy, svLxyz;
   float svLxySig, svLxyzSig;
+
   // qualities
   float svMass;
   float svNTracks;
@@ -627,7 +635,7 @@ void DisplacedJet::doGenVertexID(const float & metricThreshold, const reco::GenP
 
 bool DisplacedJet::doesPassPreSelection() const {
   if (debug > 2) std::cout << "[DEBUG] Checking Jet Preselection  " << std::endl;
-  return isInclusive(true) && isDispTrack(true);
+  return isInclusive(false) && isDispTrack(false);
 }
 
 // returns number of tracks found in iter 0,1,2 (run at HLT)
@@ -640,7 +648,7 @@ int DisplacedJet::getNPromptTracks(const bool& isHLT) const {
     // hlt only runs iter 0,1,2 for prompt track calculations
     // algo != iteration
     bool pass_algo = (algo <= 6 || !isHLT);
-    if (fabs(*ip2DIter) < 0.1 && pass_algo) nPTracks++;
+    if (fabs(*ip2DIter) < 0.05 && pass_algo) nPTracks++;
   }  
   return  nPTracks;
 }
@@ -1174,7 +1182,6 @@ void DisplacedJet::addV0Info(const reco::TrackRefVector trackRefs) {
     // particle comparisons
     jetNV0KShort += vertex.isKShort ? 1 : 0;
     jetNV0Lambda += vertex.isLambda ? 1 : 0;
-
   } // end loop on v0 candiate vertices  
 
   // create the graph of vertex association and find the h index
@@ -1224,8 +1231,8 @@ void DisplacedJet::addHitInfo(const reco::TrackCollection tracks) {
       
       //const bool	isBarInner	 = detLayerInner.isBarrel();
       //const bool	isBarOuter	 = detLayerOuter.isBarrel();
-      GeomDetEnumerators::SubDetector subDetLayerInner = detLayerInner.subDetector();
-      GeomDetEnumerators::SubDetector subDetLayerOuter = detLayerOuter.subDetector();
+      /* GeomDetEnumerators::SubDetector subDetLayerInner = detLayerInner.subDetector(); */
+      /* GeomDetEnumerators::SubDetector subDetLayerOuter = detLayerOuter.subDetector(); */
       
       // get the state on the surface
       const TrajectoryStateOnSurface&   tsosInnerHit  = trajInfo[0].detTSOS;
@@ -1249,11 +1256,9 @@ void DisplacedJet::addHitInfo(const reco::TrackCollection tracks) {
       innerHitPos.push_back(ri);
       outerHitPos.push_back(ro);
 
-      bool hasNoPixelInner = subDetLayerInner!=GeomDetEnumerators::PixelBarrel && subDetLayerInner!=GeomDetEnumerators::PixelEndcap;
-      bool hasNoPixelOuter = subDetLayerOuter!=GeomDetEnumerators::PixelBarrel && subDetLayerOuter!=GeomDetEnumerators::PixelEndcap;
-
+      bool hasPixelHits = tIter->hitPattern().numberOfValidPixelHits() > 0;
       // if the inner hit is in the pixel layers
-      if (!hasNoPixelInner) {
+      if (hasPixelHits) {
 	innerHitPosInPixel.push_back(ri);
 	jetNTracksPixel	    += 1;	
 	jetPtSumTracksPixel += pt;
@@ -1264,7 +1269,7 @@ void DisplacedJet::addHitInfo(const reco::TrackCollection tracks) {
 	jetPtSumTracksNoPixel += pt;	  
       }
 
-      if (!hasNoPixelOuter) outerHitPosInPixel.push_back(ro);
+      if (hasPixelHits) outerHitPosInPixel.push_back(ro);
       else outerHitPosOutPixel.push_back(ro);     
     } // end hits valid
   } //end loop filling vectors of hits
@@ -1299,30 +1304,9 @@ void DisplacedJet::addHitInfo(const reco::TrackCollection tracks) {
 
 
 // compute variables related to the track angles and the calo jet 
-void DisplacedJet::addTrackAngles(const reco::TrackCollection tracks) {
-  reco::TrackCollection::const_iterator tIter = tracks.begin();
+void DisplacedJet::addTrackAngles(const DisplacedTrackCollection & tracks) {
+  DisplacedTrackCollection::const_iterator tIter = tracks.begin();
   
-  //  ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<double>> jetP4 = jet.physicsP4();  
-  ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<double>> jetDetP4 = jet.detectorP4();  
-  float jdpx = jetDetP4.px(), jdpy = jetDetP4.py(), jdpz = jetDetP4.pz();
-  
-  // jet vectors 2d and 3d
-  TVector3 jetv3(jet.px(), jet.py(), jet.pz());
-  TVector3 jetv2(jet.px(), jet.py(), 0);
-  TVector3 jetv3_xyz(jet.px(), jet.py(), jet.pz());
-  TVector3 jetv2_xy(jet.px(), jet.py(), 0);
-  // unit jet vectors
-  TVector3 jetv3_unit = jetv3_xyz.Unit();
-  TVector3 jetv2_unit = jetv2_xy.Unit();
-
-  // detector jet vectors 2d and 3d
-  TVector3 jetdv3(jdpx, jdpy, jdpz);
-  TVector3 jetdv2(jdpx, jdpy, 0);
-  // detector unit jet vectors
-  TVector3 jetdv3_unit = jetdv3.Unit();
-  TVector3 jetdv2_unit = jetdv2.Unit();
-
-  //  std::cout << "Jet px = " << jet.px() << " py = " << jet.py() << std::endl;
   // pt weighted
   ptSumCosTheta2D	  = 0, ptSumCosTheta3D = 0;
   ptSumCosThetaDet2D	  = 0, ptSumCosThetaDet3D = 0;
@@ -1330,103 +1314,24 @@ void DisplacedJet::addTrackAngles(const reco::TrackCollection tracks) {
   sumCosTheta2D	          = 0, sumCosTheta3D = 0;
   sumCosThetaDet2D	  = 0, sumCosThetaDet3D = 0;   
 
-  TVector3 trackMomSumV3(0,0,0);
-  TVector3 trackMomSumV2(0,0,0);
-  TVector3 ipPosSumV3(0,0,0);
-  TVector3 ipPosSumV2(0,0,0);
-
   // find the angle between the jet momentum and track momentum
-  float sumTrackPtValid = 0;
-  // Create the transient track builder
-  edm::ESHandle<TransientTrackBuilder> builder;
-  iSetup.get<TransientTrackRecord>().get("TransientTrackBuilder", builder);
-  for(; tIter != tracks.end(); ++tIter) {
-    
-    // build the track momentum sum for the jet
-    TVector3 trackMom3d(tIter->px(), tIter->py(), tIter->pz());
-    TVector3 trackMom2d(tIter->px(), tIter->py(), 0);
-    trackMomSumV3 += trackMom3d;
-    trackMomSumV2 += trackMom2d;
-    
-    // uses recotrack debug to approximate hit positions
-    static GetTrackTrajInfo getTrackTrajInfo;
-    const reco::Track & const_track = *tIter;
-    std::vector<GetTrackTrajInfo::Result> trajInfo = getTrackTrajInfo.analyze(iSetup, const_track);
-    if (trajInfo[0].valid && trajInfo.back().valid) {
+  float sumTrackPtValid = 0;  
+  for(; tIter != tracks.end(); ++tIter) {    
+    if (tIter->isValid) {
+      float pt = tIter->pt; 
 
-      // get the inner and outer hit of the track for valid hits
-      const TrajectoryStateOnSurface&   tsosInnerHit = trajInfo[0].detTSOS;
-      const TrajectoryStateOnSurface&   tsosOuterHit = trajInfo.back().detTSOS;
-      // parse the position from the tsos
-      const GlobalPoint &               innerPos     = tsosInnerHit.globalPosition();
-      const GlobalPoint &               outerPos     = tsosOuterHit.globalPosition();
-      // const GlobalVector &              innerMom     = tsosInnerHit.globalMomentum();
-      // const GlobalVector &              outerMom     = tsosOuterHit.globalMomentum();
+      if(pt < 1) continue;
 
-      // build the transient track for manipulations
-      reco::TransientTrack transientTrack = builder->build(const_track);
-      // create the extraoplator using the transient track
-      TransverseImpactPointExtrapolator extrapolator(transientTrack.field());
-      // extrapolate to the closest point to the primary vertex
-      TrajectoryStateOnSurface tsosClosestToPV2D = extrapolator.extrapolate(transientTrack.impactPointState(), RecoVertex::convertPos(selPV.position()));
-      TrajectoryStateClosestToPoint tscpPV = transientTrack.trajectoryStateClosestToPoint(RecoVertex::convertPos(selPV.position()));
-
-      // get the position from the tsos
-      // use the exact transverse calculation
-      const GlobalPoint &   closestToPVTransverse = tsosClosestToPV2D.globalPosition();
-      const GlobalVector &  closestMomTransverse  = tsosClosestToPV2D.globalMomentum();
-      // aboslute (approximate)
-      const GlobalPoint &   closestToPV		  = tscpPV.position();
-      const GlobalVector &  closestMom		  = tscpPV.momentum();
-
-      TVector3 innerMomv3( closestMom.x(), closestMom.y(), closestMom.z());
-      TVector3 innerMomv2( closestMomTransverse.x(), closestMomTransverse.y(), 0);
-      
-      TVector3 outerv3( outerPos.x() - selPV.x(), outerPos.y() - selPV.y(), outerPos.z() - selPV.z());
-      TVector3 outerv2( outerPos.x() - selPV.x(), outerPos.y() - selPV.y(), 0);
-
-      TVector3 ipv3( closestToPV.x() - selPV.x(), closestToPV.y() - selPV.y(), closestToPV.z() - selPV.z());
-      TVector3 ipv2( closestToPVTransverse.x() - selPV.x(), closestToPVTransverse.y() - selPV.y(), 0);
-
-      ipPosSumV3 += ipv3;
-      ipPosSumV2 += ipv2;
-
-      TVector3 innerv3( innerPos.x(), innerPos.y(), innerPos.z());
-      TVector3 innerv2( innerPos.x(), innerPos.y(), 0);
-
-      float pt = tIter->pt(); 
-
-      /* float dx = outerPos.x() - innerPos.x(); //tIter->outerX() - tIter->innerPosition().X(); */
-      /* float dy = outerPos.y() - innerPos.y(); //tIter->outerY() - tIter->innerPosition().Y();  */
-      /* float dz = outerPos.z() - innerPos.z();//1 - tIter->vz(); //tIter->outerZ() - tIter->innerPosition().Z(); */
-
-      /* std::cout << "TRACK INNER " << innerPos.x() << " " << innerPos.y() << " " << innerPos.z() << std::endl; */
-      /* std::cout << "TRACK OUTER " << outerPos.x() << " " << outerPos.y() << " " << outerPos.z() << std::endl; */
-      /* std::cout << "TRACK Di " << dx << " " << dy << " " << dz << std::endl; */
-
-      /* // track vectors */
-      /* TVector3	trkv3(dx, dy, dz); */
-      /* TVector2	trkv2(dx, dy); */
-      /* // track unit vectors */
-      /* TVector3	trkv3_unit = trkv3.Unit(); */
-      /* TVector2	trkv2_unit = trkv2.Unit(); */
-
-      /* std::cout << "TRACK UNIT  3D " << trkv3_unit.X() << " " << trkv3_unit.Y() << trkv3_unit.Z() << std::endl; */
-      /* std::cout << "TRACK UNIT  2D " << trkv2_unit.X() << " " << trkv2_unit.Y() << std::endl; */
-    
-      // track cosine with jet unit
-      float   cosTheta3D	  = jetv3.Unit()* (innerMomv3).Unit();//outerv3.Unit().Cross((outerv3 - ipv3).Unit()).Mag(); //trkv3_unit * jetv3_unit;
-      float   cosTheta2D	  = jetv2.Unit()* (innerMomv2).Unit();//outerv2.Unit().Cross((outerv2 - ipv2).Unit()).Mag(); //trkv2_unit * jetv2_unit;
-      //      cosTheta3D = cosTheta3D ? log(cosTheta3D) : -20;
-      //      cosTheta2D = cosTheta2D ? log(cosTheta2D) : -20;
-
-      /* std::cout << "COSTHETA3D " << cosTheta3D << std::endl; */
-      /* std::cout << "COSTHETA2D " << cosTheta2D << std::endl; */
-      /* std::cout << " -----------------" << std::endl; */
-
-      // track cosine with jet unit detecotr
-      float   cosThetaDet3D = 0; //trkv3_unit * jetdv3_unit;
-      float   cosThetaDet2D = 0; //trkv2_unit * jetdv2_unit;
+      // track cosine with respect to the momentum at the rference point
+      // momentum is already defined at the reference point
+      float   cosTheta3D    = tIter->angleMomentumAndPVAtInnerHit3D;
+      float   cosTheta2D    = tIter->angleMomentumAndPVAtInnerHit2D;
+      // track cosine with respect to the inner hit 
+      float   cosThetaDet3D = tIter->angleMomentumAndPVAtOuterHit3D;
+      float   cosThetaDet2D = tIter->angleMomentumAndPVAtOuterHit2D;    //trkv2_unit * jetdv2_unit;
+      /* std::cout << "COSTHETA3D " << cosTheta3D << std::endl;  */
+      /* std::cout << "COSTHETA2D " << cosTheta2D << std::endl;  */
+      /* std::cout << " -----------------" << std::endl;  */
 
       cosTheta2DVector.push_back(cosTheta2D);
       cosTheta3DVector.push_back(cosTheta3D);
@@ -1437,15 +1342,15 @@ void DisplacedJet::addTrackAngles(const reco::TrackCollection tracks) {
       sumTrackPtValid	 += pt;
 
       // pt weighted
-      ptSumCosTheta2D    += cosTheta2D *    pt;
-      ptSumCosTheta3D    += cosTheta3D *    pt;
-      ptSumCosThetaDet2D += cosThetaDet2D * pt;
-      ptSumCosThetaDet3D += cosThetaDet3D * pt;
+      ptSumCosTheta2D    += sin(cosTheta2D) *    pt;
+      ptSumCosTheta3D    += sin(cosTheta3D) *    pt;
+      ptSumCosThetaDet2D += sin(cosThetaDet2D) * pt;
+      ptSumCosThetaDet3D += sin(cosThetaDet3D) * pt;
       // not pt weighted
-      sumCosTheta2D      += cosTheta2D;
-      sumCosTheta3D      += cosTheta3D;
-      sumCosThetaDet2D   += cosThetaDet2D;
-      sumCosThetaDet3D   += cosThetaDet3D;
+      sumCosTheta2D      += sin(cosTheta2D);
+      sumCosTheta3D      += sin(cosTheta3D);
+      sumCosThetaDet2D   += sin(cosThetaDet2D);
+      sumCosThetaDet3D   += sin(cosThetaDet3D);
     }
 
     // mean
@@ -1466,15 +1371,13 @@ void DisplacedJet::addTrackAngles(const reco::TrackCollection tracks) {
   }
 
   // track sum
-  trackSumMomCosTheta2D	 = jetv2_unit * trackMomSumV2.Unit();
-  trackSumMomCosTheta3D	 = jetv3_unit * trackMomSumV3.Unit();
-  trackSumMomMag2D	 = trackMomSumV2.Mag();
-  trackSumMomMag3D	 = trackMomSumV3.Mag();
+  trackSumMomCosTheta2D	 = 0;
+  trackSumMomCosTheta3D	 = 0;
+  trackSumMomMag2D	 = 0;
+  trackSumMomMag3D	 = 0;
   // vector sum of IP
-  //std::cout << "Sin(theta,jet,ipVectorSum) " << (jetv2_unit.Cross(ipPosSumV2.Unit())).Mag() << " |ipVectorSum| " << ipPosSumV2.Mag() << std::endl;
-
-  ipPosSumMag3D		 = ipPosSumV3.Mag();
-  ipPosSumMag2D		 = ipPosSumV2.Mag();
+  ipPosSumMag3D		 = 0;
+  ipPosSumMag2D		 = 0;
   // normalize by the sum pt
   ptSumCosTheta2D	/= sumTrackPtValid ? sumTrackPtValid : 1;
   ptSumCosTheta3D	/= sumTrackPtValid ? sumTrackPtValid : 1;
@@ -1535,9 +1438,34 @@ void DisplacedJet::addSVTagInfo(const reco::SecondaryVertexTagInfo& svTagInfo) {
   float xE   = std::sqrt(svXError * svXError + pvxE * pvxE), 
     yE = std::sqrt(svYError * svYError + pvyE * pvyE), 
     zE = std::sqrt(svZError * svZError + pvzE * pvzE);
-  float dx = svX - selPV.x() , dy = svY - selPV.y(), dz = svZ - selPV.z();
+  float dx = selPV.x() - svX , dy = selPV.y() - svY, dz = selPV.z() - svZ;
 
+  TVector3 pvVector3D(selPV.x(), selPV.y(), selPV.z());
+  TVector3 pvVector2D(selPV.x(), selPV.y(), 0);
+  TVector3 svVector3D(svX, svY, svZ);
+  TVector3 svVector2D(svX, svY, 0);
+
+  // line pointing form the primary vertex through the sceondary vertex
+  TVector3 svMom3D( selVertex.p4().x(), selVertex.p4().y(), selVertex.p4().z());
+  TVector3 svMom2D( selVertex.p4().x(), selVertex.p4().y(), 0);
+
+  // you want the negative when the momentum and sv are in the same 
+  // direction relative to the PV
+  // this makes sure the angle is not pi when the vertex is fit behind 
+  // the primary vertex 
+  float sign2D =  (svMom2D * (svVector2D - pvVector2D)) > 0 ? -1: 1;
+  float sign3D =  (svMom3D * (svVector3D - pvVector3D)) > 0 ? -1: 1;
+
+  TVector3 pvToVertex3D( sign3D * dx, sign3D * dy, sign3D * dz);
+  TVector3 pvToVertex2D( sign2D * dx, sign2D * dy, 0);
+
+  svAngle3D = pvToVertex3D.Angle(svMom3D);
+  svAngle2D = pvToVertex2D.Angle(svMom2D);
+  
   svMass    = selVertex.p4().mass();    
+  svPt      = selVertex.p4().pt();
+  svEta     = selVertex.p4().eta();
+  svPhi     = selVertex.p4().phi();
   svLxySig  = std::sqrt( dx * dx + dy * dy ) / std::sqrt(xE * xE + yE * yE);
   svLxyzSig = std::sqrt( dx * dx + dy * dy + dz * dz) / std::sqrt(xE * xE + yE * yE + zE * zE);
   svLxy     = std::sqrt( dx * dx + dy * dy );
@@ -1645,7 +1573,7 @@ std::vector<bool> DisplacedJet::passNoVtxTag(const std::vector<float> thres){
   std::vector<float>::const_iterator thresIter = thres.begin();
   for(; thresIter != thres.end(); ++thresIter) {
     bool didPass = false;
-    if( nTracks == 0 && jetV0ClusterSize == 0 && caloHadEnergyFrac > 0.95) didPass = true;
+    if(jetV0ClusterSize > (3 + 3*(*thresIter)) && jetV0ClusterAngleMom > 0.2 && jetV0ClusterAngleMom < 2.8) didPass = true;
     passResults.push_back(didPass);
   }
   noVertexTagsVector = passResults;
@@ -1657,8 +1585,9 @@ std::vector<bool> DisplacedJet::passShortTag(const std::vector<float> thres, flo
   std::vector<float>::const_iterator thresIter = thres.begin();
   for(; thresIter != thres.end(); ++thresIter) {
     bool didPass = false;
-    if( (jetPtSumTracksNoPixel/ sumTrackPt) < 0.7 && nTracks > 0 && medianIPLogSig2D > (*thresIter - 2)
-	&& (alphaMax / sumTrackPt) < 0.2 && jetV0ClusterSize > 15) didPass = true;
+    if(nTracks > 0 && medianIPLogSig2D > 0  && (alphaMax / sumTrackPt) < (.8 - (*thresIter * .14)) ) didPass = true;
+    //    if( medianCosThetaDet2D > 0.05 && nTracks > 2 && medianIPLogSig2D > (*thresIter)
+    //	&& (alphaMax / sumTrackPt) < 0.1) didPass = true;
     passResults.push_back(didPass);
   }
   shortTagsVector = passResults;
@@ -1670,8 +1599,7 @@ std::vector<bool> DisplacedJet::passMediumTag(const std::vector<float> thres, fl
   std::vector<float>::const_iterator thresIter = thres.begin();
   for(; thresIter != thres.end(); ++thresIter) {
     bool didPass = false;
-    if((jetPtSumTracksNoPixel/ sumTrackPt) < 0.7  && nTracks > 0 && medianIPLogSig2D > *thresIter
-       && (alphaMax / sumTrackPt) < 0.05 &&  jetV0ClusterSize <= 15) didPass = true;
+    if(nTracks > 0 && medianIPLogSig2D > (.5 * (*thresIter)) && (alphaMax / sumTrackPt) < .8) didPass = true;
     passResults.push_back(didPass);
   }
   mediumTagsVector = passResults;
@@ -1683,7 +1611,8 @@ std::vector<bool> DisplacedJet::passLongTag(const std::vector<float> thres, floa
   std::vector<float>::const_iterator thresIter = thres.begin();
   for(; thresIter != thres.end(); ++thresIter) {
     bool didPass = false;
-    if((jetPtSumTracksNoPixel/ sumTrackPt) > 0.7 && medianIPLogSig2D > *thresIter && (alphaMax / sumTrackPt) < 0.05) didPass = true;
+    if( medianCosThetaDet2D > 0.05 && nTracks > 0 && medianIPLogSig2D > (*thresIter)
+	&& (alphaMax / sumTrackPt) < 0.05) didPass = true;
     passResults.push_back(didPass);
   }
   longTagsVector = passResults;

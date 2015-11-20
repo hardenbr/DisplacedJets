@@ -68,6 +68,10 @@ parser.add_option("-l", "--lumi", dest="lumi",
 		                    help="integrated luminosity for normalization",
 		                    action="store",type="float", default = 1.0)
 
+parser.add_option( "--norm1", dest="norm1",
+		                    help="normalize to 1",
+		                    action="store_true",default = False)
+
 (options, args) = parser.parse_args()
 
 #output root file
@@ -104,6 +108,7 @@ hist2 = rt.TH1F(hist2_name, options.label2, nbins, xmin, xmax)
 hist2.SetMarkerStyle(21)
 
 
+
 n1 = thisTree.Draw("%s>>%s" % (options.var, hist1_name), options.cut1)
 n2 = thisTree.Draw("%s>>%s" % (options.var, hist2_name), options.cut2)
 
@@ -114,9 +119,6 @@ print "passsing cut2", n2
 hist1.Sumw2()
 hist2.Sumw2()
 
-hist1.GetXaxis().SetTitle(options.xlabel)
-hist1.GetYaxis().SetTitle(options.ylabel)
-
 hist1.SetLineWidth(2)
 hist1.SetLineColor(rt.kRed)
 hist1.SetMarkerColor(rt.kRed)
@@ -125,14 +127,29 @@ hist2.SetLineWidth(2)
 hist2.SetLineColor(rt.kBlack)
 hist2.SetMarkerColor(rt.kBlack)
 
-if hist1.GetMaximum() > hist2.GetMaximum():
-    hist1.Draw("e")
-    hist1.SetMarkerSize(2)
-    hist2.Draw("same")
+hist1_norm = hist1.Clone()
+hist2_norm = hist2.Clone()
+
+
+hist1_norm.GetXaxis().SetTitle(options.xlabel)
+hist1_norm.GetYaxis().SetTitle(options.ylabel)
+
+if options.norm1:
+    hist1_norm.Scale( 1. / n1)
+    hist2_norm.Scale( 1. / n2)
+
+if hist1_norm.GetMaximum() > hist2_norm.GetMaximum():
+    hist1_norm.Draw("e")
+    hist1_norm.SetMarkerSize(2)
+    hist2_norm.Draw("same")
 else:
-    hist2.Draw("e")
-    hist2.SetMarkerSize(2)
-    hist1.Draw("same")
+    hist2_norm.Draw("e")
+    hist2_norm.SetMarkerSize(2)
+    hist1_norm.Draw("same")
+
+hist1_norm.GetXaxis().SetTitle(options.xlabel)
+hist1_norm.GetYaxis().SetTitle(options.ylabel)
+
 
 leg1 = canvas.BuildLegend()
 
@@ -169,10 +186,12 @@ graph.SetMarkerStyle(21)
 graph.SetMarkerColor(rt.kBlack)
 graph.Draw("ap")
 
-leg2 = canvas2.BuildLegend()
+graph.GetXaxis().SetTitle(options.xlabel)
+
+#leg2 = canvas2.BuildLegend()
 
 CMS_lumi.CMS_lumi(canvas2, 4, 0)
 
-leg2.SetFillColor(0)
+#leg2.SetFillColor(0)
 #leg2.SetLineColor(0)
 raw_input("RAWINPUT")

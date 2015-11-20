@@ -6,7 +6,7 @@ base                = '/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDI
 outputDir           = ""
 
 # output options (to be appended to the file name outputted)
-appendSignal        = "gunFlat"
+appendSignal        = ""
 appendData          = ""
 appendBkg           = ""
 ############ FLAGS #############
@@ -16,7 +16,7 @@ isSignalMC          = True
 isMC                = True
 isData              = not isMC
 doedm               = False
-nevents             = 1000
+nevents             = -1
 
 #-------------- globaltags
 #gtag               = "74X_HLT_mcRun2_asymptotic_fromSpring15DR_v0" #spring 15 25ns
@@ -25,11 +25,14 @@ gtag                = "74X_mcRun2_asymptotic_realisticBS_v1" #realistic beam spo
 #gtag               = "PHYS14_25_V1"
 #gtag                = "MCRUN2_74_V9" #guns
 #gtag                = "74X_dataRun2_Prompt_v2"  #data
-# -------------json
+
+## -------------json
 #JSON               = 'json_DCSONLY_Run2015B.txt'
-#JSON                = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-251883_13TeV_PromptReco_Collisions15_JSON.txt'
-#JSON                = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-255031_13TeV_PromptReco_Collisions15_25ns_JSON_v2.txt'
-JSON                = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/DCSOnly/json_DCSONLY.txt'
+#JSON               = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-251883_13TeV_PromptReco_Collisions15_JSON.txt'
+#JSON               = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-255031_13TeV_PromptReco_Collisions15_25ns_JSON_v2.txt'
+#JSON               = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-258714_13TeV_PromptReco_Collisions15_25ns_JSON.txt'
+#silver json
+JSON                = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-258750_13TeV_PromptReco_Collisions15_25ns_JSON_Silver_v2.txt'
 
 #--------------trigger
 trigger_process     = "HLT" if isMC else "HLT"
@@ -48,10 +51,10 @@ writeJetTree        = True
 writeVertexTree     = True
 writeGenTree        = isSignalMC 
 #----------- matching
-doGenMatch          = True and isSignalMC
+doGenMatch          = isMC #and isSignalMC
 doSimVtxMatch       = False
 #----------- analysis cuts
-cut_jetPt           = 40
+cut_jetPt           = 60
 cut_jetEta          = 2.0
 #----------- tag categories
 shortTagThreshold   = 0.0
@@ -82,7 +85,7 @@ input_file_list     = None
 #-----gun samples
 #input_file_list = 'SignalMCLists/DIJET_GUN/dijet_gun_m300_ctau30mm.list'
 #input_file_list = 'SignalMCLists/DIJET_GUN/dijet_gun_m300_ctau0mm.list'
-input_file_list = 'SignalMCLists/DIJET_GUN/dijet_gun_m300_ctau300mm.list'
+#input_file_list = 'SignalMCLists/DIJET_GUN/dijet_gun_m300_ctau300mm.list'
 #input_file_list = 'SignalMCLists/DIJET_GUN/dijet_gun_m300_ctau10mm.list'
 #input_file_list = 'SignalMCLists/DIJET_GUN/dijet_gun_m300_flat_1mm_1000mm.list'
 #input_file_list = 'SignalMCLists/DIJET_GUN/dijet_gun_m300_ctau0mm_bbar.list'
@@ -313,10 +316,10 @@ process.p = cms.Path()
 # trigger bits to keep
 process.triggerSelection = cms.EDFilter( "TriggerResultsFilter",
     triggerConditions = cms.vstring(
-#      'HLT_HT250_DisplacedDijet40_DisplacedTrack_v*',
+      'HLT_HT250_DisplacedDijet40_DisplacedTrack_v*',
       'HLT_HT350_DisplacedDijet40_DisplacedTrack_v*',
       'HLT_HT350_DisplacedDijet80_DisplacedTrack_v*',
-#      'HLT_HT400_DisplacedDijet40_Inclusive_v*',
+      'HLT_HT400_DisplacedDijet40_Inclusive_v*',
       'HLT_HT500_DisplacedDijet40_Inclusive_v*',
       'HLT_HT550_DisplacedDijet40_Inclusive_v*',
       'HLT_HT650_DisplacedDijet80_Inclusive_v*',

@@ -403,16 +403,16 @@ void  DJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   runStatTree_->Fill(); // always fill the run stats  
 
   // dont keep events not passing preselection 
-  if (applyEventPreSelection_ && eventPassEventPreSelection == 0) {
-    return;
-  }
+  // if (applyEventPreSelection_ && eventPassEventPreSelection == 0) {
+  //   return;
+  // }
 
   djEvent.mergeSVTagInfo(svTagInfo); // add the secondary vertexer from btag
   djEvent.addIVFVertices(incSV); // add the inclusive secondary vertices (includes matching and calculations)
 
   // mc matching (gen vertex and gen particle to calo jet matching) 
   // (genparticles, particle matching, vtx matching, vtx id matching, threshold for vtx match)
-  if(isMC_ && doGenMatch_) djEvent.doGenMatching(genCollection, true, true, true, 0.3, 0.7, 0.05);    
+  if(isMC_ && doGenMatch_) djEvent.doGenMatching(genCollection, true, true, true, isSignalMC_, 0.3, 0.7, 0.05);    
   // only dump sim information for matching
   if(isMC_ && doSimMatch_) dumpSimInfo(simVtxCollection);  
 
@@ -443,7 +443,7 @@ void  DJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   dumpV0Info(djEvent);
 
   // dump the gen particle information
-  if(isMC_ && doGenMatch_) dumpGenInfo(genCollection);
+  if(isMC_ && doGenMatch_) dumpGenInfo(djEvent, genCollection);
 
   // dump the track information
   nTracks = 0;   
@@ -452,18 +452,25 @@ void  DJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   // dump the vertex info in the event
   dumpPVInfo(djEvent, pvCollection);
 
-  if(debug > 1) std::cout << "[DEBUG] Fill Event Tree" << std::endl;
-  if(writeEventTree_) eventTree_->Fill();
-  if(debug > 1) std::cout << "[DEBUG] Fill Track Tree" << std::endl;
-  if(writeTrackTree_) trackTree_->Fill();
-  if(debug > 1) std::cout << "[DEBUG] Fill Jet Tree" << std::endl;
-  if(writeJetTree_) jetTree_->Fill();
-  if(debug > 1) std::cout << "[DEBUG] Fill V0 Tree" << std::endl; 
-  if(writeV0Tree_) v0Tree_->Fill();
-  if(debug > 1) std::cout << "[DEBUG] Fill VTX Tree" << std::endl; 
-  if(writeVertexTree_) vertexTree_->Fill();
-  if(debug > 1) std::cout << "[DEBUG] Fill GEN Tree" << std::endl;
-  if(writeGenTree_)genTree_->Fill();
+  // do a selection that requires the event have at least 1 very loose tag
+  // to trim down statistics
+  const bool pass_tags =  ((djEvent.getNMediumTags())[0] >= 1);
+
+  if(pass_tags || !applyEventPreSelection_) {
+    if(debug > 1) std::cout << "[DEBUG] Fill Event Tree" << std::endl;
+    if(writeEventTree_) eventTree_->Fill();
+    if(debug > 1) std::cout << "[DEBUG] Fill Track Tree" << std::endl;
+
+    if(writeTrackTree_) trackTree_->Fill();
+    if(debug > 1) std::cout << "[DEBUG] Fill Jet Tree" << std::endl;
+    if(writeJetTree_) jetTree_->Fill();
+    if(debug > 1) std::cout << "[DEBUG] Fill V0 Tree" << std::endl; 
+    if(writeV0Tree_) v0Tree_->Fill();
+    if(debug > 1) std::cout << "[DEBUG] Fill VTX Tree" << std::endl; 
+    if(writeVertexTree_) vertexTree_->Fill();
+    if(debug > 1) std::cout << "[DEBUG] Fill GEN Tree" << std::endl;
+    if(writeGenTree_)genTree_->Fill();
+  }
 }
 
 void DJetAnalyzer::beginJob()
@@ -559,6 +566,7 @@ void DJetAnalyzer::beginJob()
   eventTree_->Branch("passPFMET170", &passPFMET170, "passPFMET170/I");
   eventTree_->Branch("passPFMET170NC", &passPFMET170NC, "passPFMET170NC/I");
   eventTree_->Branch("passMu20", &passMu20, "passMu20/I");
+  eventTree_->Branch("eventPassEventPreSelection", &eventPassEventPreSelection, "eventPassEventPreSelection/I");
 
   // local event book keeping 
   eventTree_->Branch("evNum", &evNum, "evNum/I");
@@ -611,8 +619,22 @@ void DJetAnalyzer::beginJob()
   ///////////  ///////////  ///////////  ///////////  ///////////  /////////// /////
   //////// Everything is either a flat number or indexed by nCaloJets //////////////
   //////// Exceptions are made for IVF gen matching quantities for moms and sons ///
+  if(isMC_) {
+    jetTree_->Branch("hasMatchedGenPV",&hasMatchedGenPV, "hasMatchedGenPV/I");
+    jetTree_->Branch("selectedPVIsMatched",&selectedPVIsMatched, "selectedPVIsMatched/I");
+    jetTree_->Branch("pvToGenPVDistance3D",&pvToGenPVDistance3D, "pvToGenPVDistance3D/F");
+    jetTree_->Branch("pvToGenPVDistance2D",&pvToGenPVDistance2D, "pvToGenPVDistance2D/F");
+    jetTree_->Branch("pvToGenPVDistanceZ",&pvToGenPVDistanceZ, "pvToGenPVDistanceZ/F");
+    jetTree_->Branch("bestPVDistance3D",&bestPVDistance3D, "bestPVDistance3D/F");
+    jetTree_->Branch("bestPVDistance2D",&bestPVDistance2D, "bestPVDistance2D/F");
+    jetTree_->Branch("bestPVDistanceZ",&bestPVDistanceZ, "bestPVDistanceZ/F");
+    jetTree_->Branch("bestPVX",&bestPVX, "bestPVX/F");
+    jetTree_->Branch("bestPVY",&bestPVY, "bestPVY/F");
+    jetTree_->Branch("bestPVZ",&bestPVZ, "bestPVZ/F");
+  }
 
   if(isSignalMC_) {
+
     jetTree_->Branch("genPartN", &genPartN, "genPartN/I");
     jetTree_->Branch("genMomStatus", &genMomStatus, "genMomStatus[genPartN]/I");
     jetTree_->Branch("genMomPt", &genMomPt, "genMomPt[genPartN]/F");
@@ -640,6 +662,13 @@ void DJetAnalyzer::beginJob()
   jetTree_->Branch("run", &run, "run/I");
   jetTree_->Branch("lumi", &lumi, "lumi/I");
   jetTree_->Branch("event", &event, "event/I");
+  jetTree_->Branch("eventNWP", &nWP, "eventNWP/I");
+
+  jetTree_->Branch("eventNShortTags", &eventNShortTags, "eventNShortTags[eventNWP]/I");
+  jetTree_->Branch("eventNMediumTags", &eventNMediumTags, "eventNMediumTags[eventNWP]/I");
+  jetTree_->Branch("eventNLongTags", &eventNLongTags, "eventNLongTags[eventNWP]/I");
+  jetTree_->Branch("eventNTotalTags", &eventNTotalTags, "eventNTotalTags[eventNWP]/I");
+
 
   // trigger Related
   jetTree_->Branch("nTrig", &nTrig, "nTrig/I");
@@ -666,6 +695,8 @@ void DJetAnalyzer::beginJob()
   jetTree_->Branch("passPFMET170", &passPFMET170, "passPFMET170/I");
   jetTree_->Branch("passPFMET170NC", &passPFMET170NC, "passPFMET170NC/I");
   jetTree_->Branch("passMu20", &passMu20, "passMu20/I");
+
+  jetTree_->Branch("eventCaloHT", &eventCaloHT, "eventCaloHT/F");
 
   // branch indices must be defined first
   jetTree_->Branch("nCaloJets", &nCaloJets, "nCaloJets/I");
@@ -826,6 +857,13 @@ void DJetAnalyzer::beginJob()
   jetTree_->Branch("jetSvXErr", &jetSvXErr, "jetSvXErr[nCaloJets]/F");
   jetTree_->Branch("jetSvYErr", &jetSvYErr, "jetSvYErr[nCaloJets]/F");
   jetTree_->Branch("jetSvZErr", &jetSvZErr, "jetSvZErr[nCaloJets]/F");
+
+  // kinematics
+  jetTree_->Branch("jetSvPt", &jetSvPt, "jetSvPt[nCaloJets]/F");
+  jetTree_->Branch("jetSvEta", &jetSvEta, "jetSvEta[nCaloJets]/F");
+  jetTree_->Branch("jetSvPhi", &jetSvPhi, "jetSvPhi[nCaloJets]/F");
+  jetTree_->Branch("jetSvAngle2D", &jetSvAngle2D, "jetSvAngle2D[nCaloJets]/F");
+  jetTree_->Branch("jetSvAngle3D", &jetSvAngle3D, "jetSvAngle3D[nCaloJets]/F");
 
   // SV Quality
   jetTree_->Branch("jetSvChi2", &jetSvChi2, "jetSvChi2[nCaloJets]/F");
@@ -1675,7 +1713,6 @@ void DJetAnalyzer::dumpCaloInfo(DisplacedJetEvent & djEvent) {
   // vbf numbers
   // Mqq for minimum dEta 3.0 max dEta 5 and min pt 20
   caloLeadingMqq	       = djEvent.caloLeadingMqq;
-
 }
 
 void DJetAnalyzer::dumpSVTagInfo(DisplacedJetEvent & djEvent) {
@@ -1704,6 +1741,12 @@ void DJetAnalyzer::dumpSVTagInfo(DisplacedJetEvent & djEvent) {
     // matching
     jetSvGenVertexMatched[jj]	  = djet->svIsGenMatched;
     jetSvGenVertexMatchMetric[jj] = djet->svGenVertexMatchMetric;
+    // kinematics
+    jetSvPt[jj]			  = djet->svPt;
+    jetSvEta[jj]		  = djet->svEta;
+    jetSvPhi[jj]		  = djet->svPhi;
+    jetSvAngle2D[jj]		  = djet->svAngle2D;
+    jetSvAngle3D[jj]		  = djet->svAngle3D;
   } // djet loop  
 }
 
@@ -2084,8 +2127,21 @@ void DJetAnalyzer::dumpTrackInfo(DisplacedJetEvent& djEvent, const reco::TrackCo
   }      
 }
 
-void DJetAnalyzer::dumpGenInfo(const reco::GenParticleCollection & gen) {
+void DJetAnalyzer::dumpGenInfo(DisplacedJetEvent & djEvent, const reco::GenParticleCollection & gen) {
   if(debug > 1 ) std::cout << "[DEBUG] Gen Particle Dumping" << std::endl;
+
+  // dump info related to the pv matching
+  hasMatchedGenPV     = djEvent.hasMatchedGenPV;
+  selectedPVIsMatched = djEvent.selectedPVIsMatched;
+  pvToGenPVDistance3D = djEvent.pvToGenPVDistance3D;
+  pvToGenPVDistance2D = djEvent.pvToGenPVDistance2D;
+  pvToGenPVDistanceZ  = djEvent.pvToGenPVDistanceZ;
+  bestPVDistance3D    = djEvent.bestPVDistance3D;
+  bestPVDistance2D    = djEvent.bestPVDistance2D;
+  bestPVDistanceZ     = djEvent.bestPVDistanceZ;
+  bestPVX	      = djEvent.bestVertex->x();
+  bestPVY	      = djEvent.bestVertex->y();
+  bestPVZ	      = djEvent.bestVertex->z();
 
   reco::GenParticleCollection::const_iterator iterGenParticle = gen.begin();
   genPartN = 0;
@@ -2142,16 +2198,18 @@ void DJetAnalyzer::dumpGenInfo(const reco::GenParticleCollection & gen) {
     genMomLxy[genPartN]   = std::sqrt(dx*dx + dy*dy);
     genMomCTau0[genPartN] = std::sqrt(dx*dx + dy*dy + dz*dz) / (beta_mom * gamma_mom);    
 
-    // mom one found
-    if(genMom1CTau0 == -1) {
+    // check if these quantities have been filled yet
+    bool onefilled = genMom1CTau0 != -1;
+    bool twofilled = genMom2CTau0 != -1;
+    if(!onefilled) {
       genMom1CTau0 = genMomCTau0[genPartN];
       genMom1Lxy   = genMomLxy[genPartN];
       genMom1Lxyz  = genMomLxyz[genPartN];
       genMom1Lz	   = genMomLz[genPartN];
       genMom1Pt    = genMomPt[genPartN];
     }
-    // fill mom 2
-    else if(genMom2CTau0 == -1) {
+    // fill mom 2 (make sure its not a copy of mom1 more than 1 particle has the same mom)
+    if(onefilled && !twofilled && (genMomCTau0[genPartN] != genMom1CTau0)) {
       genMom2CTau0 = genMomCTau0[genPartN];
       genMom2Lxy   = genMomLxy[genPartN];
       genMom2Lxyz  = genMomLxyz[genPartN];
@@ -2160,7 +2218,9 @@ void DJetAnalyzer::dumpGenInfo(const reco::GenParticleCollection & gen) {
     }
 
     genPartN++;    
-  }
+  } // end loop over gen particles
+
+
 }
 
 void DJetAnalyzer::dumpV0Info(DisplacedJetEvent & djEvent) { 

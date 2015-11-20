@@ -78,6 +78,8 @@ class DisplacedJetEvent {
   bool doesPassPreSelection();  
 
   void calcNIVFGenMatched(const float & metricThreshold, const reco::GenParticleCollection& genParticles);
+  float genMatchMetricZ(const reco::GenParticle & particle, const reco::Vertex& vertex);
+  float genMatchMetric2D(const reco::GenParticle & particle, const reco::Vertex& vertex);
   float genMatchMetric(const reco::GenParticle & particle, const reco::Vertex& vertex);
 
   // accessors
@@ -114,6 +116,7 @@ class DisplacedJetEvent {
   // matching
   void doGenMatching(const reco::GenParticleCollection & genParticleCollection, 
 		     const bool & doCaloJetMatch, const bool & doGenVtxMatch, const bool & doGenVtxID,
+		     const bool & isSignal, 
 		     const float& ptMatch, const float& drMatch, const float& vtxMatchThreshold); 
 
   void doSimMatching(const edm::SimVertexContainer & simVertexCollection);  
@@ -136,6 +139,18 @@ class DisplacedJetEvent {
   // vbf numbers
   // Mqq for minimum dEta 3.0 max dEta 5 and min pt 20
   float caloLeadingMqq;
+
+
+  // pv related
+  bool  hasMatchedGenPV;
+  bool  selectedPVIsMatched;
+  float pvToGenPVDistance3D;
+  float pvToGenPVDistance2D;
+  float pvToGenPVDistanceZ;
+  float bestPVDistance3D; 
+  float bestPVDistance2D; 
+  float bestPVDistanceZ; 
+  reco::Vertex * bestVertex;
 
   // ivf related 
   int nIVFReconstructed; 
@@ -241,7 +256,7 @@ bool DisplacedJetEvent::doesPassPreSelection() {
   int nJetsPass = 0;
   std::vector<DisplacedJet>::iterator djetIter = djets.begin();
   for(; djetIter != djets.end(); ++djetIter) {
-    if(djetIter->doesPassPreSelection() && djetIter->caloPt > 40.0) nJetsPass++;
+    if(djetIter->doesPassPreSelection() && djetIter->caloPt > minPT) nJetsPass++;
   }  
 
   bool didPass = nJetsPass >= 2;
@@ -314,6 +329,24 @@ float DisplacedJetEvent::genMatchMetric(const reco::GenParticle & particle, cons
   float metric = std::sqrt(((gx-vx)*(gx-vx))/(gx*gx) + ((gy-vy)*(gy-vy))/(gy*gy) + ((gz-vz)*(gz-vz))/(gz*gz));
   return metric;
 }
+
+// metric for checking gen match transverse
+float DisplacedJetEvent::genMatchMetric2D(const reco::GenParticle & particle, const reco::Vertex& vertex) {
+  float vx = vertex.x(), vy = vertex.y();
+  float gx = particle.vx(), gy = particle.vy();
+  float metric = std::sqrt(((gx-vx)*(gx-vx))/(gx*gx) + ((gy-vy)*(gy-vy))/(gy*gy));
+  return metric;
+}
+
+// metric for checking gen match transverse
+float DisplacedJetEvent::genMatchMetricZ(const reco::GenParticle & particle, const reco::Vertex& vertex) {
+  float vz = vertex.z();
+  float gz = particle.vz();
+  float metric = std::sqrt(((gz-vz)*(gz-vz))/(gz*gz));
+  return metric;
+}
+
+
 
 // check how many ivf vertices are gen matched
 void DisplacedJetEvent::calcNIVFGenMatched(const float & metricThreshold, const reco::GenParticleCollection& genParticles) {
@@ -417,7 +450,7 @@ void DisplacedJetEvent::mergeCaloIPTagInfo(const reco::TrackIPTagInfoCollection 
     djet.addIPTagInfo(*ipInfoIter);   
     // the track colleciton above can be retrieved and passed to track angles below
     djet.addHitInfo(djet.getVertexMatchedTracks());    
-    djet.addTrackAngles(djet.getVertexMatchedTracks());    
+    djet.addTrackAngles(djet.getDisplacedTracks());    
     // calculate the v0 candidates
     djet.addV0Info(djet.getVertexMatchedTrackRefs());    
     // calculate alpha for the vertces
@@ -449,7 +482,7 @@ DisplacedJet & DisplacedJetEvent::findDisplacedJetByPtEtaPhi(const float& pt, co
 }
 
 void DisplacedJetEvent::doGenMatching( const reco::GenParticleCollection& genParticles, 
-				       const bool& doCaloJetMatch = true, const bool& doGenVtxMatch = true, const bool& doGenVtxID = true,
+				       const bool& doCaloJetMatch = true, const bool& doGenVtxMatch = true, const bool& doGenVtxID = true, const bool& isSignalMC = false, 
 				       const float& ptMatch = 0.2, const float& dRMatch = 0.7,
 				       const float& vtxMatchThreshold = 0.05) {
 
@@ -464,8 +497,7 @@ void DisplacedJetEvent::doGenMatching( const reco::GenParticleCollection& genPar
 
     if(doCaloJetMatch) {
        isCaloGenMatched = djetIter->doGenCaloJetMatching(ptMatch, dRMatch, genParticles);
-    }
-    
+    }    
     if(doGenVtxMatch) {
       djetIter->doGenVertexJetMatching(vtxMatchThreshold, genParticles);
       isIVFGenVertexMatched = djetIter->ivfIsGenMatched;
@@ -476,8 +508,76 @@ void DisplacedJetEvent::doGenMatching( const reco::GenParticleCollection& genPar
     }
     if(debug > 1) std::cout <<  "[GEN MATCH] isCalomatch: " << isCaloGenMatched << " isIVFGenVertexMatched "
 			  << isIVFGenVertexMatched << " isSVGEnVertexMatched " << isSVGenVertexMatched << std::endl;
-
   }  // end loop over displaced jets
+
+  if(debug > 1) std::cout <<  "[GEN MATCH] Performing PV matching " << std::endl;
+
+  // do the primary vertex matching 
+  reco::GenParticleCollection::const_iterator genIter = genParticles.begin();
+  for(; genIter != genParticles.end(); ++genIter) {
+    // look for the intermediate decaying particle
+    // status 23 is the outgoing quarks, 22 should be the mother X
+    // for background the outgoing hard process is not displaced so we use 23
+    const bool matchSignal = (genIter->status() == 22) && isSignalMC;
+    const bool matchBkgMC  = (genIter->status() == 23) && !isSignalMC;
+
+    if (!matchSignal && !matchBkgMC) {
+      continue;    
+    }
+    else { // intermediate mother produced at PV
+      float gx = genIter->vx(), gy = genIter->vy(), gz = genIter->vz();
+      float vx = selPV.x(), vy = selPV.y(), vz = selPV.z();
+      if(debug > 2) std::cout <<  "[GEN MATCH] Location of gen vertex " <<
+		      "X: "<< gx << " Y: " << 
+		      gy << " Z: " << 
+		      gz << std::endl;
+
+      // fill the distances from the selected vertex to the gen vertex
+      pvToGenPVDistance3D = std::sqrt( (gx-vx)*(gx-vx) + (gy-vy)*(gy-vy) + (gz-vz)*(gz-vz));
+      pvToGenPVDistance2D = std::sqrt( (gx-vx)*(gx-vx) + (gy-vy)*(gy-vy));
+      pvToGenPVDistanceZ  = gz - vz;
+      
+      float minDistance = 999;
+      reco::Vertex * minVertex = NULL;
+      // loop against the primary vertices
+      reco::VertexCollection::iterator pvIter  = pVertices.begin();
+      for(; pvIter != pVertices.end(); ++pvIter) {      
+	float distance = genMatchMetricZ(*genIter, *pvIter);
+	// find the closest vertex (within 
+	if(distance < vtxMatchThreshold && distance < minDistance) {
+	  if(debug > 2) std::cout <<  "[GEN MATCH] Found a vertex within minDistance: " << distance << std::endl;
+	  hasMatchedGenPV = true; 
+	}	
+	if( distance < minDistance) {
+	  minVertex   = &*pvIter;	
+	  minDistance = distance;	  
+	}
+      } // end primary vertex loop   
+      
+      if (minVertex != NULL && pVertices.size() > 0 ) {
+	if(debug > 2) std::cout <<  "[GEN MATCH] Storing Vertex to Event: "
+				<< minVertex->x() << " y " << minVertex->y()
+				<< " z " << minVertex->z() << std::endl;
+	selectedPVIsMatched = minVertex->z() == selPV.z();
+	bestVertex	    = minVertex;
+	bestPVDistance3D    = minDistance;      
+	bestPVDistance2D    = genMatchMetric2D(*genIter, *minVertex);
+	bestPVDistanceZ	    = genMatchMetricZ(*genIter, *minVertex);
+      }
+      // once we've found the true PV of the event we are done 
+      break;
+    } // end if for finding genstatus 
+
+    // if we reach here something is wrong or there are no primary vertices
+    selectedPVIsMatched = false;
+    bestVertex		= NULL;
+    bestPVDistance3D    = -999;
+    bestPVDistance2D    = -999;
+    bestPVDistanceZ	= -999;
+    
+    std::cout << "[ERROR] Did not find a intermediate gen particle to match PV"  << std::endl;
+    assert(pVertices.size() == 0);    
+  } // end loop over genParticles
 }
 
 void DisplacedJetEvent::doMultiJetClustering() {

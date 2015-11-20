@@ -14,6 +14,7 @@ class DisplacedTrack {
     px	       = track.px();
     py	       = track.py();
     pz	       = track.pz();
+    p          = metric3D(px,py,pz);
     eta	       = track.eta();
     phi	       = track.phi();
     // quality information
@@ -55,15 +56,49 @@ class DisplacedTrack {
       // check if the track has pixel hits
       hasPixelHits = subDetLayerInner == GeomDetEnumerators::PixelBarrel 
 	|| subDetLayerInner == GeomDetEnumerators::PixelEndcap;
-     
+
       // positions
       innerPos	    = tsosInnerHit.globalPosition();
       nextPos	    = tsosNextHit.globalPosition();
       lastPos	    = tsosLastHit.globalPosition();
       // momentum 
-      /* innerPos	    = tsosInnerHit.globalMomentum(); */
-      /* nextPos	    = tsosNextHit.globalMomentum(); */
-      /* lastPos	    = tsosLastHit.globalMomentum(); */
+      innerPosMom   = tsosInnerHit.globalMomentum();      
+      lastPosMom    = tsosLastHit.globalMomentum();
+
+
+      if(debug > 7) std::cout << "[DEBUG 7] pv X " << selPV.x() << " Y " <<  selPV.y() << " Z " << selPV.z() << std::endl;
+      // pv vectors of global position
+      TVector3 pvVector3D(selPV.x(), selPV.y(), selPV.z());
+      TVector3 pvVector2D(selPV.x(), selPV.y(), 0);
+      // global position of inner hit of tracks
+      if(debug > 7) std::cout << "[DEBUG 7] INNER HIT X " << innerPos.x() << " Y " <<  innerPos.y() << " Z " << innerPos.z() << std::endl;
+      TVector3 innerPos3D(innerPos.x(), innerPos.y(), innerPos.z());
+      TVector3 innerPos2D(innerPos.x(), innerPos.y(), 0);
+      // global position of outer hit
+      TVector3 lastPos3D(lastPos.x(), lastPos.y(), lastPos.z());
+      TVector3 lastPos2D(lastPos.x(), lastPos.y(), 0);
+      // global position of reference point
+      /* TVector3 refPoint3D(track.vx(), track.vy(), track.vz()); */
+      /* TVector3 refPoint2D(track.vx(), track.vy(), 0); */
+      /* // momentum vector at reference point */
+      TVector3 refMom3D(px, py, pz); 
+      TVector3 refMom2D(px, py, 0); 
+      if(debug > 7) std::cout << "[DEBUG 7] Ref MOM X " << refMom3D.x() << " Y " <<  refMom3D.y() << " Z " << refMom3D.z() << std::endl;
+      // momentum vector at inner Hit
+      TVector3 innerMom3D(innerPosMom.x(), innerPosMom.y(), innerPosMom.z());
+      TVector3 innerMom2D(innerPosMom.x(), innerPosMom.y(), 0);
+      // momentum vector at outer hit
+      TVector3 outerMom3D(lastPosMom.x(), lastPosMom.y(), lastPosMom.z());
+      TVector3 outerMom2D(lastPosMom.x(), lastPosMom.y(), 0);
+
+      if(debug > 7) std::cout << "[DEBUG 7] inner MOM X " << innerMom3D.x() << " Y " <<  innerMom3D.y() << " Z " << innerMom3D.z() << std::endl;
+
+      // angles related to the primary vertex 
+      angleMomentumAndPVAtInnerHit2D = (-1 * (pvVector2D - innerPos2D)).Angle((refMom2D)); 
+      angleMomentumAndPVAtInnerHit3D = (-1 * (pvVector3D - innerPos3D)).Angle((refMom3D));
+      angleMomentumAndPVAtOuterHit2D = (-1 * (pvVector2D - innerPos2D)).Angle((innerMom2D)); 
+      angleMomentumAndPVAtOuterHit3D = (-1 * (pvVector3D - innerPos3D)).Angle((innerMom3D));
+
       // coorindates
       innerX   = innerPos.x(), innerY = innerPos.y(), innerZ = innerPos.z();
       nextX    = nextPos.x(), nextY = nextPos.y(), nextZ = nextPos.z();
@@ -104,6 +139,7 @@ class DisplacedTrack {
   bool isValid; // has valid hits from hit pattern
     
   // kinematics
+  float p;
   float pt, eta, phi;
   float px, py, pz;
   float q, chi2;
@@ -114,6 +150,12 @@ class DisplacedTrack {
 
   // detector related information
   bool hasPixelHits;
+
+  // angle related
+  float angleMomentumAndPVAtInnerHit2D;
+  float angleMomentumAndPVAtOuterHit2D;
+  float angleMomentumAndPVAtInnerHit3D;
+  float angleMomentumAndPVAtOuterHit3D;
 
   // impact related
   float dxy, dz;
@@ -144,6 +186,10 @@ class DisplacedTrack {
   GlobalPoint	innerPos;
   GlobalPoint	nextPos;
   GlobalPoint	lastPos;
+  
+  GlobalVector	innerPosMom;
+  GlobalVector	nextPosMom;
+  GlobalVector	lastPosMom;
 
   // trajectory state of the inner and next hit
   TrajectoryStateOnSurface tsosInnerHit ; 

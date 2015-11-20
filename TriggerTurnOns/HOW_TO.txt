@@ -51,7 +51,7 @@ python ratio_plot.py -f signalxx4j30cm.root -o test_golden.root --cut1 "eventNSh
 python ratio_plot.py -f signalxx4j30cm.root -o test_golden.root --cut1 "passDisplaced500_40" --cut2 "passDisplaced550_40" -t eventInfo -v eventCaloHT --xmin 250 --xmax 800 --nbins 25 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "2 Loose Displaced Jet Tags" --label2 "2 Tags + pass HLT"
 
 
-python ratio_plot.py -f dataPD_JetHT_golden.root -o test_golden.root --cut1 "passHTControl && eventNTotalTags[1] > 1" --cut2 "passHTControl && (passDisplaced350_40 || passDisplaced500_40 || passHT800) && eventNTotalTags[1] > 1" -t eventInfo -v eventCaloHT --xmin 250 --xmax 1000 --nbins 25 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "2 Displaced Jet tags" --label2 "HLT_HT500_DisplacedDijt40_Inclusive"
+python ratio_plot.py -f jetHT_2015D_OCT5_GOLDEN_FULL.root -o test_golden.root --cut1 "passHTControl && eventNTotalTags[1] > 1" --cut2 "passHTControl && (passDisplaced350_40 || passDisplaced500_40 || passHT800) && eventNTotalTags[2] > 1" -t eventInfo -v eventCaloHT --xmin 250 --xmax 1000 --nbins 25 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "2 Displaced Jet tags" --label2 "HLT_HT500_DisplacedDijt40_Inclusive"
 
 python ratio_plot.py -f dataPD_SingleMuon_golden.root -o test_golden.root --cut1 "passMu20 && eventNTotalTags[1] > 1" --cut2 "passMu20 && (passDisplaced350_40 || passDisplaced500_40 || passHT800) && eventNTotalTags[1] > 1" -t eventInfo -v eventCaloHT --xmin 250 --xmax 1000 --nbins 25 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "2 Displaced Jet tags" --label2 "HLT_HT500_DisplacedDijt40_Inclusive"
 
@@ -61,4 +61,31 @@ python ratio_plot.py -f dataPD_SingleMuon_golden.root -o test_golden.root --cut1
 
 
 
-python ratio_plot.py -f dataPD_MET_golden.root -o test_golden.root --cut1 "(passPFMET170 || passPFMET170NC) && eventNTotalTags[1] > 1" --cut2 "(passPFMET170 || passPFMET170NC) && (passDisplaced350_40 || passDisplaced500_40 || passHT800) && eventNTotalTags[1] > 1" -t eventInfo -v eventCaloHT --xmin 250 --xmax 1000 --nbins 25 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "2 Displaced Jet tags" --label2 "HLT_HT500_DisplacedDijt40_Inclusive"
+python ratio_plot.py -f jetHT_2015D_OCT5_GOLDEN_FULL.root --cut1 "(passPFMET170 || passPFMET170NC) && eventNTotalTags[1] > 1" --cut2 "(passPFMET170 || passPFMET170NC) && (passDisplaced350_40 || passDisplaced500_40 || passHT800) && eventNTotalTags[1] > 1" -t eventInfo -v eventCaloHT --xmin 250 --xmax 1000 --nbins 25 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "2 Displaced Jet tags" --label2 "HLT_HT500_DisplacedDijt40_Inclusive"
+
+python ratio_plot.py -f jetHT_2015D_OCT5_GOLDEN_FULL.root -o test_golden.root --cut1 "passHT425 && eventPassEventPreSelection " --cut2 "passHT425 && passDisplaced500_40 && eventPassEventPreSelection" -t jets -v eventCaloHT --xmin 250 --xmax 700 --nbins 25 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "2 Displaced Jet Tags " --label2 "HLT_HT500_DisplacedDijt40_Inclusive"
+
+python ratio_plot.py -f jetHT_oct19FULL.root -o test_golden.root --cut1 "(passHT425 || passHT325) && eventPassEventPreSelection && eventNMediumTags[0] > 1 " --cut2 "(passHT425 || passHT325)  && passDisplaced500_40 && eventPassEventPreSelection && eventNMediumTags[0] > 1" -t eventInfo -v eventCaloHT --xmin 250 --xmax 700 --nbins 25 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "2 Displaced Jet Tags " --label2 "HLT_HT500_DisplacedDijt40_Inclusive"
+
+python ratio_plot.py -f jetHT_2015D_OCT5_GOLDEN_FULL.root -o test_golden.root --cut1 "(passHT275 || passHT200) && eventPassEventPreSelection && eventNLongTags[1] > 1 " --cut2 "(passHT275 || passHT200)  && passDisplaced350_40 && eventPassEventPreSelection && eventNLongTags[1] > 1" -t eventInfo -v eventCaloHT --xmin 250 --xmax 500 --nbins 25 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "2 Displaced Jet Tags " --label2 "HLT_HT500_DisplacedDijt40_Inclusive"
+
+------------
+
+python ratio_plot.py -f displacedJet_oct19_848pb.root -o test_golden.root --cut1 "((passDisplaced500_40 || passDisplaced350_40))" --cut2 "(passDisplaced500_40 || passDisplaced350_40)  && caloJetAlphaMax/sumTrackPt < 0.05 && jetMedianIPLogSig2D > 2 && medianCosThetaDet2D > 0.05" -t jets -v caloJetEta --xmin -3 --xmax 3 --nbins 25 --xlabel "jet Eta" --ylabel "N Jets" --label1 "jet" --label2 "tagged" --norm1
+
+python ratio_plot.py -f displacedJet_oct19_848pb.root -o test_golden.root --cut1 "((passDisplaced350_40 || passDisplaced500_40))" --cut2 "(passDisplaced350_40 || passDisplaced500_40 )  && caloJetAlphaMax/sumTrackPt < 0.05 && jetMedianIPLogSig2D > 2 && medianCosThetaDet2D > 0.05" -t jets -v nCaloJets --xmin 0 --xmax 8 --nbins 8 --xlabel "N Jets" --ylabel "N Jets" --label1 "jet" --label2 "tagged" --norm1
+
+python ratio_plot.py -f displacedJet_oct19_848pb.root -o test_golden.root --cut1 "((passDisplaced350_40 || passDisplaced500_40)) && nCaloJets > 2 && fabs(caloJetEta) < 1.0)" --cut2 "(passDisplaced350_40 || passDisplaced500_40 ) && nCaloJets > 2 && fabs(caloJetEta) < 1.0)  && caloJetAlphaMax/sumTrackPt < 0.05 && jetMedianIPLogSig2D > 2 && medianCosThetaDet2D > 0.05" -t jets -v nCaloJets --xmin 0 --xmax 8 --nbins 8 --xlabel "N Jets" --ylabel "N Jets" --label1 "jet" --label2 "tagged" --norm1
+
+python ratio_plot.py -f displacedJet_oct19_848pb.root -o test_golden.root --cut1 "((passDisplaced350_40 || passDisplaced500_40))" --cut2 "(passDisplaced350_40 || passDisplaced500_40 )  && caloJetAlphaMax/sumTrackPt < 0.05 && jetMedianIPLogSig2D > 2 && medianCosThetaDet2D > 0.05" -t jets -v caloJetPt --xmin 60 --xmax 300 --nbins 20 --xlabel "Jet P_{t} [GeV]" --ylabel "N jets" --label1 "jet" --label2 "tagged" --norm1
+
+python ratio_plot.py -f displacedJet_oct19_848pb.root -o test_golden.root --cut1 "((passDisplaced350_40 || passDisplaced500_40)) && jetNTracks > 2" --cut2 "(passDisplaced350_40 || passDisplaced500_40 )  && jetNTracks > 2 && caloJetAlphaMax/sumTrackPt < 0.05 && jetMedianIPLogSig2D > 2 && medianCosThetaDet2D > 0.05" -t jets -v caloJetPt --xmin 60 --xmax 300 --nbins 20 --xlabel "Jet P_{t} [GeV]" --ylabel "N jets" --label1 "jet" --label2 "tagged" --norm1
+
+python ratio_plot.py -f displacedJet_oct19_848pb.root -o test_golden.root --cut1 "((passDisplaced350_40 || passDisplaced500_40))" --cut2 "(passDisplaced350_40 || passDisplaced500_40) && caloJetAlphaMax/sumTrackPt < 0.05 && jetMedianIPLogSig2D > 2 && medianCosThetaDet2D > 0.05" -t jets -v jetNTracks --xmin 0 --xmax 20 --nbins 20 --xlabel "Jet N Tracks" --ylabel "N Jets" --label1 "jet" --label2 "tagged" --norm1
+
+python ratio_plot.py -f displacedJet_oct19_848pb.root -o test_golden.root --cut1 "((passDisplaced350_40 || passDisplaced500_40)) && jetNTracks > 2" --cut2 "(passDisplaced350_40 || passDisplaced500_40 ) && jetNTracks > 2  && caloJetAlphaMax/sumTrackPt < 0.05 && jetMedianIPLogSig2D > 2 && medianCosThetaDet2D > 0.05" -t jets -v nCaloJets --xmin 0 --xmax 8 --nbins 8 --xlabel "N Jets" --ylabel "N Jets" --label1 "jet" --label2 "tagged" --norm1
+
+# QCD
+python ratio_plot.py -f QCD_Pt_170to300_FULL.root -o test_golden.root --cut1 "(jetNTracks>0)" --cut2 "(1)  && caloJetAlphaMax/sumTrackPt < 0.05 && jetMedianIPLogSig2D > 2 && medianCosThetaDet2D > 0.05" -t jets -v nCaloJets --xmin 0 --xmax 8 --nbins 8 --xlabel "N Jets" --ylabel "N Jets" --label1 "all jets" --label2 "tagged" --norm1
+python ratio_plot.py -f QCD_Pt_170to300_FULL.root -o test_golden.root --cut1 "(jetNTracks>0)" --cut2 "(1) && caloJetAlphaMax/sumTrackPt < 0.05 && jetMedianIPLogSig2D > 2 && medianCosThetaDet2D > 0.05" -t jets -v jetNTracks --xmin 0 --xmax 20 --nbins 20 --xlabel "Jet N Tracks" --ylabel "N Jets" --label1 "all jets" --label2 "tagged" --norm1
+python ratio_plot.py -f QCD_Pt_170to300_FULL.root -o test_golden.root --cut1 "(jetNTracks>0)" --cut2 "(1)  && caloJetAlphaMax/sumTrackPt < 0.05 && jetMedianIPLogSig2D > 2 && medianCosThetaDet2D > 0.05" -t jets -v caloJetEta --xmin -3 --xmax 3 --nbins 25 --xlabel "jet Eta" --ylabel "N Jets" --label1 "all jets" --label2 "tagged" --norm1

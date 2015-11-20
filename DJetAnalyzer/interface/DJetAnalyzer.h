@@ -10,7 +10,7 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   void fillHandles(const edm::Event &);
 
   // gnerator
-  void dumpGenInfo(const reco::GenParticleCollection &); 
+  void dumpGenInfo(DisplacedJetEvent&, const reco::GenParticleCollection &); 
   void dumpSimInfo(const edm::SimVertexContainer &);
   void dumpPreSelection(DisplacedJetEvent&);
 
@@ -287,6 +287,7 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   Float_t   svDRTrackJet[MAX_VTX];
   Float_t   svDRTrackFlight[MAX_VTX];
 
+
   ///////////////// JET TREE SPECIFIC MEMBERS /////////////////
 
   // analysis tracking
@@ -400,6 +401,13 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   Float_t   jetSvLxyz[MAX_JETS];
   Float_t   jetSvLxyzSig[MAX_JETS];
   Int_t	    jetSvNTrack[MAX_JETS];  //vertex track multiplicty
+
+  // kinematics
+  Float_t   jetSvPt[MAX_JETS];
+  Float_t   jetSvEta[MAX_JETS];
+  Float_t   jetSvPhi[MAX_JETS];
+  Float_t   jetSvAngle2D[MAX_JETS];
+  Float_t   jetSvAngle3D[MAX_JETS];
 
   // SV position
   Float_t   jetSvX[MAX_JETS];
@@ -718,6 +726,19 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   Float_t   vtxIncSecSimMatchMetric[MAX_VTX];
 
   ///////////////// GENERATOR TREE SPECIFIC MEMBERS /////////////////
+
+  // PV matching related
+  Int_t	    hasMatchedGenPV;
+  Int_t	    selectedPVIsMatched;
+  Float_t   pvToGenPVDistance3D;
+  Float_t   pvToGenPVDistance2D;
+  Float_t   pvToGenPVDistanceZ;
+  Float_t   bestPVDistance3D;
+  Float_t   bestPVDistance2D;
+  Float_t   bestPVDistanceZ;
+  Float_t   bestPVX;
+  Float_t   bestPVY;
+  Float_t   bestPVZ;
 
   // Qualities
   Int_t genPartN;

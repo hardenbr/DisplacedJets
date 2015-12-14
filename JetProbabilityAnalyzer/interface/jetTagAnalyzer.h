@@ -91,4 +91,8 @@ class jetTagAnalyzer {
   // write just the histograms (ntags, baseline variables?)
   void outputHistograms();
 
+  static const int MAX_JETS = 50;
+
+  int nJets;
+  float * nJetTagProb[MAX_JETS];
 }

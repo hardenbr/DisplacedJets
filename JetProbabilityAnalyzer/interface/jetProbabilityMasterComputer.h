@@ -13,14 +13,14 @@ class jetProbabilityMasterComputer {
 
   // calculate the probability of N tags as a vector from 0 to N jets in the event
   // limit the calculator to maxJetsTagged
-  std::vector<float>                   getNJetTaggedVector(long int eventNumber, int maxJetsTagged);
-  std::vector<float>                   getJetProbabilityVector(long int eventNumber);
-  std::vector<std::pair<float, float>> getNJetErrorVector(long int eventNumber, int maxJetsTagged);
+  std::vector<double>                   getNJetTaggedVector(long int eventNumber, int maxJetsTagged);
+  std::vector<double>                   getJetProbabilityVector(long int eventNumber);
+  std::vector<std::pair<double, double>> getNJetErrorVector(long int eventNumber, int maxJetsTagged);
 
   // helper method for the njet tagged vector. calculates a specific permutation with nJets in the event
   // and nJets being tagged. pass the variable as well as the category for the jets in the event
-  float getNJetProbability(float * const binValues, float * const catValues, int nJetsTagged, int nJets);  
-  std::pair<float, float> getNJetProbabilityError(float * const binValues,float * const catValues, 
+  double getNJetProbability(double * const binValues, double * const catValues, int nJetsTagged, int nJets);  
+  std::pair<double, double> getNJetProbabilityError(double * const binValues,double * const catValues, 
 						  int nJetsTagged, int nJets);
 
   // calculates the sum of the digits of the binary literal (corresponding to the number of tags)

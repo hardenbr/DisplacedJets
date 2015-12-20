@@ -94,5 +94,5 @@ class jetTagAnalyzer {
   static const int MAX_JETS = 50;
 
   int nJets;
-  float * nJetTagProb[MAX_JETS];
+  double * nJetTagProb[MAX_JETS];
 }

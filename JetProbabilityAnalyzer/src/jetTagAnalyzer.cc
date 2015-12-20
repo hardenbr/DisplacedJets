@@ -134,11 +134,11 @@ int main(int argc, char* argv[]) {
 
     // initialize histograms
     const int maxNTags  = 5;
-    TH1F nTagHistTrue(nTagHistTrueName.c_str(), "Number of true tags in event", maxNTags - 1, 1, maxNTags);
-    TH1F nTagHistPred(nTagHistPredName.c_str(), "Number of predicted tags in event", maxNTags - 1, 1, maxNTags);
-    TH1F nTagHistPredErrUp((nTagHistPredName+"ErrUp").c_str(), 
+    TH1D nTagHistTrue(nTagHistTrueName.c_str(), "Number of true tags in event", maxNTags - 1, 1, maxNTags);
+    TH1D nTagHistPred(nTagHistPredName.c_str(), "Number of predicted tags in event", maxNTags - 1, 1, maxNTags);
+    TH1D nTagHistPredErrUp((nTagHistPredName+"ErrUp").c_str(), 
 			   "Number of predicted tags in event with combinatorial error varied up", maxNTags - 1, 1, maxNTags);
-    TH1F nTagHistPredErrDn((nTagHistPredName+"ErrDn").c_str(), 
+    TH1D nTagHistPredErrDn((nTagHistPredName+"ErrDn").c_str(), 
 			   "Number of predicted tags in event with combinatorial error varried dn", maxNTags - 1, 1, maxNTags);
 
     if(debug > -1) {
@@ -183,6 +183,7 @@ int main(int argc, char* argv[]) {
       localSampleProb->getTaggedHist().Write();
       localSampleProb->getAllHist().Write();
       localSampleProb->getRatioGraph().Write();
+      localSampleProb->getCentralEffHist().Write();
       localSampleProb->getCentralEffHistErrUp().Write();
       localSampleProb->getCentralEffHistErrDn().Write();
       
@@ -223,14 +224,14 @@ int main(int argc, char* argv[]) {
     TTree* jetVariableTree = jetSel.shallowCopyTree(tree);
 
     // arrays related to the probability tagging    
-    int nCat		   = 11;
-    float nTagWeight[11]     = {0,0,0,0,0,0,0,0,0,0};
-    float probNTags[11]	     = {0,0,0,0,0,0,0,0,0,0};
-    float probNTagsErrUp[11] = {0,0,0,0,0,0,0,0,0,0};
-    float probNTagsErrDn[11] = {0,0,0,0,0,0,0,0,0,0};
-    int   nJetTagArray[11] = {0,1,2,3,4,5,6,7,8,9,10};
+    int nCat		      = 11;
+    int nTagWeight[11]	      = {0,0,0,0,0,0,0,0,0,0};
+    double probNTags[11]      = {0,0,0,0,0,0,0,0,0,0};
+    double probNTagsErrUp[11] = {0,0,0,0,0,0,0,0,0,0};
+    double probNTagsErrDn[11] = {0,0,0,0,0,0,0,0,0,0};
+    int   nJetTagArray[11]    = {0,1,2,3,4,5,6,7,8,9,10};
     // jet indexed
-    float probJTag[50];
+    double probJTag[50];
     int   isTagged[50];
     // event indexed / flat number
     int		nTagged = 0;
@@ -241,12 +242,12 @@ int main(int argc, char* argv[]) {
     jetVariableTree->Branch("evNum", &evNum, "evNum/I");
     jetVariableTree->Branch("nCat", &nCat, "nCat/I");
     jetVariableTree->Branch("index", &nJetTagArray, "index[nCat]/I");
-    jetVariableTree->Branch("nTagWeight", &nTagWeight, "nTagWeight[nCat]/F");
-    jetVariableTree->Branch("probNTags", &probNTags, "probNTags[nCat]/F");
-    jetVariableTree->Branch("probNTagsErrUp", &probNTagsErrUp, "probNTagsErrUp[nCat]/F");
-    jetVariableTree->Branch("probNTagsErrDn", &probNTagsErrDn, "probNTagsErrDn[nCat]/F");
+    jetVariableTree->Branch("nTagWeight", &nTagWeight, "nTagWeight[nCat]/I");
+    jetVariableTree->Branch("probNTags", &probNTags, "probNTags[nCat]/D");
+    jetVariableTree->Branch("probNTagsErrUp", &probNTagsErrUp, "probNTagsErrUp[nCat]/D");
+    jetVariableTree->Branch("probNTagsErrDn", &probNTagsErrDn, "probNTagsErrDn[nCat]/D");
     // jet indexed
-    jetVariableTree->Branch("probJTag", &probJTag, "probJTag[nCaloJets]/F");    
+    jetVariableTree->Branch("probJTag", &probJTag, "probJTag[nCaloJets]/D");    
     jetVariableTree->Branch("isTagged", &isTagged, "isTagged[nCaloJets]/I");    
     // event index / flat number
     jetVariableTree->Branch("nTagged", &nTagged, "nTagged/I");    
@@ -283,11 +284,11 @@ int main(int argc, char* argv[]) {
       }
 
       // get the probability vector for n tagged scenarios
-      std::vector<float>    nTagProbVector		    = 
+      std::vector<double>    nTagProbVector		    = 
 	masterJetCalc.getNJetTaggedVector(event, maxJetTags);
-      std::vector<float>    jetProbabilityVector	    = 
+      std::vector<double>    jetProbabilityVector	    = 
 	masterJetCalc.getJetProbabilityVector(event);
-      std::vector<std::pair<float,float>> nTagProbErrVector = 
+      std::vector<std::pair<double,double>> nTagProbErrVector = 
 	masterJetCalc.getNJetErrorVector(event, maxJetTags);
 
       if(debug > 2) std::cout << "Getting Vector Size for event: "  << event << std::endl;
@@ -299,9 +300,9 @@ int main(int argc, char* argv[]) {
       // look at up to maxJetTags
       for(int jj = 0; (jj <= nJets) && (jj <= maxJetTags); ++jj ) {
 	if(debug > 2) std::cout << "Checking for jets jj "  << jj <<  " nJets " << nJets << std::endl;
-	float	prob   = nTagProbVector[jj];
-	float	probUp = nTagProbErrVector[jj].first;
-	float	probDn = nTagProbErrVector[jj].second;
+	double	prob   = nTagProbVector[jj];
+	double	probUp = nTagProbErrVector[jj].first;
+	double	probDn = nTagProbErrVector[jj].second;
 
 	// fill the arrays given the probabilities make sense
 	if(prob == 1 && jj != 0) { 
@@ -315,8 +316,8 @@ int main(int argc, char* argv[]) {
 	probNTagsErrUp[jj] = (probUp >= 0 && probUp <= 1) ? probUp : 0;
 	probNTagsErrDn[jj] = (probDn >= 0 && probDn <= 1) ? probDn : 0;
 
-	float weightErrUp = probNTags[jj] + probNTagsErrUp[jj];
-	float weightErrDn = probNTags[jj] - probNTagsErrDn[jj];
+	double weightErrUp = probNTags[jj] + probNTagsErrUp[jj];
+	double weightErrDn = probNTags[jj] - probNTagsErrDn[jj];
 	// fill the prediciton histogram
 	if(debug> 2) {
 	  std::cout << "Fill histograms with probabilities p = " << 

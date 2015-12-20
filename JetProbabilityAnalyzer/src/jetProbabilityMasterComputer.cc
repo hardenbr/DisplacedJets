@@ -15,7 +15,7 @@ jetProbabilityMasterComputer::~jetProbabilityMasterComputer() {
 }
 
 // propagate the statistical error from the fake rate to the n jet tag measurement 
-std::vector<std::pair<float, float>> jetProbabilityMasterComputer::getNJetErrorVector(long int eventNumber, int maxJetsTagged) {
+std::vector<std::pair<double, double>> jetProbabilityMasterComputer::getNJetErrorVector(long int eventNumber, int maxJetsTagged) {
   std::string	binVar	= jetProb->getBinningVarName(); 
   if(debug > 2) std:: cout << "[JetProbMaster] error calc...parsing category name" << std::endl;
   std::string	catVar	= jetProb->getCategoryVarName(); 
@@ -28,8 +28,8 @@ std::vector<std::pair<float, float>> jetProbabilityMasterComputer::getNJetErrorV
   int		nJets   = binLeaf->GetNdata();
 
   // setup for parsing from the branch
-  std::vector<float> binValues;
-  std::vector<float> catValues;
+  std::vector<double> binValues;
+  std::vector<double> catValues;
 
   if(debug > 2) std:: cout << "[JetProbMaster] error calc...filling arrays forbinVar and catVar" << std::endl;
   if(debug > 2) std:: cout << "[JetProbMaster] error calc....nJets in Event = " << nJets << std::endl;
@@ -39,12 +39,12 @@ std::vector<std::pair<float, float>> jetProbabilityMasterComputer::getNJetErrorV
     catValues.push_back(catLeaf->GetValue(ii));
   }
   // use the arrays to compute the configurational probabilities  
-  std::vector<std::pair<float,float>> probabilityErrorPairVector;
+  std::vector<std::pair<double,double>> probabilityErrorPairVector;
 
   // check the tag probability in each scenario
   if(debug > 2) std:: cout << "[JetProbMaster] Looping nTags for event" << std::endl;
   for(int ii = 0; (ii <= nJets) && (ii < maxJetsTagged); ++ii) {
-    std::pair<float,float> errors = getNJetProbabilityError(&binValues[0], &catValues[0], ii, nJets);
+    std::pair<double,double> errors = getNJetProbabilityError(&binValues[0], &catValues[0], ii, nJets);
     probabilityErrorPairVector.push_back(errors);
   }
 
@@ -52,8 +52,8 @@ std::vector<std::pair<float, float>> jetProbabilityMasterComputer::getNJetErrorV
   if(debug > 1) { 
     std::cout << " Probability Error Vector for event (jet idx, err_up, err_down): " << std::endl;
     for(int ii = 0; ii <= nJets; ++ii) {
-      float up = probabilityErrorPairVector[ii].first;
-      float dn = probabilityErrorPairVector[ii].second;
+      double up = probabilityErrorPairVector[ii].first;
+      double dn = probabilityErrorPairVector[ii].second;
       std::cout << " (" << ii << "," << up << " , " << dn << ") ";
     }
     std::cout << std::endl;      
@@ -62,9 +62,9 @@ std::vector<std::pair<float, float>> jetProbabilityMasterComputer::getNJetErrorV
   return probabilityErrorPairVector;  
 }
 
-std::vector<float> jetProbabilityMasterComputer::getJetProbabilityVector(long int eventNumber) {
+std::vector<double> jetProbabilityMasterComputer::getJetProbabilityVector(long int eventNumber) {
   // maket he vector we will return with the jet probaiblities
-  std::vector<float> jetProbabilityVector; 
+  std::vector<double> jetProbabilityVector; 
 
   // get the event
   jetTree->GetEntry(eventNumber);
@@ -78,8 +78,8 @@ std::vector<float> jetProbabilityMasterComputer::getJetProbabilityVector(long in
   int		nJets   = binLeaf->GetNdata();
 
   // setup for parsing from the branch
-  std::vector<float> binValues;
-  std::vector<float> catValues;
+  std::vector<double> binValues;
+  std::vector<double> catValues;
 
   // fill an array with the values in the ttree
   for(int ii = 0; ii < nJets; ++ii) {
@@ -89,7 +89,7 @@ std::vector<float> jetProbabilityMasterComputer::getJetProbabilityVector(long in
 
   // get the individual jet probabilities
   for(int ii = 0; ii < nJets; ++ii) {
-    float prob = jetProb->getJetFakeProbability(binValues[ii], catValues[ii]);
+    double prob = jetProb->getJetFakeProbability(binValues[ii], catValues[ii]);
     jetProbabilityVector.push_back(prob);
   }
 
@@ -97,7 +97,7 @@ std::vector<float> jetProbabilityMasterComputer::getJetProbabilityVector(long in
 }
 
 // calculate the probability of N tags as a vector from 0 to N jets in the event
-std::vector<float> jetProbabilityMasterComputer::getNJetTaggedVector(long int eventNumber, int maxJetsTagged) {
+std::vector<double> jetProbabilityMasterComputer::getNJetTaggedVector(long int eventNumber, int maxJetsTagged) {
   if(debug > 2) std:: cout << "[JetProbMaster] getting event" << std::endl;
   jetTree->GetEntry(eventNumber);
 
@@ -123,8 +123,8 @@ std::vector<float> jetProbabilityMasterComputer::getNJetTaggedVector(long int ev
   }
 
   // setup for parsing from the branch
-  std::vector<float> binValues;
-  std::vector<float> catValues;
+  std::vector<double> binValues;
+  std::vector<double> catValues;
 
   if(debug > 2) std:: cout << "[JetProbMaster] filling arrays forbinVar and catVar" << std::endl;
   if(debug > 2) std:: cout << "[JetProbMaster] nJets in Event = " << nJets << std::endl;
@@ -136,11 +136,11 @@ std::vector<float> jetProbabilityMasterComputer::getNJetTaggedVector(long int ev
   }
   
   // use the arrays to compute the configurational probabilities  
-  std::vector<float> nTaggedProbVector;
+  std::vector<double> nTaggedProbVector;
   // check the tag probability in each scenario
   if(debug > 2) std:: cout << "[JetProbMaster] Looping nTags for event" << std::endl;
   for(int ii = 0; (ii <= nJets) && (ii <= maxJetsTagged); ++ii) {
-    float prob = getNJetProbability(&binValues[0], &catValues[0], ii, nJets);
+    double prob = getNJetProbability(&binValues[0], &catValues[0], ii, nJets);
     if(debug > 4) std:: cout << "[JetProbMaster] Adding Probability:" << prob << " to vector " << std::endl;
     nTaggedProbVector.push_back(prob);
   }
@@ -163,30 +163,30 @@ std::vector<float> jetProbabilityMasterComputer::getNJetTaggedVector(long int ev
 }
 
 // helper method for the njet tagged vector. calculates a specific permutation
-std::pair<float, float> jetProbabilityMasterComputer::getNJetProbabilityError(float * const binValues, 
-									      float * const catValues, 
+std::pair<double, double> jetProbabilityMasterComputer::getNJetProbabilityError(double * const binValues, 
+									      double * const catValues, 
 									      int nJetsTagged, int nJets) {
-  float total_error_up	 = 0;	// sum of all dp_djet terms with error fluctation up
-  float total_error_dn   = 0;	// sum of all dp_djet terms with error fluctation down
+  double total_error_up	 = 0;	// sum of all dp_djet terms with error fluctation up
+  double total_error_dn   = 0;	// sum of all dp_djet terms with error fluctation down
 
   int nConfig = pow2[nJets] - 1;
 
   // calculate the term corresponding to each jet indexed by i in dP/dp_i
   for(int jet = 0; jet < nJets; ++jet ) {
-    float dp_djet_term_up = 0;  // term corresponding to varying the probability for a given jet
-    float dp_djet_term_dn = 0;  // term corresponding to varying the probability for a given jet
+    double dp_djet_term_up = 0;  // term corresponding to varying the probability for a given jet
+    double dp_djet_term_dn = 0;  // term corresponding to varying the probability for a given jet
 
     // get the errors for the jet in question
-    std::pair<float, float> jetProbErrors = jetProb->getJetFakeProbabilityError(binValues[jet], catValues[jet]);
-    float		    jetErrUp	  = jetProbErrors.first;
-    float		    jetErrDn	  = jetProbErrors.second;
+    std::pair<double, double> jetProbErrors = jetProb->getJetFakeProbabilityError(binValues[jet], catValues[jet]);
+    double		    jetErrUp	  = jetProbErrors.first;
+    double		    jetErrDn	  = jetProbErrors.second;
 
     // calculate each sub-term in the probability (1 for each configuration)
     for(long int ii = 0; ii <= nConfig; ++ii) {
       int ntags = getBinaryDigitSum(ii, nJets);
       if (ntags != nJetsTagged) continue; // only include terms with the correct configuration of tags
 
-      float subTerm = 1;
+      double subTerm = 1;
       // check each bit in the 
       for(int subjet = 0; subjet < nJets; ++subjet) {
 	bool isTagged = (nConfig & pow2[subjet]) > 0;
@@ -195,7 +195,7 @@ std::pair<float, float> jetProbabilityMasterComputer::getNJetProbabilityError(fl
 	  subTerm *= isTagged ? 1 : -1;	  
 	}
 	else { // otherwise multiply by the correct factor
-	  float p_jet = jetProb->getJetFakeProbability(binValues[subjet], catValues[subjet]);
+	  double p_jet = jetProb->getJetFakeProbability(binValues[subjet], catValues[subjet]);
 	  subTerm *= isTagged ? p_jet : (1 - p_jet);
 	}	
       } // end loop over subjets in the given configuration
@@ -212,7 +212,7 @@ std::pair<float, float> jetProbabilityMasterComputer::getNJetProbabilityError(fl
   total_error_up = std::sqrt(total_error_up);
   total_error_dn = std::sqrt(total_error_dn);
 
-  std::pair<float, float> error_pair(total_error_up, total_error_dn);
+  std::pair<double, double> error_pair(total_error_up, total_error_dn);
 
   return error_pair;
 } // end get n jet probability errors
@@ -220,15 +220,15 @@ std::pair<float, float> jetProbabilityMasterComputer::getNJetProbabilityError(fl
 
 
 // helper method for the njet tagged vector. calculates a specific permutation
-float jetProbabilityMasterComputer::getNJetProbability(float * const binValues, 
-						       float * const catValues, 
+double jetProbabilityMasterComputer::getNJetProbability(double * const binValues, 
+						       double * const catValues, 
 						       int nJetsTagged, int nJets) {
   
   if(debug > 2) std:: cout << "\n\n[JetProbMaster] computing ntags = " << nJetsTagged << " .... with nJets =  " << nJets << std::endl;
   // As a binary variable corresponds to all tagging combinations
   int nConfig = pow2[nJets] - 1;
   
-  float probabilitySum = 0;
+  double probabilitySum = 0;
   if(debug > 2) std:: cout << "\n\n[JetProbMaster] begin loop over configurations" << std::endl;
   // loop over all posible configurations
   for(long int ii = 0; ii <= nConfig; ++ii) {
@@ -252,23 +252,24 @@ float jetProbabilityMasterComputer::getNJetProbability(float * const binValues,
     }
 
     // this is the term for a specific tag configuration to be added to the total
-    float localConfigProb = 1;
+    double localConfigProb = 1;
     // loop over each binary digit and check its value
     for(int jj = 0; jj < nJets; ++jj) {
       // parse the value of the bit in binary
-      int	bitVal	       = (ii & pow2[jj]) > 0;
+      bool	bitTagged	       = (ii & pow2[jj]) > 0;
       if(debug > 9) std:: cout << "[JetProbMaster] getting jet fake rate probability... for  " << binValues[jj] << " " << catValues[jj] << std::endl;
-      float	tagProbability = jetProb->getJetFakeProbability(binValues[jj], catValues[jj]);
+      double	tagProbability = jetProb->getJetFakeProbability(binValues[jj], catValues[jj]);
 
       if (tagProbability > 1 || tagProbability < 0) {
 	std:: cout << "[JetProbMaster] Invalid Jet Probability " << tagProbability << "setting to 0" << std::endl;
 	tagProbability = 0;
       }
 
-      if(debug > 9) std:: cout << "[JetProbMaster] jet probability # " << jj << " p = " << tagProbability << " isTagged? " << bitVal << std::endl;;
+      if(debug > 9) std:: cout << "[JetProbMaster] jet probability # " << jj << " p = " << tagProbability << " isTagged? " << bitTagged << std::endl;;
 
       // multiply the probability byw whether the jet was tagged or not
-      float term       = ((bitVal == 1) ? tagProbability : (1 - tagProbability));
+      double term       = bitTagged ? tagProbability : (1 - tagProbability);
+
       localConfigProb *= term;
 
       if(debug > 9) {

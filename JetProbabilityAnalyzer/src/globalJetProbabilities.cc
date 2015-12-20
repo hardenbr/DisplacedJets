@@ -47,28 +47,28 @@ globalJetProbabilities::globalJetProbabilities(const std::string& label,
   nBins = binning_json.size() - 1 ;
   // build vectors from the arrays
   for(int bin = 0; bin < binning_json.size(); ++bin) {
-    float binVal = binning_json[bin].asDouble();    
+    double binVal = binning_json[bin].asDouble();    
     if(debug > 2) std::cout << binVal << " ";
     binningVec.push_back(binVal);
   }
 
-  if(debug > 2) std::cout << "\n[globalJetProbabilities] Building Tempe Histograms" << std::endl;
+  if(debug > 2) std::cout << "\n[globalJetProbabilities] Building Temp Histograms" << std::endl;
   // build the jet histograms
-  TH1F allJetHist_temp(allJetHistName.c_str(), "", nBins, &(binningVec[0]));
-  TH1F taggedJetHist_temp(taggedJetHistName.c_str(), "", nBins, &(binningVec[0]));
-  TH1F ratioHistEff_temp(effHistName.c_str(), "", nBins, &(binningVec[0]));
-  TH1F ratioHistEffErrUp_temp(effHistNameUp.c_str(), "", nBins, &(binningVec[0]));
-  TH1F ratioHistEffErrDn_temp(effHistNameDn.c_str(), "", nBins, &(binningVec[0]));
+  TH1D allJetHist_temp(allJetHistName.c_str(), "", nBins, &(binningVec[0]));
+  TH1D taggedJetHist_temp(taggedJetHistName.c_str(), "", nBins, &(binningVec[0]));
+  TH1D ratioHistEff_temp(effHistName.c_str(), "", nBins, &(binningVec[0]));
+  TH1D ratioHistEffErrUp_temp(effHistNameUp.c_str(), "", nBins, &(binningVec[0]));
+  TH1D ratioHistEffErrDn_temp(effHistNameDn.c_str(), "", nBins, &(binningVec[0]));
 
   if(debug > 2) std::cout << "[globalJetProbabilities] setting bin content of hists" << std::endl;
   // set the histogram bin content from the json
-  for(int bin = 0; bin < binningVec.size(); ++bin) {
-    allJetHist_temp.SetBinContent(bin+1, allHist_json[bin].asFloat());
-    taggedJetHist_temp.SetBinContent(bin+1, taggedHist_json[bin].asFloat());
+  for(int bin = 0; bin < nBins; ++bin) {
+    allJetHist_temp.SetBinContent(bin+1, allHist_json[bin].asDouble());
+    taggedJetHist_temp.SetBinContent(bin+1, taggedHist_json[bin].asDouble());
     // the efficiency histogram and the associated errors
-    ratioHistEff_temp.SetBinContent(bin+1, effHist_json[bin].asFloat());
-    ratioHistEffErrUp_temp.SetBinContent(bin+1, effHistErrUp_json[bin].asFloat());
-    ratioHistEffErrDn_temp.SetBinContent(bin+1, effHistErrDn_json[bin].asFloat());
+    ratioHistEff_temp.SetBinContent(bin+1, effHist_json[bin].asDouble());
+    ratioHistEffErrUp_temp.SetBinContent(bin+1, effHistErrUp_json[bin].asDouble());
+    ratioHistEffErrDn_temp.SetBinContent(bin+1, effHistErrDn_json[bin].asDouble());
   }
 
   if(debug > 2) std::cout << "[globalJetProbabilities] Setting Pointers" << std::endl;
@@ -119,7 +119,7 @@ globalJetProbabilities::globalJetProbabilities(const std::string& label,
   catBinVals  = jetSel.getCatBinning();  
 
   // for now just make the single histogram for the fake Rate
-  //  TH1F hist("genericHist", "genericHist", nBins, histBinVals); 
+  //  TH1D hist("genericHist", "genericHist", nBins, histBinVals); 
   std::string		    taggedJetHistName = "tagged_" + label;
   std::string		    allJetHistName    = "allJets_" + label;
 
@@ -128,8 +128,8 @@ globalJetProbabilities::globalJetProbabilities(const std::string& label,
   categoryVar	   = jetSel.getCategoryVarName();
 
   // form the draw string that will fill the histograms
-  std::string	drawSelectedString = binningVar+">>" + taggedJetHistName+"(100,0,100)";
-  std::string	drawAllString      = binningVar+">>" + allJetHistName + "(100,0,100)"; 
+  std::string	drawSelectedString = binningVar+">>" + taggedJetHistName+"(1000,-100,100)";
+  std::string	drawAllString      = binningVar+">>" + allJetHistName + "(1000,-100,100)"; 
 
   if(debug > -1) { 
     std::cout << "-----------------------" << std::endl;
@@ -147,16 +147,16 @@ globalJetProbabilities::globalJetProbabilities(const std::string& label,
   tree->Draw(drawAllString.c_str(), ("(" + eventCutString + ") && (" + baselineJetCutString + ")").c_str(), "goff");
 
   // get the histograms from the pipe 
-  taggedJetHist = (TH1F)*(TH1F*)gDirectory->Get(taggedJetHistName.c_str());
-  allJetHist	= (TH1F)*(TH1F*)gDirectory->Get(allJetHistName.c_str());
+  taggedJetHist = (TH1D)*(TH1D*)gDirectory->Get(taggedJetHistName.c_str());
+  allJetHist	= (TH1D)*(TH1D*)gDirectory->Get(allJetHistName.c_str());
 
   // check they are filled
   taggedJetHist.Print();
   allJetHist.Print();
 
   // rebin the histograms so they can be divided
-  taggedJetHist = (TH1F)*(TH1F*)taggedJetHist.Rebin(nBins, "", &(histBinVals[0]));
-  allJetHist	= (TH1F)*(TH1F*)allJetHist.Rebin(nBins, "", &(histBinVals[0]));
+  taggedJetHist = (TH1D)*(TH1D*)taggedJetHist.Rebin(nBins, "", &(histBinVals[0]));
+  allJetHist	= (TH1D)*(TH1D*)allJetHist.Rebin(nBins, "", &(histBinVals[0]));
 
   // build the corresponding efficieny graph
   ratioGraph.BayesDivide(&taggedJetHist, &allJetHist);
@@ -170,11 +170,11 @@ globalJetProbabilities::globalJetProbabilities(const std::string& label,
   std::string effHistName = "effHist_" + label;
 
   // make copies off the histogram for the efficiency with the same binning
-  ratioHistEff = (TH1F)*(TH1F*)allJetHist.Clone(effHistName.c_str());
+  ratioHistEff = (TH1D)*(TH1D*)allJetHist.Clone(effHistName.c_str());
   ratioHistEff.Reset();
-  ratioHistEffErrUp = (TH1F)*(TH1F*)allJetHist.Clone((effHistName+"Up").c_str());
+  ratioHistEffErrUp = (TH1D)*(TH1D*)allJetHist.Clone((effHistName+"Up").c_str());
   ratioHistEffErrUp.Reset();
-  ratioHistEffErrDn = (TH1F)*(TH1F*)allJetHist.Clone((effHistName+"Dn").c_str());
+  ratioHistEffErrDn = (TH1D)*(TH1D*)allJetHist.Clone((effHistName+"Dn").c_str());
   ratioHistEffErrDn.Reset();
 
   // parse the central values and errors of the ratio Graph
@@ -221,10 +221,12 @@ Json::Value globalJetProbabilities::getProbabilitiesJSON() {
     Json::Value effErrDn(Json::arrayValue);    
 
     // loop over bins in the histogram for that category 
-    for(int bin = 0; bin < histBinVals.size() - 1; ++bin) {      
+    for(int bin = 1; bin < histBinVals.size(); ++bin) {      
 
-      float binVal	= histBinVals[bin];
-      // get the values 
+      // histbinvals is the array of the binning and begins with 0
+      float binVal	= histBinVals[bin-1];
+      // get the values from the histograms 
+      // histograms first bin is numbered 1 (0 is the underflow bin)
       float tagVal	= taggedJetHist.GetBinContent(bin);
       float allJetVal	= allJetHist.GetBinContent(bin);
       float effVal	= ratioHistEff.GetBinContent(bin);
@@ -239,8 +241,8 @@ Json::Value globalJetProbabilities::getProbabilitiesJSON() {
       effErrUp.append(Json::Value(effValErrUp));
       effErrDn.append(Json::Value(effValErrDn));
     }
-    // add the last bin value
-    binning.append(Json::Value(histBinVals[nBins]));
+    // add the last bin value for the binning array (which has nbins + 1 entries)
+    binning.append(Json::Value(histBinVals[histBinVals.size()]));
 
     std::string catName = "cat" + std::to_string(cat); 
     
@@ -261,35 +263,34 @@ Json::Value globalJetProbabilities::getProbabilitiesJSON() {
 } 
 
 // does the lookup in the ratiograph for a specific jet configuration
-float globalJetProbabilities::getJetFakeProbability(float binVariable, float catVar) {
+double globalJetProbabilities::getJetFakeProbability(float binVariable, float catVar) {
   // find the bin and return the central value
   //  ratioHistEff.Print();
   if(debug > 20) std::cout << "[globalJetProb] binVariable: " << binVariable << " catVar " << catVar << std::endl;
-  int bin = ratioHistEff.GetBin(binVariable);
+  int bin = ratioHistEff.FindBin(binVariable);
   if(debug > 20) std::cout << "[globalJetProb] bin: " << bin << std::endl;
-  float value = ratioHistEff.GetBinContent(bin);
+  double value = ratioHistEff.GetBinContent(bin);
   if(debug > 20) std::cout << "[globalJetProb] bin Content: " << value << std::endl;
 
   if(debug > 5 && binVariable == 1) std::cout << "JET HAS 1 TRACK -- binvar = " << 
 				      binVariable << " fake probability = " << value << std::endl;
-
 
   return value;
 }
 
 
 // does the lookup in the ratiograph for a specific jet configuration
-std::pair<float, float> globalJetProbabilities::getJetFakeProbabilityError(float binVariable, float catVar) {
+std::pair<double, double> globalJetProbabilities::getJetFakeProbabilityError(float binVariable, float catVar) {
   // find the bin and return the central value
   //  ratioHistEff.Print();
   if(debug > 5) std::cout << "[globalJetProb] binVariable: " << binVariable << " catVar " << catVar << std::endl;
   int bin = ratioHistEff.GetBin(binVariable);
   if(debug > 5) std::cout << "[globalJetProb] bin: " << bin << std::endl;
-  float errUp = ratioHistEffErrUp.GetBinContent(bin);
-  float errDn = ratioHistEffErrDn.GetBinContent(bin);
+  double errUp = ratioHistEffErrUp.GetBinContent(bin);
+  double errDn = ratioHistEffErrDn.GetBinContent(bin);
   if(debug > 5) std::cout << "[globalJetProb] bin errors up: " << errUp << " error down: "  <<  errDn << std::endl;
 
-  std::pair<float, float> errors(errUp, errDn);
+  std::pair<double, double> errors(errUp, errDn);
   return errors;
 }
 
@@ -321,11 +322,11 @@ void globalJetProbabilities::printHistStatus() {
 
 // accessors
 TGraphAsymmErrors globalJetProbabilities::getRatioGraph() { return ratioGraph; }
-TH1F globalJetProbabilities::getTaggedHist() { return taggedJetHist; }
-TH1F globalJetProbabilities::getAllHist() { return allJetHist; }
-TH1F globalJetProbabilities::getCentralEffHist() { return ratioHistEff;}
-TH1F globalJetProbabilities::getCentralEffHistErrUp() { return ratioHistEffErrUp;}
-TH1F globalJetProbabilities::getCentralEffHistErrDn() { return ratioHistEffErrDn;}
+TH1D globalJetProbabilities::getTaggedHist() { return taggedJetHist; }
+TH1D globalJetProbabilities::getAllHist() { return allJetHist; }
+TH1D globalJetProbabilities::getCentralEffHist() { return ratioHistEff;}
+TH1D globalJetProbabilities::getCentralEffHistErrUp() { return ratioHistEffErrUp;}
+TH1D globalJetProbabilities::getCentralEffHistErrDn() { return ratioHistEffErrDn;}
 
 // build from preset global Probabilities
 // globalJetProbabilities::globalJetProbabilities(const Json::Value & assignedProb) {  

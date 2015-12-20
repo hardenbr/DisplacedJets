@@ -42,13 +42,13 @@ class globalJetProbabilities {
 
   // called by jetTagAnalyzer to retrieve probabilities to be included in the outputted JSON
   //void getGlobalProbabilities();
-  float getNJetTagProbabilityVector();
+  //float getNJetTagProbabilityVector();
 
   // calculates the local pdf likelihood
   //float getJetLikelihood(const jetCandidate&);
 
-  float getJetFakeProbability(float binVariable, float catVar);
-  std::pair<float, float> getJetFakeProbabilityError(float binVariable, float catVar);
+  double getJetFakeProbability(float binVariable, float catVar);
+  std::pair<double, double> getJetFakeProbabilityError(float binVariable, float catVar);
   void printHistStatus();
 
   Json::Value getProbabilitiesJSON();
@@ -59,23 +59,23 @@ class globalJetProbabilities {
 
   // accessors
   TGraphAsymmErrors getRatioGraph();
-  TH1F		    getTaggedHist();
-  TH1F		    getAllHist();
-  TH1F              getCentralEffHist();
-  TH1F              getCentralEffHistErrUp();
-  TH1F              getCentralEffHistErrDn();
+  TH1D		    getTaggedHist();
+  TH1D		    getAllHist();
+  TH1D              getCentralEffHist();
+  TH1D              getCentralEffHistErrUp();
+  TH1D              getCentralEffHistErrDn();
 
   // local variables
-  TH1F		    taggedJetHist;
-  TH1F		    allJetHist;
+  TH1D		    taggedJetHist;
+  TH1D		    allJetHist;
   TGraphAsymmErrors ratioGraph;
   // histograms of the assymetric errors
-  TH1F              ratioHistEff;
-  TH1F              ratioHistEffErrUp;
-  TH1F              ratioHistEffErrDn;
+  TH1D              ratioHistEff;
+  TH1D              ratioHistEffErrUp;
+  TH1D              ratioHistEffErrDn;
 
-  std::vector<double>           histBinVals;
-  std::vector<double>           catBinVals;
+  std::vector<double>   histBinVals;
+  std::vector<double>   catBinVals;
 
   // bins and category variables
   std::string   binningVar;

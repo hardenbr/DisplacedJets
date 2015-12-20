@@ -284,7 +284,7 @@ std::pair<double, double> globalJetProbabilities::getJetFakeProbabilityError(flo
   // find the bin and return the central value
   //  ratioHistEff.Print();
   if(debug > 5) std::cout << "[globalJetProb] binVariable: " << binVariable << " catVar " << catVar << std::endl;
-  int bin = ratioHistEff.GetBin(binVariable);
+  int bin = ratioHistEff.FindBin(binVariable);
   if(debug > 5) std::cout << "[globalJetProb] bin: " << bin << std::endl;
   double errUp = ratioHistEffErrUp.GetBinContent(bin);
   double errDn = ratioHistEffErrDn.GetBinContent(bin);

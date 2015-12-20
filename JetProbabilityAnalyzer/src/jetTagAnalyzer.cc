@@ -262,7 +262,10 @@ int main(int argc, char* argv[]) {
     int nEvents = tree->GetEntries();
     if(maxEvents > 0) nEvents = maxEvents;
     for(long int event = 0; event < nEvents; ++event) {
+      if(debug > 2) std::cout << "Checking event selection... "  <<  std::endl;
       bool eventPassSelection = jetSel.doesEventPassSelection(tree, event);
+      if(debug > 2) std::cout << "Event passes event selection?? "  << eventPassSelection << std::endl;
+
       evNum = event;
       if(event % 5000 == 0) std::cout << "Processing Event # --- "  << event << std::endl;
       if(debug > 9) std::cout << "\t\t\tProcessing Event # --- "  << event << std::endl;
@@ -363,7 +366,7 @@ int main(int argc, char* argv[]) {
       // set the weight vector to the number of true tags 
       nTagWeight[nTagged] = 1;
       // fill the histogram
-      if(eventPassSelection) nTagHistTrue.Fill(nTagged);
+      if(eventPassSelection) nTagHistTrue.Fill(nTagged,1);
       if(debug > 1) std::cout << " -- Number of jets tagged...." << nTagged << std::endl;
 
       // fill the Tree
@@ -378,7 +381,8 @@ int main(int argc, char* argv[]) {
 
     // build the expectation comparison
     TCanvas canvas("canvas", "prediction vs number of tags per event", 800, 800);
-    // lines 
+
+    // lines attributes
     nTagHistPred.SetLineWidth(2);
     nTagHistTrue.SetLineWidth(2);
     nTagHistPredErrUp.SetLineStyle(9);
@@ -386,7 +390,7 @@ int main(int argc, char* argv[]) {
     nTagHistPred.SetLineColor(kBlue);
     nTagHistTrue.SetLineColor(kBlack);
 
-    // marker 
+    // marker  attributes
     nTagHistPred.SetMarkerStyle(25);
     nTagHistTrue.SetMarkerStyle(20);
     nTagHistPred.SetMarkerColor(kBlue);
@@ -394,11 +398,12 @@ int main(int argc, char* argv[]) {
 
     // axes
     nTagHistPredErrUp.GetXaxis()->SetTitle("N Jets Tagged");
-    
+
+    // draw onto the canvas
     nTagHistPredErrUp.Draw();
     nTagHistPredErrDn.Draw("same");
     nTagHistPred.Draw("psame");
-    nTagHistTrue.Draw("psame");
+    nTagHistTrue.Draw("epsame");
 
     // write the canvas
     canvas.Write();

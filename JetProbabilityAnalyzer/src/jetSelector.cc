@@ -4,8 +4,9 @@
 jetSelector::jetSelector(const Json::Value & selectorJSON, const int & debug_) :
   debug(debug_){  
 
-  jetCutString   = selectorJSON.get("jetSelectionCutString","1").asString();
-  eventCutString = selectorJSON.get("eventSelectionCutString","1").asString();
+  jetCutString	       = selectorJSON.get("jetSelectionCutString","1").asString();
+  eventCutString       = selectorJSON.get("eventSelectionCutString","1").asString();
+  baselineJetCutString = selectorJSON.get("baselineJetSelectionCutString","(1)").asString();
 
   // 
   // FAKE RATE SETUP
@@ -58,12 +59,16 @@ jetSelector::jetSelector(const Json::Value & selectorJSON, const int & debug_) :
 }
 
 bool  jetSelector::doesEventPassSelection(TTree * tree, int event) { 
+ if(debug > 5) std::cout << "[jetSelector]  getting tree event for event selection " << std::endl; 
  tree->GetEntry(event);
  bool eventPass = true;
 
+ if(debug > 2) std::cout << "[jetSelector]  starting event variable loop " << std::endl; 
  // assume all event variables are a single float variable
  for(int ii = 0; ii < eventSelection.size(); ++ii) {
-   std::string	var	= jetSelection[ii].get("variable","ERROR").asString();
+   if(debug > 5) std::cout << "[jetSelector]  retreiving leaf values... " << std::endl; 
+   std::string	var	= eventSelection[ii].get("variable","ERROR").asString();
+   if(debug > 5) std::cout << "[jetSelector]  leaf name:... " << var << std::endl; 
    TLeaf *	varLeaf = tree->GetLeaf(var.c_str());
    float	val	= varLeaf->GetValue(0);
    
@@ -71,7 +76,13 @@ bool  jetSelector::doesEventPassSelection(TTree * tree, int event) {
    const float   min		   = eventSelection[ii].get("min","ERROR").asFloat();
    const float   max		   = eventSelection[ii].get("max","ERROR").asFloat();
 
+   if(debug > 1) std::cout << "[jetSelector] Checking EVENT variable: " << var << " min " << 
+		   min << " max " << max << " val " << val << std::endl;  
+
    bool fail = val < min || val > max;
+
+   if(debug > 5) std::cout << "[jetSelector]  Event pass....? " << !fail << std::endl;
+
    if(fail) return false;
  }
 

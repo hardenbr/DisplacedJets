@@ -110,8 +110,9 @@ globalJetProbabilities::globalJetProbabilities(const std::string& label,
   debug(debug_) {
   
   // parse out the jet selection
-  jetCutString      = jetSel.getJetCutString();
-  eventCutString    = jetSel.getEventCutString();
+  jetCutString	       = jetSel.getJetCutString();
+  eventCutString       = jetSel.getEventCutString();
+  baselineJetCutString = jetSel.getJetBaselineCutString();
 
   // build the fake rate histograms from the binning contained in the jetSelection
   histBinVals = jetSel.getHistBinning();
@@ -121,9 +122,6 @@ globalJetProbabilities::globalJetProbabilities(const std::string& label,
   //  TH1F hist("genericHist", "genericHist", nBins, histBinVals); 
   std::string		    taggedJetHistName = "tagged_" + label;
   std::string		    allJetHistName    = "allJets_" + label;
-
-  //  TH1F	taggedJets(taggedJetHistName.c_str(), taggedJetHistName.c_str(), nBins, histBinVals); 
-  //TH1F	allJets(allJetHistName.c_str(), allJetHistName.c_str(), nBins, histBinVals); 
 
   // get the names of the variables
   binningVar	   = jetSel.getBinningVarName();
@@ -137,14 +135,16 @@ globalJetProbabilities::globalJetProbabilities(const std::string& label,
     std::cout << "-----------------------" << std::endl;
     std::cout << "binning variable string: " << binningVar << std::endl;
     std::cout << "jet selection string: " << jetCutString << std::endl;
+    std::cout << "baseline jet  selection string: " << baselineJetCutString << std::endl;
     std::cout << "event selection string: " << eventCutString << std::endl;
   }
 
   // fill the histograms with the appropriate draw command
   // -- the tagged jets  
-  tree->Draw(drawSelectedString.c_str(), (jetCutString + "&& (" + eventCutString + ")").c_str(), "goff");
+  tree->Draw(drawSelectedString.c_str(), ("(" + eventCutString + ") && (" + jetCutString + ")" + 
+					  "&& (" + baselineJetCutString + ")").c_str(), "goff");
   // -- the not tagged jets
-  tree->Draw(drawAllString.c_str(), eventCutString.c_str(), "goff");
+  tree->Draw(drawAllString.c_str(), ("(" + eventCutString + ") && (" + baselineJetCutString + ")").c_str(), "goff");
 
   // get the histograms from the pipe 
   taggedJetHist = (TH1F)*(TH1F*)gDirectory->Get(taggedJetHistName.c_str());

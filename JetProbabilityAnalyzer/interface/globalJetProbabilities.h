@@ -83,6 +83,7 @@ class globalJetProbabilities {
   // selection strings
   std::string	jetCutString;
   std::string	eventCutString;
+  std::string	baselineJetCutString;
 
   // configuration params
   const bool isMC, isSig;

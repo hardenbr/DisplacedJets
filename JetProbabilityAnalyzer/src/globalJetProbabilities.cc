@@ -62,13 +62,14 @@ globalJetProbabilities::globalJetProbabilities(const std::string& label,
 
   if(debug > 2) std::cout << "[globalJetProbabilities] setting bin content of hists" << std::endl;
   // set the histogram bin content from the json
-  for(int bin = 0; bin < nBins; ++bin) {
-    allJetHist_temp.SetBinContent(bin+1, allHist_json[bin].asDouble());
-    taggedJetHist_temp.SetBinContent(bin+1, taggedHist_json[bin].asDouble());
+  for(int edge = 0; edge < nBins; ++edge) {
+    int bin = edge + 1;
+    allJetHist_temp.SetBinContent(bin, allHist_json[edge].asDouble());
+    taggedJetHist_temp.SetBinContent(bin, taggedHist_json[edge].asDouble());
     // the efficiency histogram and the associated errors
-    ratioHistEff_temp.SetBinContent(bin+1, effHist_json[bin].asDouble());
-    ratioHistEffErrUp_temp.SetBinContent(bin+1, effHistErrUp_json[bin].asDouble());
-    ratioHistEffErrDn_temp.SetBinContent(bin+1, effHistErrDn_json[bin].asDouble());
+    ratioHistEff_temp.SetBinContent(bin, effHist_json[edge].asDouble());
+    ratioHistEffErrUp_temp.SetBinContent(bin, effHistErrUp_json[edge].asDouble());
+    ratioHistEffErrDn_temp.SetBinContent(bin, effHistErrDn_json[edge].asDouble());
   }
 
   if(debug > 2) std::cout << "[globalJetProbabilities] Setting Pointers" << std::endl;
@@ -242,7 +243,7 @@ Json::Value globalJetProbabilities::getProbabilitiesJSON() {
       effErrDn.append(Json::Value(effValErrDn));
     }
     // add the last bin value for the binning array (which has nbins + 1 entries)
-    binning.append(Json::Value(histBinVals[histBinVals.size()]));
+    binning.append(Json::Value(histBinVals[histBinVals.size()-1]));
 
     std::string catName = "cat" + std::to_string(cat); 
     

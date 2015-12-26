@@ -304,13 +304,13 @@ int main(int argc, char* argv[]) {
 	double	probUp = nTagProbErrVector[jj].first;
 	double	probDn = nTagProbErrVector[jj].second;
 
-	// fill the arrays given the probabilities make sense
-	if(prob == 1 && jj != 0) { 
-	  std::cout << "[ERROR] probability is 1?....Exiting....event: " << event << std::endl;
-	  std::cout << "[ERROR] nJets: " << nJets << " checking for jet jj = " << jj  << std::endl;
-	  std::cout << "[ERROR] probUp: " << probUp << "  probdown: " << probDn  << std::endl;
-	  exit(1);
-	}
+	// // fill the arrays given the probabilities make sense
+	// if(prob == 1 && jj != 0) { 
+	//   std::cout << "[ERROR] probability is 1?....Exiting....event: " << event << std::endl;
+	//   std::cout << "[ERROR] nJets: " << nJets << " checking for jet jj = " << jj  << std::endl;
+	//   std::cout << "[ERROR] probUp: " << probUp << "  probdown: " << probDn  << std::endl;
+	//   exit(1);
+	// }
 
 	probNTags[jj]	   = (prob >= 0 && prob <= 1) ? prob : 0;
 	probNTagsErrUp[jj] = (probUp >= 0 && probUp <= 1) ? probUp : 0;

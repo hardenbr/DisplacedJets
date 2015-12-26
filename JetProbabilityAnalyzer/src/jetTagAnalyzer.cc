@@ -46,7 +46,9 @@ int main(int argc, char* argv[]) {
   // }
 
   // check if global probabilities were provided
-  bool probProvided = (globalProb_json != "none");
+  bool	probProvided	 = (globalProb_json != "none");
+
+
   if(debug > -1){
     std::cout << "sample      json name: " << sample_json << std::endl;
     std::cout << "selection   json name: " << selection_json << std::endl;
@@ -80,12 +82,13 @@ int main(int argc, char* argv[]) {
 
   // read parameters from the run config
   if(debug > -1) std::cout << "Building Output File..." << std::endl;
-  std::string	outputFileName = run_config_root.get("outputFileName","test.root").asString();
-  std::string	outputDir      = run_config_root.get("outputDir","/tmp/hardenbr/").asString();
-  debug			       = run_config_root.get("debug",0).asInt();
-  long int	maxEvents      = run_config_root.get("maxEvents",-1).asInt();
+  std::string	outputFileName	 = run_config_root.get("outputFileName","test.root").asString();
+  std::string	outputDir	 = run_config_root.get("outputDir","/tmp/hardenbr/").asString();
+  debug				 = run_config_root.get("debug",0).asInt();
+  long int	maxEvents	 = run_config_root.get("maxEvents",-1).asInt();
   // limit on the number of ntags to compute
-  int		maxJetTags     = run_config_root.get("maxJetTags",3).asInt(); 
+  int		maxJetTags	 = run_config_root.get("maxJetTags",3).asInt(); 
+  bool		runSignalContam = run_config_root["signalContam"].get("run",false).asBool(); 
 
   if(debug > -1) std::cout << "\t..." << outputFileName << std::endl;
   // read in the json if the config is provided 
@@ -99,6 +102,8 @@ int main(int argc, char* argv[]) {
   else {
     std::cout << "No global jet probabilities provided. Will compute per sample... " << std::endl;
   }
+
+  std::cout << "Run Signal Contamination..." << runSignalContam << std::endl;
 
   if(debug > -1) std::cout << "Building Jet Selection..." << std::endl;
   // build the jet selector
@@ -120,7 +125,7 @@ int main(int argc, char* argv[]) {
     bool runSample  = samples[ss].get("runSample", false).asBool();
     if(!runSample) continue;
 
-    // extract sample informatino from json
+    // extract sample information from json
     std::string label = samples[ss].get("label", "NO_LABEL").asString();
     std::string path  = samples[ss].get("path", "NO_PATH_PROVIDED").asString();
     std::string stack = samples[ss].get("stack", "NO_STACK_PROVIDED").asString();
@@ -164,6 +169,42 @@ int main(int argc, char* argv[]) {
       // process the sample by constructing the global probabilities
       globalJetProbabilities * localSampleProb = new globalJetProbabilities(label, stack, isMC, isSig, xsec, tree, jetSel, debug);     
 
+      if(runSignalContam) {
+
+	// parse the parameters
+	float	    norm      = run_config_root["signalContam"].get("norm",0).asFloat();
+	std::string contLabel = run_config_root["signalContam"].get("label","NO_LABEL").asString();
+
+	std::cout << "Running Signal Contamination with sample : "  << contLabel << " using normalization " << norm << std::endl;
+
+	// find the sample
+	bool foundContam = false;
+	for(int sss = 0; sss < samples.size(); ++sss ) {	    
+	  // extract sample informatino from json
+	  std::string label = samples[sss].get("label", "NO_LABEL").asString();	  
+	  if (label != contLabel) continue;
+	  foundContam = true;	  
+
+	  // parse the path
+	  std::string path  = samples[sss].get("path", "NO_PATH_PROVIDED").asString();
+	  
+	  TFile   contamFile(path.c_str(), "READ");
+	  TTree * contamTree = (TTree*)contamFile.Get(treeName.c_str());
+	  
+	  std::cout << "Adding signal contamination from path: " << path.c_str() << std::endl;
+	  // add the signal contamination to the local probabilities
+	  localSampleProb->addSignalContamination(contamTree, jetSel, norm);
+	  
+
+	} // end loop over signal samples for contamination	
+	
+	// make sure we found
+	if(!foundContam) {
+	  std::cout << "[ERROR] did not find sample for signal contamaination....exiting" << std::endl;
+	  exit(1);
+	}
+      } // end additional signal contamination
+
       // parse the json assembled
       Json::Value  sampleJson = localSampleProb->getProbabilitiesJSON();
 
@@ -175,7 +216,6 @@ int main(int argc, char* argv[]) {
       Json::StyledWriter styledWriter;
       json_stream << styledWriter.write(sampleJson);
       json_stream.close();
-
 
       // write the histograms for the file
       if(debug > -1) std::cout << "Writing probability hists..." << std::endl;

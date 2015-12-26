@@ -19,7 +19,8 @@ class globalJetProbabilities {
 				  const float& evWeight_, 
 				  TTree*& tree,
 				  const jetSelector& jetSel,
-				  const int & debug_);
+				  const int & debug_
+				  );
   
   // constructor from a stored json 
 
@@ -29,7 +30,8 @@ class globalJetProbabilities {
 				  const bool & isSig_ , 
 				  const float& evWeight_, 
 				  Json::Value probabilities,
-				  const int & debug_);
+				  const int & debug_
+				  );
 
   // add jets to the probabilities
   // void addJet(const jetCandidate&);  
@@ -50,6 +52,8 @@ class globalJetProbabilities {
   double getJetFakeProbability(float binVariable, float catVar);
   std::pair<double, double> getJetFakeProbabilityError(float binVariable, float catVar);
   void printHistStatus();
+  void addSignalContamination(TTree*& tree, const jetSelector & jetSel, float norm);
+
 
   Json::Value getProbabilitiesJSON();
 
@@ -74,9 +78,14 @@ class globalJetProbabilities {
   TH1D              ratioHistEffErrUp;
   TH1D              ratioHistEffErrDn;
 
+  // jetSelector
+
+
   std::vector<double>   histBinVals;
   std::vector<double>   catBinVals;
 
+  // sample label
+  std::string   label;
   // bins and category variables
   std::string   binningVar;
   std::string   categoryVar;

@@ -9,6 +9,7 @@
 #include <string.h>  
 #include "TCanvas.h"
 #include "TColor.h"
+#include "TLegend.h"
 #include "rootlogon.C"
 
 int main(int argc, char* argv[]) {
@@ -136,7 +137,15 @@ int main(int argc, char* argv[]) {
     std::string stack = samples[ss].get("stack", "NO_STACK_PROVIDED").asString();
     bool	isMC  = samples[ss].get("isMC", true).asBool();
     bool	isSig = samples[ss].get("isSig", false).asBool();
-    float		xsec  = samples[ss].get("xsec", 1).asFloat();
+    float	xsec  = samples[ss].get("xsec", 1).asFloat();
+    float       x_limit_label = 0;
+    float       y_limit_label = 0;
+
+    // parse the values to be used for the limit calculation (ONLY IF SIGNAL)
+    if(isSig) {
+      x_limit_label = samples[ss].get("x_limit_label", -999).asFloat();      
+      y_limit_label = samples[ss].get("y_limit_label", -999).asFloat();      
+    }
 
     // build  names for tagging histograms  based on the label
     std::string nTagHistTrueName = label + "_nTagTrue";
@@ -214,7 +223,7 @@ int main(int argc, char* argv[]) {
       Json::Value  sampleJson = localSampleProb->getProbabilitiesJSON();
 
       // write the json to the stream in the output directory
-      std::string jsonOutputName = outputDir+"/"+"json_"+label+".json";
+      std::string jsonOutputName = outputDir+"/"+"prob_"+label+".json";
       std::ofstream json_stream;
       json_stream.open(jsonOutputName);      
       // use the style writter
@@ -306,10 +315,13 @@ int main(int argc, char* argv[]) {
     // loop event by event
     if(debug > -1) std::cout << " Beginning Event Loop  " << std::endl;
     int nEvents = tree->GetEntries();
+    int nPassEventSelection = 0;
     if(maxEvents > 0) nEvents = maxEvents;
     for(long int event = 0; event < nEvents; ++event) {
       if(debug > 2) std::cout << "Checking event selection... "  <<  std::endl;
       bool eventPassSelection = jetSel.doesEventPassSelection(tree, event);
+      if(eventPassSelection)  nPassEventSelection++;
+
       if(debug > 2) std::cout << "Event passes event selection?? "  << eventPassSelection << std::endl;
 
       evNum = event;
@@ -479,7 +491,58 @@ int main(int argc, char* argv[]) {
       } // loop over events in the contamination sample       
     } // if statement closing if we are running the contamination study
 
+    // --------------------------
+    // write a json result containing the n-tags and systematic variations 
+    // based on the histograms
+    // --------------------------
 
+    Json::Value resultJSON;
+    // build the array
+    Json::Value nTagTrue(Json::arrayValue);
+    Json::Value nTagPred(Json::arrayValue);
+    Json::Value nTagFakeRateUp(Json::arrayValue);
+    Json::Value nTagFakeRateDn(Json::arrayValue);
+
+    // set the array values
+    for(int ntag = 1; ntag < maxJetTags; ++ntag) {
+      nTagTrue.append(nTagHistTrue.GetBinContent(ntag));
+      nTagPred.append(nTagHistPred.GetBinContent(ntag));
+      nTagFakeRateUp.append(nTagHistPredErrUp.GetBinContent(ntag));
+      nTagFakeRateDn.append(nTagHistPredErrDn.GetBinContent(ntag));
+    }
+
+    // set the values inside the result JSON
+    // flags realted to the type of file being analyzed
+    resultJSON["label"]				= label;
+    resultJSON["includesContamination"]         = runSignalContam ? "True" : "False";
+    resultJSON["isSignal"]                      = isSig ? "True" : "False";
+    resultJSON["x_limit_label"]                 = x_limit_label;
+    resultJSON["y_limit_label"]                 = y_limit_label;
+    resultJSON["nEventsAnalyzed"]		= nEvents;
+    resultJSON["nEventsPassSelection"]		= nPassEventSelection;
+    resultJSON["nTagTrue"]			= nTagTrue;
+    resultJSON["nTagPred"]			= nTagPred;
+    resultJSON["systematics"]["nTagFakeRateUp"] = nTagFakeRateUp;
+    resultJSON["systematics"]["nTagFakeRateDn"] = nTagFakeRateDn;
+    // keep some information about the probabilities JSON used for this
+    resultJSON["jetTagString"]	       = globalJetProbToApply->jetCutString;
+    resultJSON["eventCutString"]       = globalJetProbToApply->eventCutString;
+    resultJSON["baselineJetCutString"] = globalJetProbToApply->baselineJetCutString;
+    resultJSON["fakeRateBinningVar"]   = globalJetProbToApply->binningVar;
+
+    // write teh result JSO using the styled writter
+    std::string jsonResultOutputName = outputDir+"/"+"result_"+label+".json";
+    std::ofstream jsonResult_stream;
+    jsonResult_stream.open(jsonResultOutputName);      
+      // use the style writter
+    Json::StyledWriter styledWriter;
+    jsonResult_stream << styledWriter.write(resultJSON);
+    jsonResult_stream.close();
+
+    // --------------------------
+    // make cosmetic changes to the histograms and build a canvas with all
+    // contamination and esimtations  
+    // --------------------------
     sampleOutputFile.cd();    
 
     // build the expectation comparison
@@ -507,15 +570,17 @@ int main(int argc, char* argv[]) {
 
     // axes
     nTagHistPredErrUp.GetXaxis()->SetTitle("N Jets Tagged");
-    canvas.SetBottomMargin(.2);
-
+    nTagHistPredErrUp.GetYaxis()->SetTitle("N Events");
 
     // draw onto the canvas
     nTagHistPredErrUp.Draw();
     nTagHistPredErrDn.Draw("same");
     nTagHistPred.Draw("psame");
     nTagHistTrue.Draw("epsame");
-    nTagHistTrue_contam->Draw("histsame");
+    if(runSignalContam) nTagHistTrue_contam->Draw("histsame");
+
+    TLegend *  leg = canvas.BuildLegend();
+    leg->SetFillColor(0);      
     
     // write the canvas
     canvas.Write();

@@ -86,10 +86,12 @@ globalJetProbabilities::globalJetProbabilities(const std::string& label_,
 
   if(debug > 2) std::cout << "[globalJetProbabilities] Parsing cfg strings from config  " << std::endl;
   // set the string variables  from json
-  binningVar	 = probabilities[catName].get("binningVar","1").asString();  
-  categoryVar	 = probabilities[catName].get("categoryVar","caloJetPt").asString();  
-  jetCutString	 = probabilities[catName].get("jetTagString","(1)").asString();
-  eventCutString = probabilities[catName].get("eventTagString","(1)").asString();      
+  binningVar	       = probabilities[catName].get("binningVar","1").asString();  
+  categoryVar	       = probabilities[catName].get("categoryVar","caloJetPt").asString();  
+  jetCutString	       = probabilities[catName].get("jetTagString","(1)").asString();
+  eventCutString       = probabilities[catName].get("eventTagString","(1)").asString();      
+  baselineJetCutString = probabilities[catName].get("baselineJetCutString","(1)").asString();      
+
   if(debug > 2) {
     std::cout << "\t\t\t binvar: " << binningVar << std::endl;
     std::cout << "\t\t\t catVar: " << categoryVar << std::endl;

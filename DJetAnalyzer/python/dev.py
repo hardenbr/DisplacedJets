@@ -11,9 +11,9 @@ appendData          = ""
 appendBkg           = ""
 ############ FLAGS #############
 debugLevel          = 0
-reportEveryNEvents  = 1000
-isSignalMC          = True
-isMC                = True
+reportEveryNEvents  = 5000
+isSignalMC          = False
+isMC                = False
 isData              = not isMC
 doedm               = False
 nevents             = -1
@@ -32,7 +32,7 @@ gtag                = "74X_mcRun2_asymptotic_realisticBS_v1" #realistic beam spo
 #JSON               = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-255031_13TeV_PromptReco_Collisions15_25ns_JSON_v2.txt'
 #JSON               = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-258714_13TeV_PromptReco_Collisions15_25ns_JSON.txt'
 #silver json
-JSON                = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-258750_13TeV_PromptReco_Collisions15_25ns_JSON_Silver_v2.txt'
+JSON                = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-260627_13TeV_PromptReco_Collisions15_25ns_JSON_Silver_v2.txt'
 
 #--------------trigger
 trigger_process     = "HLT" if isMC else "HLT"

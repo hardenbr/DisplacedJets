@@ -9,8 +9,12 @@
 #include <string.h>  
 #include "TCanvas.h"
 #include "TColor.h"
+#include "rootlogon.C"
 
 int main(int argc, char* argv[]) {
+
+  defaultStyle style;
+  style.setStyle();
 
   // names of the json files to be parsed
   std::string sample_json;
@@ -88,7 +92,8 @@ int main(int argc, char* argv[]) {
   long int	maxEvents	 = run_config_root.get("maxEvents",-1).asInt();
   // limit on the number of ntags to compute
   int		maxJetTags	 = run_config_root.get("maxJetTags",3).asInt(); 
-  bool		runSignalContam = run_config_root["signalContam"].get("run",false).asBool(); 
+  bool		runSignalContam  = run_config_root["signalContam"].get("run",false).asBool(); 
+  bool		writeTree        = run_config_root.get("writeTree",false).asBool(); 
 
   if(debug > -1) std::cout << "\t..." << outputFileName << std::endl;
   // read in the json if the config is provided 
@@ -138,14 +143,13 @@ int main(int argc, char* argv[]) {
     std::string nTagHistPredName = label + "_nTagPred";
 
     // initialize histograms
-    const int maxNTags  = 5;
-    TH1D nTagHistTrue(nTagHistTrueName.c_str(), "Number of true tags in event", maxNTags - 1, 1, maxNTags);
-    TH1D nTagHistPred(nTagHistPredName.c_str(), "Number of predicted tags in event", maxNTags - 1, 1, maxNTags);
+    TH1D nTagHistTrue(nTagHistTrueName.c_str(), "Number of true tags in event", maxJetTags, 1, maxJetTags+1);
+    TH1D nTagHistPred(nTagHistPredName.c_str(), "Number of predicted tags in event", maxJetTags, 1, maxJetTags+1);
     TH1D nTagHistPredErrUp((nTagHistPredName+"ErrUp").c_str(), 
-			   "Number of predicted tags in event with combinatorial error varied up", maxNTags - 1, 1, maxNTags);
+			   "Number of predicted tags in event with combinatorial error varied up", maxJetTags, 1, maxJetTags+1);
     TH1D nTagHistPredErrDn((nTagHistPredName+"ErrDn").c_str(), 
-			   "Number of predicted tags in event with combinatorial error varried dn", maxNTags - 1, 1, maxNTags);
-
+			   "Number of predicted tags in event with combinatorial error varried dn", maxJetTags, 1, maxJetTags+1);
+    
     if(debug > -1) {
       std::cout << "label: " << label << std::endl;
       std::cout << "\t path: " << path << std::endl;
@@ -161,6 +165,7 @@ int main(int argc, char* argv[]) {
     TFile thisFile(path.c_str(),"READ");
     TTree * tree       = (TTree*)(thisFile.Get(treeName.c_str()));    
     TTree * caloHTTree = (TTree*)(thisFile.Get("eventInfo"));    
+    std::string contamPath;
 
     // is globalProbabilities were not computed, produce them for each sample
     if(!probProvided) {
@@ -186,7 +191,7 @@ int main(int argc, char* argv[]) {
 	  foundContam = true;	  
 
 	  // parse the path
-	  std::string path  = samples[sss].get("path", "NO_PATH_PROVIDED").asString();
+	  contamPath  = samples[sss].get("path", "NO_PATH_PROVIDED").asString();
 	  
 	  TFile   contamFile(path.c_str(), "READ");
 	  TTree * contamTree = (TTree*)contamFile.Get(treeName.c_str());
@@ -412,13 +417,70 @@ int main(int argc, char* argv[]) {
 
       // fill the Tree
       if(debug > 2) std::cout << "Filling the Tree.." << std::endl;
-      jetVariableTree->Fill();
+      if(writeTree) jetVariableTree->Fill();
 
       // reset the weight back to zero
       nTagWeight[nTagged] = 0;
     } // loop over events in a single sample
 
-    sampleOutputFile.cd();
+    // make copies this far that have no inclusion of the contamination histograms
+    TH1D * nTagHistPred_noContam = (TH1D*)nTagHistPred.Clone((std::string(nTagHistPred.GetName()) + "_noContam").c_str());
+    TH1D * nTagHistTrue_noContam = (TH1D*)nTagHistPred.Clone((std::string(nTagHistTrue.GetName()) + "_noContam").c_str());    
+
+    // make a copy of the histogram to only keep track of the histograms with contamation
+    TH1D * nTagHistTrue_contam = (TH1D*)nTagHistPred.Clone((std::string(nTagHistTrue.GetName()) + "_contam").c_str());    
+    // clear out the information
+    nTagHistTrue_contam->Reset();
+
+    // now add the histograms for the contamination correctly scaled
+    if(runSignalContam) {
+      if(debug > 2) std::cout << "[contamination] building global probabilities for contamination" << std::endl;
+      
+      // get the contamation sample tree
+      TFile	contamFile(contamPath.c_str(), "READ");
+      TTree*	contamTree = (TTree*)contamFile.Get(treeName.c_str());
+
+      // build the master jet probability comupter using hte global probaiblities and the contamination
+      jetProbabilityMasterComputer contamJetCalc(globalJetProbToApply, contamTree, debug);
+      
+      // weight the events by the normalization determined by the run configuration
+      if(debug > 2) std::cout << "[contamination] Parsing scale factors for normalization " <<std::endl;
+      float norm    = run_config_root["signalContam"].get("norm",0).asFloat();
+      if(debug > 2) std::cout << "[contamination] Parsing number of events in contamination tree " << std::endl;
+      int   nEvents = contamTree->GetEntries();
+      float scale_factor = norm / float(nEvents);
+
+      if(debug > -1) std::cout << "[contamination]Processing Contamination to add " <<std::endl;
+      for(long int event = 0; event < nEvents; ++event) {
+	if(debug > 2) std::cout << "[contamination] Checking event selection... "  <<  std::endl;	
+
+	// make sure the vent passes the even tpreseleciton
+	bool eventPassSelection = jetSel.doesEventPassSelection(contamTree, event);
+	if(!eventPassSelection) continue;
+	
+	// get the probabilities of n-tags for the signal
+	std::vector<double> nTagProbVector = contamJetCalc.getNJetTaggedVector(event, maxJetTags);
+	// get the actual number of tags per event
+	std::vector<bool>   taggedVector   = jetSel.getJetTaggedVector(contamTree, event);      
+	int		    nJets	   = contamTree->GetLeaf("nCaloJets")->GetValue(0);	
+
+	int nTagged = 0;
+	// loop over the various possibilities of jet tags up to max tags
+	for(int jj = 0; (jj <= nJets) && (jj <= maxJetTags); ++jj ) {
+	  if(debug > 2) std::cout << "[CONTAMINATION] Checking for jets jj "  << jj <<  " nJets " << nJets << std::endl;
+	  // sample + contamination 
+	  nTagHistPred.Fill(jj, nTagProbVector[jj] * scale_factor);	  
+	  // contamination only
+	  if(taggedVector[jj]) nTagged++;
+	} // loop over the possible number of jets in the event
+	// fill the number taged for the (samp + contam) and contam only
+	nTagHistTrue.Fill(nTagged, scale_factor);
+	nTagHistTrue_contam->Fill(nTagged, scale_factor);    
+      } // loop over events in the contamination sample       
+    } // if statement closing if we are running the contamination study
+
+
+    sampleOutputFile.cd();    
 
     // build the expectation comparison
     TCanvas canvas("canvas", "prediction vs number of tags per event", 800, 800);
@@ -426,26 +488,35 @@ int main(int argc, char* argv[]) {
     // lines attributes
     nTagHistPred.SetLineWidth(2);
     nTagHistTrue.SetLineWidth(2);
+    nTagHistTrue_contam->SetLineWidth(2);
     nTagHistPredErrUp.SetLineStyle(9);
     nTagHistPredErrDn.SetLineStyle(9);
+    nTagHistTrue_contam->SetLineStyle(9);
     nTagHistPred.SetLineColor(kBlue);
     nTagHistTrue.SetLineColor(kBlack);
+    nTagHistTrue_contam->SetLineColor(kRed);
 
     // marker  attributes
     nTagHistPred.SetMarkerStyle(25);
     nTagHistTrue.SetMarkerStyle(20);
+    nTagHistTrue.SetMarkerSize(1.5);
+    nTagHistTrue_contam->SetMarkerStyle(20);
     nTagHistPred.SetMarkerColor(kBlue);
     nTagHistTrue.SetMarkerColor(kBlack);
+    nTagHistTrue_contam->SetMarkerColor(kRed);
 
     // axes
     nTagHistPredErrUp.GetXaxis()->SetTitle("N Jets Tagged");
+    canvas.SetBottomMargin(.2);
+
 
     // draw onto the canvas
     nTagHistPredErrUp.Draw();
     nTagHistPredErrDn.Draw("same");
     nTagHistPred.Draw("psame");
     nTagHistTrue.Draw("epsame");
-
+    nTagHistTrue_contam->Draw("histsame");
+    
     // write the canvas
     canvas.Write();
 
@@ -455,8 +526,13 @@ int main(int argc, char* argv[]) {
     nTagHistPredErrUp.Write();
     nTagHistPredErrDn.Write();
 
+    // write the contamination related histograms
+    nTagHistPred_noContam->Write();
+    nTagHistTrue_noContam->Write();
+    nTagHistTrue_contam->Write();
+
     // write out the tree and close 
-    jetVariableTree->Write();
+    if(writeTree) jetVariableTree->Write();
     sampleOutputFile.Close();    
   } // loop over samples contained in the the sample json  
 

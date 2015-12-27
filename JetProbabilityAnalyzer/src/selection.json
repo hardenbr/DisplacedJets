@@ -11,14 +11,13 @@
   "eventVariablesToSave" : ["nCaloJets",  
   			 "passDisplaced500_40", "passDisplaced350_40", "passDisplaced400_40","passDisplaced250_40", 
 			 "passHT200", "passHT275", "passHT325", "passHT425", "passHT575","passPFHT800"],
-
   //
   // write the selection as a single string for histogram building with tdraw 
   //
   "baselineJetSelectionCutString" : "(caloJetPt > 60 && abs(caloJetEta) < 2.0)",
 
-  "jetSelectionCutString" : "(jetMedianIPLogSig2D > 2 && caloJetAlphaMax/sumTrackPt  < 0.1 && medianCosThetaDet2D > 0.05)" ,
-  "eventSelectionCutString" : "(nCaloJets > 1)" ,
+  "jetSelectionCutString" : "(jetMedianIPLogSig2D > 2.0 && caloJetAlphaMax/sumTrackPt  < 0.1 && medianCosThetaDet2D > 0.05)" ,
+  "eventSelectionCutString" : "(nCaloJets > 1) && passDisplaced500_40" ,
   // 
   // variables that will be cut on during the tagging
   //
@@ -29,13 +28,13 @@
       "isRatio": false,
       "min": 2,
       "max": 9999
+   },
+   {
+       "variable": "passDisplaced500_40",
+       "isRatio": false,
+       "min": 1,
+       "max": 9999
    }
-   // {
-   //    "variable": "passDisplaced350_40",
-   //    "isRatio": false,
-   //    "min": 1,
-   //    "max": 9999
-   // }
    ],  
 
   "jetSelection": [
@@ -54,7 +53,7 @@
    {
       "variable": "jetMedianIPLogSig2D",
       "isRatio": false,
-      "min": 2,
+      "min": 2.0,
       "max": 9999
    },
    {

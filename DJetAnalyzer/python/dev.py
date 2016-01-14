@@ -12,8 +12,8 @@ appendBkg           = ""
 ############ FLAGS #############
 debugLevel          = 0
 reportEveryNEvents  = 5000
-isSignalMC          = False
-isMC                = False
+isSignalMC          = True
+isMC                = True
 isData              = not isMC
 doedm               = False
 nevents             = -1

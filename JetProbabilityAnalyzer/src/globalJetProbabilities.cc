@@ -4,7 +4,8 @@ globalJetProbabilities::globalJetProbabilities(const std::string& label_,
 					       const std::string& stack,
 					       const bool & isMC_ , 
 					       const bool & isSig_ , 
-					       const float& evWeight_, 
+					       const double& evWeight_, 
+					       const double& xsec_, 
 					       Json::Value probabilities,
 					       //const jetSelector& jetSel_,				      
 					       const int & debug_) : 
@@ -12,6 +13,7 @@ globalJetProbabilities::globalJetProbabilities(const std::string& label_,
   isMC(isMC_), 
   isSig(isSig_), 
   evWeight(evWeight_),
+  xsec(xsec_),
   debug(debug_) {
   //  jetSel(jetSel_){
 
@@ -23,7 +25,7 @@ globalJetProbabilities::globalJetProbabilities(const std::string& label_,
   std::string	effHistNameDn	  = "effHist_" + label + "Dn";
   
   int nCat  = probabilities.size();
-  if(nCat != 1) {
+  if(nCat != 1 + 2) {
     std::cout << "[globalJetProbabilities] Only can handle one category for now" << std::endl;
     exit(1);
     }
@@ -107,7 +109,8 @@ globalJetProbabilities::globalJetProbabilities(const std::string& label_,
 					       const std::string& stack,
 					       const bool & isMC_ , 
 					       const bool & isSig_ , 
-					       const float& evWeight_, 
+					       const double& evWeight_, 
+					       const double& xsec_, 
 					       TTree*& tree,
 					       const jetSelector& jetSel, 
 					       const int & debug_) : 
@@ -116,6 +119,7 @@ globalJetProbabilities::globalJetProbabilities(const std::string& label_,
   isMC(isMC_), 
   isSig(isSig_), 
   evWeight(evWeight_),
+  xsec(xsec_),
   //  jetSel(jetSel_),
   debug(debug_)
 {
@@ -208,8 +212,8 @@ globalJetProbabilities::globalJetProbabilities(const std::string& label_,
     int	binDn = ratioHistEffErrDn.FindBin(var);    
 
     ratioHistEff.SetBinContent(bin, eff);    
-    ratioHistEffErrDn.SetBinContent(bin, yEffErrorDnVals[ii]);    
-    ratioHistEffErrUp.SetBinContent(bin, yEffErrorUpVals[ii]);    
+    ratioHistEffErrDn.SetBinContent(binDn, yEffErrorDnVals[ii]);    
+    ratioHistEffErrUp.SetBinContent(binDn, yEffErrorUpVals[ii]);    
   }   
   
   // check the histogram was printed
@@ -256,8 +260,12 @@ Json::Value globalJetProbabilities::getProbabilitiesJSON() {
     binning.append(Json::Value(histBinVals[histBinVals.size()-1]));
 
     std::string catName = "cat" + std::to_string(cat); 
+
+    if(debug > 0) std::cout << "[globalJetProbabities] Using sample xsec for JSON = " << xsec << " pb " << std::endl;
     
     // set info about how this was generated
+    event["eventWeight"]             = evWeight;
+    event["xsec"]                    = xsec;
     event[catName]["binningVar"]     = binningVar;
     event[catName]["binning"]	     = binning;
     event[catName]["jetTagString"]   = jetCutString;
@@ -267,7 +275,7 @@ Json::Value globalJetProbabilities::getProbabilitiesJSON() {
     event[catName]["all"]	     = all;
     event[catName]["eff"]	     = eff;
     event[catName]["effErrUp"]	     = effErrUp;
-    event[catName]["effErrDN"]	     = effErrDn;
+    event[catName]["effErrDn"]	     = effErrDn;
   }
   
   return event;
@@ -358,13 +366,13 @@ void globalJetProbabilities::addSignalContamination(TTree*& tree, const jetSelec
   TH1D sigCont_taggedJetHist    = (TH1D)*(TH1D*)gDirectory->Get(taggedJetHistName.c_str());
   TH1D sigCont_allJetHist	= (TH1D)*(TH1D*)gDirectory->Get(allJetHistName.c_str()); 
 
-  // store the statistical errors
-  sigCont_taggedJetHist.Sumw2();
-  sigCont_allJetHist.Sumw2();
-
   // rebin the contamination hists
   sigCont_taggedJetHist = (TH1D)*(TH1D*)sigCont_taggedJetHist.Rebin(nBins, "", &(histBinVals[0]));
   sigCont_allJetHist	= (TH1D)*(TH1D*)sigCont_allJetHist.Rebin(nBins, "", &(histBinVals[0])); 
+
+  // store the statistical errors
+  sigCont_taggedJetHist.Sumw2();
+  sigCont_allJetHist.Sumw2();
 
   // check contamination hists are filled
   if(debug > -1) std::cout << "histograms after rebinning for signal contamination" << std::endl;
@@ -376,9 +384,26 @@ void globalJetProbabilities::addSignalContamination(TTree*& tree, const jetSelec
   taggedJetHist.Print();
   allJetHist.Print();
 
+  // print out the bin values for all jet histograms for the contamination
+  if(debug > 0) {
+    std::cout << "[signalContamination] bin values for tagged hist in contamination (PRE NORMALIZATION)\n " << std::endl;
+    for(int bin = 1; bin <= nBins; ++bin) {
+      std::cout << " " << sigCont_taggedJetHist.GetBinContent(bin);
+    }
+    std::cout << std::endl << "[signal Contamination bin values for all jet hist in contamination (PRE NORMALIZATION)\n ";
+    for(int bin = 1; bin <= nBins; ++bin) {
+      std::cout << " " << sigCont_allJetHist.GetBinContent(bin);
+    }
+    std::cout << "\n";
+  }
+
+
   // normalize the histograms 
-  float nEvents	     = tree->GetEntries();
-  float scale_factor = norm / nEvents; 
+  double nEvents      = tree->GetEntries();
+  double scale_factor = norm / nEvents; 
+  if(debug > 0) {
+    std::cout << "[signalcontamination] applying scale factor to contmaination:" << scale_factor << std::endl;
+  }
   sigCont_taggedJetHist.Scale(scale_factor);
   sigCont_allJetHist.Scale(scale_factor);
 
@@ -428,6 +453,7 @@ void globalJetProbabilities::addSignalContamination(TTree*& tree, const jetSelec
   }
 
   // re-calculate the efficiency graph and histogram
+  ratioGraph.Set(0);
   ratioGraph.BayesDivide(&taggedJetHist, &allJetHist);
   std::string graphName = "sigCont_efficieny_" + label;
   ratioGraph.SetTitle(graphName.c_str());

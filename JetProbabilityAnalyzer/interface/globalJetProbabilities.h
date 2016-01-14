@@ -16,7 +16,8 @@ class globalJetProbabilities {
 				  const std::string &stack,
 				  const bool & isMC_ , 
 				  const bool & isSig_ , 
-				  const float& evWeight_, 
+				  const double& evWeight_, 
+				  const double& xsec_, 
 				  TTree*& tree,
 				  const jetSelector& jetSel,
 				  const int & debug_
@@ -28,7 +29,8 @@ class globalJetProbabilities {
 				  const std::string& stack,
 				  const bool & isMC_ , 
 				  const bool & isSig_ , 
-				  const float& evWeight_, 
+				  const double& evWeight_, 
+				  const double& xsec_, 
 				  Json::Value probabilities,
 				  const int & debug_
 				  );
@@ -96,7 +98,8 @@ class globalJetProbabilities {
 
   // configuration params
   const bool isMC, isSig;
-  const float evWeight;
+  double evWeight;
+  double xsec;
   const int debug;
   int nBins;
 };

@@ -64,27 +64,57 @@ bool  jetSelector::doesEventPassSelection(TTree * tree, int event) {
  bool eventPass = true;
 
  if(debug > 2) std::cout << "[jetSelector]  starting event variable loop " << std::endl; 
+
  // assume all event variables are a single float variable
  for(int ii = 0; ii < eventSelection.size(); ++ii) {
-   if(debug > 5) std::cout << "[jetSelector]  retreiving leaf values... " << std::endl; 
-   std::string	var	= eventSelection[ii].get("variable","ERROR").asString();
-   if(debug > 5) std::cout << "[jetSelector]  leaf name:... " << var << std::endl; 
-   TLeaf *	varLeaf = tree->GetLeaf(var.c_str());
-   float	val	= varLeaf->GetValue(0);
-   
-   // min and max values for the variable
-   const float   min		   = eventSelection[ii].get("min","ERROR").asFloat();
-   const float   max		   = eventSelection[ii].get("max","ERROR").asFloat();
+   // check if the variable is an OR (for triggers mostly) 
+   bool	isOR = eventSelection[ii].get("isOR", false).asBool();
+   if(isOR) {
+     // get the list of variables, mins, and maxs for each
+     Json::Value variables = eventSelection[ii]["variables"];
+     Json::Value mins = eventSelection[ii]["mins"];
+     Json::Value maxs = eventSelection[ii]["maxs"];
 
-   if(debug > 1) std::cout << "[jetSelector] Checking EVENT variable: " << var << " min " << 
+     // loop over each variable in the OR
+     for(int var = 0; var < variables.size(); ++var){
+       TLeaf *	varLeaf = tree->GetLeaf(variables[var].asString().c_str());
+       float	val	= varLeaf->GetValue(0);
+
+       // parse the individual boundaries for this piece of the OR
+       float min = mins[var].asFloat();
+       float max = maxs[var].asFloat();
+       bool pass = val >= min && val <= max;
+
+       // only one of the variables needs to pass in an OR
+       if(pass) return true;
+     }
+
+     // if none of the variables in the loop passed...the OR fails
+     return false;
+   }
+   // otherwise the variable is an AND with the rest
+   else {
+     if(debug > 5) std::cout << "[jetSelector]  retreiving leaf values... " << std::endl; 
+     std::string	var	= eventSelection[ii].get("variable","ERROR").asString();
+     if(debug > 5) std::cout << "[jetSelector]  leaf name:... " << var << std::endl; 
+
+     TLeaf *	    varLeaf = tree->GetLeaf(var.c_str());
+     float	    val	    = varLeaf->GetValue(0);   
+
+     // min and max values for the variable
+     const float    min	    = eventSelection[ii].get("min","ERROR").asFloat();
+     const float    max	    = eventSelection[ii].get("max","ERROR").asFloat();
+     
+     if(debug > 1) std::cout << "[jetSelector] Checking EVENT variable: " << var << " min " << 
 		   min << " max " << max << " val " << val << std::endl;  
 
-   bool fail = val < min || val > max;
+     bool fail = val < min || val > max;
 
-   if(debug > 5) std::cout << "[jetSelector]  Event pass....? " << !fail << std::endl;
+     if(debug > 5) std::cout << "[jetSelector]  Event pass....? " << !fail << std::endl;
 
-   if(fail) return false;
- }
+     if(fail) return false;
+   } // close if/else for performing OR or AND of requirement
+ } // end loop over each piece of the event selection
 
  // if the event never fails it passes
  return true;
@@ -108,6 +138,7 @@ std::vector<bool> jetSelector::getJetTaggedVector(TTree * tree, int event) {
     for(int ii = 0; ii < jetSelection.size(); ++ii) {
 
       bool  isRatio = jetSelection[ii].get("isRatio",false).asBool();
+
       float val	    = -99999;
       
       if(isRatio) {

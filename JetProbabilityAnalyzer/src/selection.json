@@ -17,7 +17,7 @@
   "baselineJetSelectionCutString" : "(caloJetPt > 60 && abs(caloJetEta) < 2.0)",
 
   "jetSelectionCutString" : "(jetMedianIPLogSig2D > 2.0 && caloJetAlphaMax/sumTrackPt  < 0.1 && medianCosThetaDet2D > 0.05)" ,
-  "eventSelectionCutString" : "(nCaloJets > 1) && passDisplaced500_40" ,
+  "eventSelectionCutString" : "(passDisplaced500_40 || passDisplaced350_40) && (nCaloJets > 1) "  ,
   // 
   // variables that will be cut on during the tagging
   //
@@ -25,34 +25,30 @@
   "eventSelection": [
    {
       "variable": "nCaloJets",
-      "isRatio": false,
       "min": 2,
       "max": 9999
    },
    {
-       "variable": "passDisplaced500_40",
-       "isRatio": false,
-       "min": 1,
-       "max": 9999
+       "isOR": true,
+       "variables": ["passDisplaced500_40","passDisplaced350_40"],
+       "mins": [1,   1],
+       "maxs": [9999,9999]
    }
    ],  
 
   "jetSelection": [
    {
       "variable": "caloJetPt",
-      "isRatio": false,
       "min": 60,
       "max": 99999
    },
    {
       "variable": "caloJetEta",
-      "isRatio": false,
       "min": -2,
       "max": 2
    },
    {
       "variable": "jetMedianIPLogSig2D",
-      "isRatio": false,
       "min": 2.0,
       "max": 9999
    },
@@ -65,7 +61,6 @@
    },
    {
       "variable": "medianCosThetaDet2D",
-      "isRatio": false,
       "min": 0.05,
       "max": 9999   
    }

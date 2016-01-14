@@ -1,8 +1,8 @@
 from CRABClient.UserUtilities import config, getUsernameFromSiteDB
 config = config()
 
-config.General.requestName     = 'QCD_SPRING15_NOV3'
-config.General.workArea        = 'CRAB3_QCD_SPRING15_NOV3'
+config.General.requestName     = 'QCD_SPRING15_JAN7'
+config.General.workArea        = 'CRAB3_QCD_SPRING15_JAN7'
 config.General.transferOutputs = True
 config.General.transferLogs    = False
 
@@ -13,12 +13,12 @@ config.JobType.outputFiles = ['djana.root']
 #config.Data.inputDataset = '/MinimumBias/Commissioning2015-v1/RAW'
 config.Data.inputDBS = 'global'
 config.Data.splitting = 'FileBased'
-config.Data.unitsPerJob = 10
+config.Data.unitsPerJob = 1
 config.Data.totalUnits = -1 #config.Data.unitsPerJob * NJOBS
 #config.Data.lumiMask = 'https://cms-service-dqm.web.cern.ch/cms-service-dqm/CAF/certification/Collisions12/8TeV/Prompt/Cert_190456-208686_8TeV_PromptReco_Collisions12_JSON.txt'
 #config.Data.runRange = '193093-193999' # '193093-194075'
 
-config.Data.outLFNDirBase  = '/store/group/phys_susy/razor/josh/RAZOR_DIJET/DJANALYSIS/QCD_SPRING15_NOV3_VLOOSEPRESEL'
+config.Data.outLFNDirBase  = '/store/group/phys_susy/razor/josh/RAZOR_DIJET/DJANALYSIS/QCD_SPRING15_JAN7_TRIGGERAPPLIED'
 config.Data.publication = False
 config.Data.ignoreLocality   = True #seth zenz fix 
 #config.Data.publishDataName = 'CRAB3_tutorial_May2015_Data_analysis'
@@ -128,23 +128,23 @@ if __name__ == '__main__':
     #config.Data.totalUnits = 4
     submit(config)
 
-    # config.General.requestName = 'qcd1800_2400'
-    # config.Data.inputDataset = '/QCD_Pt_1800to2400_TuneCUETP8M1_13TeV_pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/AODSIM'
-    # # config.Data.unitsPerJob = 2
-    # #config.Data.totalUnits = 4
-    # submit(config)
+    config.General.requestName = 'qcd1800_2400'
+    config.Data.inputDataset = '/QCD_Pt_1800to2400_TuneCUETP8M1_13TeV_pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/AODSIM'
+    # config.Data.unitsPerJob = 2
+    #config.Data.totalUnits = 4
+    submit(config)
 
-    # config.General.requestName = 'qcd2400_3200'
-    # config.Data.inputDataset = '/QCD_Pt_2400to3200_TuneCUETP8M1_13TeV_pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/AODSIM'
-    # # config.Data.unitsPerJob = 2
-    # #config.Data.totalUnits = 4
-    # submit(config)
+    config.General.requestName = 'qcd2400_3200'
+    config.Data.inputDataset = '/QCD_Pt_2400to3200_TuneCUETP8M1_13TeV_pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/AODSIM'
+    # config.Data.unitsPerJob = 2
+    #config.Data.totalUnits = 4
+    submit(config)
 
-    # config.General.requestName = 'qcd3200'
-    # config.Data.inputDataset = '/QCD_Pt_3200toInf_TuneCUETP8M1_13TeV_pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/AODSIM'
-    # # config.Data.unitsPerJob = 2
-    # #config.Data.totalUnits = 4
-    # submit(config)
+    config.General.requestName = 'qcd3200'
+    config.Data.inputDataset = '/QCD_Pt_3200toInf_TuneCUETP8M1_13TeV_pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/AODSIM'
+    # config.Data.unitsPerJob = 2
+    #config.Data.totalUnits = 4
+    submit(config)
 
 # /QCD_Pt_1000to1400_TuneCUETP8M1_13TeV_pythia8/RunIISpring15Digi74-AVE_40_BX_25ns_tsg_MCRUN2_74_V7-v1/GEN-SIM-RAW
 

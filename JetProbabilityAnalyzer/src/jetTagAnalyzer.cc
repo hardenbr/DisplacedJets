@@ -9,6 +9,7 @@
 #include <string.h>  
 #include "TCanvas.h"
 #include "TColor.h"
+#include "TDirectory.h"
 #include "TLegend.h"
 #include "rootlogon.C"
 
@@ -16,7 +17,6 @@ int main(int argc, char* argv[]) {
 
   defaultStyle style;
   style.setStyle();
-
   // names of the json files to be parsed
   std::string sample_json;
   std::string selection_json;
@@ -137,7 +137,7 @@ int main(int argc, char* argv[]) {
     std::string stack = samples[ss].get("stack", "NO_STACK_PROVIDED").asString();
     bool	isMC  = samples[ss].get("isMC", true).asBool();
     bool	isSig = samples[ss].get("isSig", false).asBool();
-    float	xsec  = samples[ss].get("xsec", 1).asFloat();
+    double	xsec  = samples[ss].get("xsec", 1).asFloat();
     float       x_limit_label = 0;
     float       y_limit_label = 0;
 
@@ -152,12 +152,12 @@ int main(int argc, char* argv[]) {
     std::string nTagHistPredName = label + "_nTagPred";
 
     // initialize histograms
-    TH1D nTagHistTrue(nTagHistTrueName.c_str(), "Number of true tags in event", maxJetTags, 1, maxJetTags+1);
-    TH1D nTagHistPred(nTagHistPredName.c_str(), "Number of predicted tags in event", maxJetTags, 1, maxJetTags+1);
+    TH1D nTagHistTrue(nTagHistTrueName.c_str(), "N Tags", maxJetTags, 1, maxJetTags+1);
+    TH1D nTagHistPred(nTagHistPredName.c_str(), "N Tags (Fake Rate)", maxJetTags, 1, maxJetTags+1);
     TH1D nTagHistPredErrUp((nTagHistPredName+"ErrUp").c_str(), 
-			   "Number of predicted tags in event with combinatorial error varied up", maxJetTags, 1, maxJetTags+1);
+			   "Fake Rate Sys.", maxJetTags, 1, maxJetTags+1);
     TH1D nTagHistPredErrDn((nTagHistPredName+"ErrDn").c_str(), 
-			   "Number of predicted tags in event with combinatorial error varried dn", maxJetTags, 1, maxJetTags+1);
+			   "Fake Rate Sys.", maxJetTags, 1, maxJetTags+1);
     
     if(debug > -1) {
       std::cout << "label: " << label << std::endl;
@@ -176,12 +176,21 @@ int main(int argc, char* argv[]) {
     TTree * caloHTTree = (TTree*)(thisFile.Get("eventInfo"));    
     std::string contamPath;
 
+    // First get some global information about the sample
+    caloHTTree->Draw("event>>event_temp_hist","","goff");
+    TH1F*   event_hist		= (TH1F*)gDirectory->Get("event_temp_hist");
+    double  minEvent		= event_hist->GetXaxis()->GetXmin();
+    double  maxEvent		= event_hist->GetXaxis()->GetXmax();
+    double  total_processed	= maxEvent - minEvent;
+    int	    nPassEventSelection = 0;
+    double  eventWeight         = xsec / total_processed;
+
     // is globalProbabilities were not computed, produce them for each sample
     if(!probProvided) {
       if(debug > -1) std::cout << "Probabilities not provided.." << std::endl;
       if(debug > -1) std::cout << "Constructing localProbabilities..." << std::endl;
       // process the sample by constructing the global probabilities
-      globalJetProbabilities * localSampleProb = new globalJetProbabilities(label, stack, isMC, isSig, xsec, tree, jetSel, debug);     
+      globalJetProbabilities * localSampleProb = new globalJetProbabilities(label, stack, isMC, isSig, eventWeight, xsec, tree, jetSel, debug);     
 
       if(runSignalContam) {
 
@@ -202,14 +211,13 @@ int main(int argc, char* argv[]) {
 	  // parse the path
 	  contamPath  = samples[sss].get("path", "NO_PATH_PROVIDED").asString();
 	  
-	  TFile   contamFile(path.c_str(), "READ");
+	  TFile   contamFile(contamPath.c_str(), "READ");
 	  TTree * contamTree = (TTree*)contamFile.Get(treeName.c_str());
 	  
 	  std::cout << "Adding signal contamination from path: " << path.c_str() << std::endl;
 	  // add the signal contamination to the local probabilities
 	  localSampleProb->addSignalContamination(contamTree, jetSel, norm);
 	  
-
 	} // end loop over signal samples for contamination	
 	
 	// make sure we found
@@ -246,7 +254,7 @@ int main(int argc, char* argv[]) {
     } // end building global probabilities
     else {
       std::cout << "....Loading JSON Probabilities......." << std::endl;
-      globalJetProbabilities * loadedProbabilities = new globalJetProbabilities(label, stack, isMC, isSig, xsec, globalProb_root, debug);
+      globalJetProbabilities * loadedProbabilities = new globalJetProbabilities(label, stack, isMC, isSig, eventWeight, xsec, globalProb_root, debug);
       globalJetProbToApply = loadedProbabilities;
 
       outputFile.cd();
@@ -291,9 +299,10 @@ int main(int argc, char* argv[]) {
     int		nTagged = 0;
     long int	evNum	= 0;
     float       caloHT  = 0;
-   
+
     // set the branches for the probabilities
     jetVariableTree->Branch("evNum", &evNum, "evNum/I");
+
     jetVariableTree->Branch("nCat", &nCat, "nCat/I");
     jetVariableTree->Branch("index", &nJetTagArray, "index[nCat]/I");
     jetVariableTree->Branch("nTagWeight", &nTagWeight, "nTagWeight[nCat]/I");
@@ -315,7 +324,14 @@ int main(int argc, char* argv[]) {
     // loop event by event
     if(debug > -1) std::cout << " Beginning Event Loop  " << std::endl;
     int nEvents = tree->GetEntries();
-    int nPassEventSelection = 0;
+
+    // add variables for determining the event rate
+    jetVariableTree->Branch("eventWeight", &eventWeight, "eventWeight/D");
+    jetVariableTree->Branch("xsec", &xsec, "xsec/D");
+    jetVariableTree->Branch("eventsAnal", &total_processed, "eventsAnal/D");
+    jetVariableTree->Branch("eventsInFile", &nEvents, "eventsInFile/I");
+    jetVariableTree->Branch("eventsPassingSel", &nPassEventSelection, "eventsPassingSel/I");      
+
     if(maxEvents > 0) nEvents = maxEvents;
     for(long int event = 0; event < nEvents; ++event) {
       if(debug > 2) std::cout << "Checking event selection... "  <<  std::endl;
@@ -371,10 +387,20 @@ int main(int argc, char* argv[]) {
 
 	probNTags[jj]	   = (prob >= 0 && prob <= 1) ? prob : 0;
 	probNTagsErrUp[jj] = (probUp >= 0 && probUp <= 1) ? probUp : 0;
-	probNTagsErrDn[jj] = (probDn >= 0 && probDn <= 1) ? probDn : 0;
+	probNTagsErrDn[jj] = (probDn >= 0 && probDn <= 1) ? probDn : 0;	
 
-	double weightErrUp = probNTags[jj] + probNTagsErrUp[jj];
+	double weightErrUp = (probNTags[jj] + probNTagsErrUp[jj]);
 	double weightErrDn = probNTags[jj] - probNTagsErrDn[jj];
+
+	if (weightErrDn < 0) { 
+	  //std::cout << "[WARNING!!!] weight with errors down smaller than 0???" << probNTags[jj] << " errorDn " << probNTagsErrDn[jj] << std::endl;
+	  weightErrDn = 0;
+	}
+	if (weightErrUp > 1) {
+	  //std::cout << "[WARNING!!!] weight with errors up greater than 1???" << probNTags[jj] << " errorDn " << probNTagsErrUp[jj] << std::endl;
+	  weightErrUp = 1;
+	}
+
 	// fill the prediciton histogram
 	if(debug> 2) {
 	  std::cout << "Fill histograms with probabilities p = " << 
@@ -429,7 +455,7 @@ int main(int argc, char* argv[]) {
 
       // fill the Tree
       if(debug > 2) std::cout << "Filling the Tree.." << std::endl;
-      if(writeTree) jetVariableTree->Fill();
+      if(writeTree && eventPassSelection) jetVariableTree->Fill();
 
       // reset the weight back to zero
       nTagWeight[nTagged] = 0;
@@ -518,17 +544,22 @@ int main(int argc, char* argv[]) {
     resultJSON["isSignal"]                      = isSig ? "True" : "False";
     resultJSON["x_limit_label"]                 = x_limit_label;
     resultJSON["y_limit_label"]                 = y_limit_label;
-    resultJSON["nEventsAnalyzed"]		= nEvents;
+    // statistics about events analysed
+    resultJSON["nEventsAnalyzed"]		= total_processed;
+    resultJSON["nEventsInFile"]		        = nEvents;
     resultJSON["nEventsPassSelection"]		= nPassEventSelection;
     resultJSON["nTagTrue"]			= nTagTrue;
     resultJSON["nTagPred"]			= nTagPred;
     resultJSON["systematics"]["nTagFakeRateUp"] = nTagFakeRateUp;
     resultJSON["systematics"]["nTagFakeRateDn"] = nTagFakeRateDn;
     // keep some information about the probabilities JSON used for this
-    resultJSON["jetTagString"]	       = globalJetProbToApply->jetCutString;
-    resultJSON["eventCutString"]       = globalJetProbToApply->eventCutString;
-    resultJSON["baselineJetCutString"] = globalJetProbToApply->baselineJetCutString;
-    resultJSON["fakeRateBinningVar"]   = globalJetProbToApply->binningVar;
+    resultJSON["probabilitiesProvided?"]	= probProvided ? "True" : "False";
+    if(probProvided) resultJSON["providedPath"] = globalProb_json;
+    resultJSON["jetTagString"]			= globalJetProbToApply->jetCutString;
+    resultJSON["eventCutString"]		= globalJetProbToApply->eventCutString;
+    resultJSON["baselineJetCutString"]		= globalJetProbToApply->baselineJetCutString;
+    resultJSON["fakeRateBinningVar"]		= globalJetProbToApply->binningVar;
+    resultJSON["xsec"]                          = xsec;
 
     // write teh result JSO using the styled writter
     std::string jsonResultOutputName = outputDir+"/"+"result_"+label+".json";
@@ -581,6 +612,7 @@ int main(int argc, char* argv[]) {
 
     TLegend *  leg = canvas.BuildLegend();
     leg->SetFillColor(0);      
+    leg->SetLineColor(0);      
     
     // write the canvas
     canvas.Write();

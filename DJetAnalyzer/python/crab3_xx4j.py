@@ -1,8 +1,8 @@
 from CRABClient.UserUtilities import config, getUsernameFromSiteDB
 config = config()
 
-config.General.requestName = 'XX4J_CENTRAL_NOV3'
-config.General.workArea = 'CRAB3_XX4J_CENTRAL_NOV3'
+config.General.requestName = 'XX4J_CENTRAL_DEC28_v2'
+config.General.workArea = 'CRAB3_XX4J_CENTRAL_DEC28_v2'
 config.General.transferOutputs = True
 config.General.transferLogs = False
 
@@ -16,7 +16,7 @@ config.Data.splitting = 'FileBased'
 config.Data.unitsPerJob = 1
 config.Data.totalUnits = -1 #config.Data.unitsPerJob * NJOBS
 
-config.Data.outLFNDirBase = '/store/group/phys_susy/razor/josh/RAZOR_DIJET/DJANALYSIS/XX4J_CENTRAL_NOV3'
+config.Data.outLFNDirBase = '/store/group/phys_susy/razor/josh/RAZOR_DIJET/DJANALYSIS/XX4J_CENTRAL_DEC28'
 config.Data.publication = False
 #config.Data.publishDataName = 'CRAB3_tutorial_May2015_Data_analysis'
 config.Site.storageSite = 'T2_CH_CERN'
@@ -140,30 +140,30 @@ if __name__ == '__main__':
     # config.Data.inputDataset   = '/XXTo4J_M-3000_CTau-3mm_TuneCUETP8M1_13TeV_pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/AODSIM'
     # submit(config)	 
 
-    config.General.requestName = 'xx4j_m300_ctau1000mm'
-    config.Data.inputDataset   = '/XXTo4J_M-300_CTau-1000mm_TuneCUETP8M1_13TeV_pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/AODSIM'
-    submit(config)	 
-    config.General.requestName = 'xx4j_m300_ctau100mm'
-    config.Data.inputDataset   = '/XXTo4J_M-300_CTau-100mm_TuneCUETP8M1_13TeV_pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/AODSIM'
-    submit(config)	 
-    config.General.requestName = 'xx4j_m300_ctau10mm'
-    config.Data.inputDataset   = '/XXTo4J_M-300_CTau-10mm_TuneCUETP8M1_13TeV_pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/AODSIM'
-    submit(config)	 
-    config.General.requestName = 'xx4j_m300_ctau1mm'
-    config.Data.inputDataset   = '/XXTo4J_M-300_CTau-1mm_TuneCUETP8M1_13TeV_pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/AODSIM'
-    submit(config)	 
-    config.General.requestName = 'xx4j_m300_ctau2000mm'
-    config.Data.inputDataset   = '/XXTo4J_M-300_CTau-2000mm_TuneCUETP8M1_13TeV_pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/AODSIM'
-    submit(config)	 
-    config.General.requestName = 'xx4j_m300_ctau300mm'
-    config.Data.inputDataset   = '/XXTo4J_M-300_CTau-300mm_TuneCUETP8M1_13TeV_pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/AODSIM'
-    submit(config)	 
-    config.General.requestName = 'xx4j_m300_ctau30mm'
-    config.Data.inputDataset   = '/XXTo4J_M-300_CTau-30mm_TuneCUETP8M1_13TeV_pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/AODSIM'
-    submit(config)	 
-    config.General.requestName = 'xx4j_m300_ctau3mm'
-    config.Data.inputDataset   = '/XXTo4J_M-300_CTau-3mm_TuneCUETP8M1_13TeV_pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/AODSIM'
-    submit(config)	 
+    # config.General.requestName = 'xx4j_m300_ctau1000mm'
+    # config.Data.inputDataset   = '/XXTo4J_M-300_CTau-1000mm_TuneCUETP8M1_13TeV_pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/AODSIM'
+    # submit(config)	 
+    # config.General.requestName = 'xx4j_m300_ctau100mm'
+    # config.Data.inputDataset   = '/XXTo4J_M-300_CTau-100mm_TuneCUETP8M1_13TeV_pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/AODSIM'
+    # submit(config)	 
+    # config.General.requestName = 'xx4j_m300_ctau10mm'
+    # config.Data.inputDataset   = '/XXTo4J_M-300_CTau-10mm_TuneCUETP8M1_13TeV_pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/AODSIM'
+    # submit(config)	 
+    # config.General.requestName = 'xx4j_m300_ctau1mm'
+    # config.Data.inputDataset   = '/XXTo4J_M-300_CTau-1mm_TuneCUETP8M1_13TeV_pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/AODSIM'
+    # submit(config)	 
+    # config.General.requestName = 'xx4j_m300_ctau2000mm'
+    # config.Data.inputDataset   = '/XXTo4J_M-300_CTau-2000mm_TuneCUETP8M1_13TeV_pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/AODSIM'
+    # submit(config)	 
+    # config.General.requestName = 'xx4j_m300_ctau300mm'
+    # config.Data.inputDataset   = '/XXTo4J_M-300_CTau-300mm_TuneCUETP8M1_13TeV_pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/AODSIM'
+    # submit(config)	 
+    # config.General.requestName = 'xx4j_m300_ctau30mm'
+    # config.Data.inputDataset   = '/XXTo4J_M-300_CTau-30mm_TuneCUETP8M1_13TeV_pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/AODSIM'
+    # submit(config)	 
+    # config.General.requestName = 'xx4j_m300_ctau3mm'
+    # config.Data.inputDataset   = '/XXTo4J_M-300_CTau-3mm_TuneCUETP8M1_13TeV_pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/AODSIM'
+    # submit(config)	 
 
     # config.General.requestName = 'xx4j_m500_ctau1000mm'
     # config.Data.inputDataset   = '/XXTo4J_M-500_CTau-1000mm_TuneCUETP8M1_13TeV_pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/AODSIM'

@@ -1,0 +1,22 @@
+{"samples": [
+       {  
+          "runSample": true,
+          "path":  " /afs/cern.ch/work/h/hardenbr/2015/DIJET/JETPROB/JAN11/HT575_BASELINE/QCD.root",
+          "labels": ["HT575 Baseline Sel"],
+	  "type" : "graph",
+          "objects": ["efficieny_DATA_JetHT"],
+	  "colors" : ["kRed"],
+	  "line_styles" : [1],
+          "draw_options": ""
+       },
+       {  
+          "runSample": true,
+          "path":  "/afs/cern.ch/work/h/hardenbr/2015/DIJET/JETPROB/JAN11/HT575_LOOSE/QCD.root",
+          "labels": ["HT575 Loose"],
+	  "type": "graph",
+          "objects": ["efficieny_DATA_JetHT"],
+	  "colors" : ["kBlack"],
+	  "line_styles" : [1],
+          "draw_options": ""
+       }
+]}

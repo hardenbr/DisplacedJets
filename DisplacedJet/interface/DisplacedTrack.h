@@ -49,7 +49,7 @@ class DisplacedTrack {
       tsosLastHit   = trajInfo.back().detTSOS;            
       // get the detector layer from the trajectory information
       const DetLayer &  detLayerInner	 = *(trajInfo[0].detLayer); 
-      const DetLayer &  detLayerOuter	 = *(trajInfo.back().detLayer); 
+      //const DetLayer &  detLayerOuter	 = *(trajInfo.back().detLayer); 
       // detector layers
       GeomDetEnumerators::SubDetector subDetLayerInner = detLayerInner.subDetector();
       //GeomDetEnumerators::SubDetector subDetLayerOuter = detLayerOuter.subDetector();

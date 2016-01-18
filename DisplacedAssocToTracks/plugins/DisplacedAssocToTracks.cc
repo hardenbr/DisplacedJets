@@ -102,13 +102,17 @@ class DisplacedAssocToTracks : public edm::EDProducer {
 DisplacedAssocToTracks::DisplacedAssocToTracks(const edm::ParameterSet& iConfig)
 {
 
-  tag_jetTracksAssociation_ = iConfig.getUntrackedParameter<edm::InputTag>("jetTracksAssociation");
-  tag_genParticles_ = iConfig.getUntrackedParameter<edm::InputTag>("genParticleTag");
-  jetPtCut_ = iConfig.getUntrackedParameter<double>("jetPtCut");
-  outputLabel_ = iConfig.getUntrackedParameter<std::string>("outputLabel");
-  //isSignalMC_    =   iConfig.getUntrackedParameter<bool>("isSignalMC");
-  //doGenMatch_    =   iConfig.getUntrackedParameter<bool>("doGenMatch");
-  debug_    =   iConfig.getUntrackedParameter<int>("debug");
+  //  mJets = consumes<edm::View <reco::Jet> >(fConfig.getParameter<edm::InputTag> ("jets"));
+
+
+  tag_jetTracksAssociation_ = (iConfig.getUntrackedParameter<edm::InputTag>("jetTracksAssociation"));
+  consumes<reco::JetTracksAssociationCollection>(iConfig.getUntrackedParameter<edm::InputTag>("jetTracksAssociation"));
+  tag_genParticles_	    = iConfig.getUntrackedParameter<edm::InputTag>("genParticleTag");
+  jetPtCut_		    = iConfig.getUntrackedParameter<double>("jetPtCut");
+  outputLabel_		    = iConfig.getUntrackedParameter<std::string>("outputLabel");
+  //isSignalMC_		    = iConfig.getUntrackedParameter<bool>("isSignalMC");
+  //doGenMatch_		    = iConfig.getUntrackedParameter<bool>("doGenMatch");
+  debug_		    = iConfig.getUntrackedParameter<int>("debug");
 
   produces<reco::TrackCollection >(outputLabel_);    
 }

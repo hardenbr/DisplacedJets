@@ -1226,8 +1226,8 @@ void DisplacedJet::addHitInfo(const reco::TrackCollection tracks) {
     if (trajInfo[0].valid && trajInfo.back().valid) {
 
       // get the detector layer
-      const DetLayer &  detLayerInner	 = *(trajInfo[0].detLayer); 
-      const DetLayer &  detLayerOuter	 = *(trajInfo.back().detLayer); 
+      //      const DetLayer &  detLayerInner	 = *(trajInfo[0].detLayer); 
+      // const DetLayer &  detLayerOuter	 = *(trajInfo.back().detLayer); 
       
       //const bool	isBarInner	 = detLayerInner.isBarrel();
       //const bool	isBarOuter	 = detLayerOuter.isBarrel();

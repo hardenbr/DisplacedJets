@@ -1,5 +1,5 @@
 import FWCore.ParameterSet.Config as cms
-
+from Configuration.StandardSequences.Eras import eras
 #output directories
 base                = '/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDIES/CMSSW_7_4_10_patch1/src/DisplacedJets/'
 #outputDir           = "/afs/cern.ch/work/h/hardenbr/2015/DIJET/DJANALYSIS/"
@@ -12,15 +12,16 @@ appendBkg           = ""
 ############ FLAGS #############
 debugLevel          = 0
 reportEveryNEvents  = 5000
-isSignalMC          = True
+isSignalMC          = False
 isMC                = True
 isData              = not isMC
 doedm               = False
-nevents             = -1
+nevents             = 5000
 
 #-------------- globaltags
 #gtag               = "74X_HLT_mcRun2_asymptotic_fromSpring15DR_v0" #spring 15 25ns
-gtag                = "74X_mcRun2_asymptotic_realisticBS_v1" #realistic beam spot for 74x
+#gtag                = "74X_mcRun2_asymptotic_realisticBS_v1" #realistic beam spot for 74x
+gtag                = "76X_mcRun2_asymptotic_v12"
 #gtag               = "FALL1374_25V4"
 #gtag               = "PHYS14_25_V1"
 #gtag                = "MCRUN2_74_V9" #guns
@@ -116,23 +117,27 @@ if isSignalMC and input_file_list == None :
 if not isSignalMC and input_file_list == None and not isData:
    myfilelist = cms.untracked.vstring()
 #   myfilelist.extend(['file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/data/Run2015B/DisplacedJet/AOD/PromptReco-v1/000/251/562/00000/F6834634-9A2A-E511-9F6F-02163E012402.root'])   
-   qcd_files = ['/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/5E794759-B9FB-E411-99F3-001E67397E90.root',
-                 '/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/5EADB739-17FB-E411-9D85-0025905B858E.root',
-                 '/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/5EC9A83E-FBFA-E411-87B4-002618943925.root',
-                 '/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/62F42BF1-EBFA-E411-8A7E-002590D0B0B6.root',
-                 '/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/6468E4FD-19FB-E411-83B5-0025905A6090.root',
-                 '/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/66AC1E2F-2CFB-E411-8596-002618FDA259.root',
-                 '/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/6A602B0D-0CFB-E411-9A94-00248C55CC3C.root',
-                 '/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/6A65D77E-07FB-E411-95C1-002590D0B002.root',
-                 '/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/70AD84BC-DCFB-E411-BF96-0025904CDDF8.root',
-                 '/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/7444B6BD-DCFB-E411-BD11-0025905C96E8.root']
+   qcd_files = ['/store/mc/RunIIFall15DR76/QCD_Pt_300to470_TuneCUETP8M1_13TeV_pythia8/AODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/40000/0AD1B83E-DCA0-E511-AA14-0025905A60F2.root',
+                '/store/mc/RunIIFall15DR76/QCD_Pt_300to470_TuneCUETP8M1_13TeV_pythia8/AODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/40000/18EEA885-D9A0-E511-9529-0025905A6138.root',
+                '/store/mc/RunIIFall15DR76/QCD_Pt_300to470_TuneCUETP8M1_13TeV_pythia8/AODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/40000/1AD1A49F-D9A0-E511-9484-0CC47A4D7618.root',
+                '/store/mc/RunIIFall15DR76/QCD_Pt_300to470_TuneCUETP8M1_13TeV_pythia8/AODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/40000/1CBB563A-F1A0-E511-A729-002590D9D89C.root']
+   # qcd_files = ['/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/5E794759-B9FB-E411-99F3-001E67397E90.root',
+   #               '/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/5EADB739-17FB-E411-9D85-0025905B858E.root',
+   #               '/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/5EC9A83E-FBFA-E411-87B4-002618943925.root',
+   #               '/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/62F42BF1-EBFA-E411-8A7E-002590D0B0B6.root',
+   #               '/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/6468E4FD-19FB-E411-83B5-0025905A6090.root',
+   #               '/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/66AC1E2F-2CFB-E411-8596-002618FDA259.root',
+   #               '/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/6A602B0D-0CFB-E411-9A94-00248C55CC3C.root',
+   #               '/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/6A65D77E-07FB-E411-95C1-002590D0B002.root',
+   #               '/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/70AD84BC-DCFB-E411-BF96-0025904CDDF8.root',
+   #               '/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/7444B6BD-DCFB-E411-BD11-0025905C96E8.root']
    for ff in qcd_files: myfilelist.extend([ff])   
 #   myfilelist.extend(['/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/00000/00D76158-CCFC-E411-89EA-AC853DA06B56.root'])
 if isData and input_file_list == None:
    myfilelist.extend(['/store/data/Run2015C/JetHT/AOD/PromptReco-v1/000/254/905/00000/263140AF-B34B-E511-A678-02163E0146DB.root'])
 #   myfilelist.extend(['file:pickevents.root'])
 
-process = cms.Process("ANA")
+process = cms.Process("ANA", eras.Run2_25ns)
 
 process.load("FWCore.MessageService.MessageLogger_cfi")
 #standard sequences (from 740x driver command)
@@ -420,10 +425,10 @@ else: # run the analysis and tree dumper using the djtagging sequence output
     process.p *= process.analyzerCALO
 
 # Automatic addition of the customisation function from SLHCUpgradeSimulations.Configuration.postLS1Customs
-from SLHCUpgradeSimulations.Configuration.postLS1Customs import customisePostLS1
+#from SLHCUpgradeSimulations.Configuration.postLS1Customs import customisePostLS1
 
 #call to customisation function customisePostLS1 imported from SLHCUpgradeSimulations.Configuration.postLS1Customs
-process = customisePostLS1(process)
+#process = customisePostLS1(process)
 
 process.options = cms.untracked.PSet(
     SkipEvent = cms.untracked.vstring('ProductNotFound'),

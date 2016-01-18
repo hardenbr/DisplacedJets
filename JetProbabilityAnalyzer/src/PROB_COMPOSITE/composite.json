@@ -1,4 +1,0 @@
-{
-    "sum" : ["prob_QCD_1000_1400mm.json", "prob_QCD_120_170mm.json", "prob_QCD_1400_1800mm.json", "prob_QCD_170_300mm.json", "prob_QCD_1800_2400mm.json", "prob_QCD_2400_3200mm.json" , "prob_QCD_300_470mm.json" , "prob_QCD_3200_Infmm.json" , "prob_QCD_470_600mm.json" , "prob_QCD_50_80mm.json" , "prob_QCD_600_800mm.json" , "prob_QCD_800_1000mm.json", "prob_QCD_80_120mm.json"],
-    "subtract" : [ ]
-}

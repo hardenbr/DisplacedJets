@@ -117,6 +117,9 @@ DisplacedTagsToVertices::DisplacedTagsToVertices(const edm::ParameterSet& iConfi
   doGenMatch_		      = iConfig.getUntrackedParameter<bool>("doGenMatch");
   debug_		      = iConfig.getUntrackedParameter<int>("debug");
 
+  consumes<reco::SecondaryVertexTagInfoCollection>(tag_secondaryVertexTagInfo_);
+  consumes<reco::GenParticleCollection>(tag_genParticles_);
+
   produces<reco::VertexCollection>(outputLabel_);  
 }
 

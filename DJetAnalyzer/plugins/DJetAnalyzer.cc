@@ -157,21 +157,31 @@ DJetAnalyzer::DJetAnalyzer(const edm::ParameterSet& iConfig)
   // trigger tags
   triggerResultPath_  = iConfig.getUntrackedParameter<std::string>("triggerResultPath");
   tag_triggerResults_ = iConfig.getUntrackedParameter<edm::InputTag>("triggerResults");
+  consumes<edm::TriggerResults>(tag_triggerResults_);
 
   // collection tags
   tag_generalTracks_		  = iConfig.getUntrackedParameter<edm::InputTag>("generalTracks");
+  consumes<reco::TrackCollection>(tag_generalTracks_);
   tag_ak4CaloJets_		  = iConfig.getUntrackedParameter<edm::InputTag>("ak4CaloJets");
+  consumes<reco::CaloJetCollection>(tag_ak4CaloJets_);
   tag_secondaryVertexTagInfo_	  = iConfig.getUntrackedParameter<edm::InputTag>("secondaryVertexTagInfo");  
+  consumes<reco::SecondaryVertexTagInfoCollection>(tag_secondaryVertexTagInfo_);
   tag_lifetimeIPTagInfo_	  = iConfig.getUntrackedParameter<edm::InputTag>("lifetimeIPTagInfo"); 
+  consumes<reco::TrackIPTagInfoCollection>(tag_lifetimeIPTagInfo_);
   tag_caloMatchedTracks_          = iConfig.getUntrackedParameter<edm::InputTag>("caloMatchedTrackAssociation"); 
+  consumes<reco::JetTracksAssociationCollection>(tag_caloMatchedTracks_);
   tag_vertexMatchedTracks_        = iConfig.getUntrackedParameter<edm::InputTag>("vertexMatchedTrackAssociation"); 
+  consumes<reco::JetTracksAssociationCollection>(tag_vertexMatchedTracks_);
 
   // vertex tags
   tag_secondaryVertices_	  = iConfig.getUntrackedParameter<edm::InputTag>("secondaryVertex"); 
+  consumes<reco::VertexCollection>(tag_secondaryVertices_);
   tag_inclusiveVertexCandidates_  = iConfig.getUntrackedParameter<edm::InputTag>("inclusiveVertexCand"); 
+  consumes<reco::VertexCollection>(tag_inclusiveVertexCandidates_);
   tag_inclusiveSecondaryVertices_ = iConfig.getUntrackedParameter<edm::InputTag>("inclusiveVertexSecondary"); 
+  consumes<reco::VertexCollection>(tag_inclusiveSecondaryVertices_);
   tag_offlinePrimaryVertices_	  = iConfig.getUntrackedParameter<edm::InputTag>("offlinePrimaryVertices"); 
-
+  consumes<reco::VertexCollection>(tag_offlinePrimaryVertices_);
   
   //cuts 
   cut_jetPt  = iConfig.getUntrackedParameter<double>("jetPt");
@@ -182,7 +192,9 @@ DJetAnalyzer::DJetAnalyzer(const edm::ParameterSet& iConfig)
     //tag_ak5GenJets_ = iConfig.getUntrackedParameter<edm::InputTag>("ak5GenJets");
     //tag_genMetCalo_ = iConfig.getUntrackedParameter<edm::InputTag>("genMetCalo");
     tag_genParticles_ = iConfig.getUntrackedParameter<edm::InputTag>("genParticles");
+    consumes<reco::GenParticleCollection>(tag_genParticles_);
     tag_simVertex_    = iConfig.getUntrackedParameter<edm::InputTag>("simVertices");
+    consumes<edm::SimVertexContainer>(tag_simVertex_);
   } 
 }
 
@@ -331,7 +343,9 @@ void DJetAnalyzer::fillHandles(const edm::Event & iEvent ) {
 
   // and sim matching quantities related to MC
   if(isMC_) {    
-    if(doGenMatch_) iEvent.getByLabel(tag_genParticles_, genParticles);
+    if(doGenMatch_) { 
+      iEvent.getByLabel(tag_genParticles_, genParticles);
+    }
     if(doSimMatch_) iEvent.getByLabel(tag_simVertex_, simVertices);
   }  
 
@@ -359,7 +373,7 @@ void  DJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   const reco::VertexCollection &                    pvCollection	   = *(offlinePrimaryVertices.product());
   const reco::TrackIPTagInfoCollection &	    lifetimeTagInfo	   = *(lifetimeIPTagInfo.product()); ;
   const reco::SecondaryVertexTagInfoCollection &    svTagInfo		   = *(secondaryVertexTagInfo.product()); 
-  const reco::VertexCollection &		    inc			   = *(inclusiveVertexCandidates.product());
+  //  const reco::VertexCollection &		    inc			   = *(inclusiveVertexCandidates.product());
   const reco::VertexCollection &		    incSV		   = *(inclusiveSecondaryVertices.product());
   const reco::GenParticleCollection &		    genCollection	   = *(genParticles.product());     
   const edm::SimVertexContainer &		    simVtxCollection	   = *(simVertices.product()); 
@@ -375,7 +389,7 @@ void  DJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   DisplacedJetEvent djEvent(isMC_, caloJets, pvCollection, cut_jetPt, cut_jetEta, iSetup, debug);
 
   // pull out the first primary vertex in the collection (the default PV)
-  const reco::Vertex & firstPV = *pvCollection.begin(); 
+  //  const reco::Vertex & firstPV = *pvCollection.begin(); 
    
   /////////////////////////////////
   // Fill Trees

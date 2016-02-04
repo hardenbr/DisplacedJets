@@ -490,6 +490,9 @@ class DisplacedJet {
   DisplacedCluster *v0Cluster = NULL;
   DisplacedCluster *v0NJetCluster = NULL;
 
+  std::vector<float> cosTheta2DVector, cosThetaDet2DVector, cosTheta3DVector, cosThetaDet3DVector; 
+  std::vector<float> ip3dVector, ip3dsVector, ip2dVector, ip2dsVector;
+
  private: 
 
   static const int GEN_STATUS_CODE_MATCH = 23; 
@@ -502,13 +505,13 @@ class DisplacedJet {
   reco::TrackCollection vertexMatchedTracks; 
   reco::TrackRefVector  vertexMatchedTrackRefs; 
   std::vector<reco::btag::TrackIPData> lifetimeIPData; 
-  std::vector<float> ip3dVector, ip3dsVector, ip2dVector, ip2dsVector;
+
   std::vector<int>   trackAlgo;
   std::vector<float> ipLog3dVector, ipLog3dsVector, ipLog2dVector, ipLog2dsVector;
   std::vector<float> jetAxisDistVector, jetAxisDistSigVector; 
 
   // cos related
-  std::vector<float> cosTheta2DVector, cosThetaDet2DVector, cosTheta3DVector, cosThetaDet3DVector; 
+
 
   // simplify quadrature calculations
   float metric2D(float x, float y) {
@@ -1676,23 +1679,24 @@ float DisplacedJet::getJetMean(const std::vector<float> & values, bool is_signed
 }
 
 float DisplacedJet::getJetVariance(const std::vector<float>& values, bool is_signed) {
-  if (values.size() == 0 || values.size() == 1) return 0.0;
+  return 0;
+  /* if (values.size() == 0 || values.size() == 1) return 0.0; */
 
-  float sum = 0;
-  float mean = getJetMean(values, is_signed);
+  /* float sum = 0; */
+  /* float mean = getJetMean(values, is_signed); */
 
-  std::vector<float>::const_iterator val = values.begin();
-  for (; val != values.end(); ++val) {
-    float temp =  (*val - mean) * (*val - mean);
-    sum += temp;
-  }
+  /* std::vector<float>::const_iterator val = values.begin(); */
+  /* for (; val != values.end(); ++val) { */
+  /*   float temp =  (*val - mean) * (*val - mean); */
+  /*   sum += temp; */
+  /* } */
 
-  //safety check
-  if(!is_signed ) { assert( sum >= 0 ); }
-  float variance = std::sqrt(sum / float((values.size() - 1.0)));
+  /* //safety check */
+  /* if(!is_signed ) { assert( sum >= 0 ); } */
+  /* float variance = std::sqrt(sum / float((values.size() - 1.0))); */
 
-  //if (debug > 4) std::cout << "[DEBUG] jet variance:  " << variance << std::endl;
-  return variance;
+  /* //if (debug > 4) std::cout << "[DEBUG] jet variance:  " << variance << std::endl; */
+  /* return variance; */
 }
 
 // calculate the jet variable alpha: the ratio of (vertex tracks sum pt matching the jet)

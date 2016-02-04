@@ -19,16 +19,17 @@ config.Data.lumiMask         = 'https://cms-service-dqm.web.cern.ch/cms-service-
 #config.Data.lumiMask         = 'https://cms-service-dqm.web.cern.ch/cms-service-dqm/CAF/certification/Collisions15/13TeV/DCSOnly/Cert_246908-251883_13TeV_PromptReco_Collisions15_JSON.txt'
 #config.Data.lumiMask         = 'Cert_190456-208686_8TeV_PromptReco_Collisions12_JSON.txt'
 
-config.Data.inputDBS         = 'global'
-config.Data.splitting        = 'FileBased'
-config.Data.unitsPerJob      = 3
-config.Data.totalUnits       = -1 #config.Data.unitsPerJob * NJOBS
-#config.Data.runRange        = '193093-193999' # '193093-194075'
-config.Data.outLFNDirBase    = '/store/group/phys_susy/razor/josh/RAZOR_DIJET/DJANALYSIS/RUN2015D_DEC26_JSON_SILVER_v2_NOPRESEL'
-config.Data.publication      = False
-config.Data.ignoreLocality   = True #seth zenz fix 
-#config.Data.publishDataName = 'CRAB3_tutorial_May2015_Data_analysis'
-config.Site.storageSite      = 'T2_CH_CERN'
+
+config.Data.inputDBS                  = 'global'
+config.Data.splitting                 = 'FileBased'
+config.Data.unitsPerJob               = 3
+config.Data.totalUnits                = -1 #config.Data.unitsPerJob * NJOBS
+#config.Data.runRange                 = '193093-193999' # '193093-194075'
+config.Data.outLFNDirBase             = '/store/group/phys_susy/razor/josh/RAZOR_DIJET/DJANALYSIS/RUN2015D_DEC26_JSON_SILVER_v2_NOPRESEL'
+config.Data.publication               = False
+config.Data.ignoreLocality            = True #seth zenz fix 
+#config.Data.publishDataName          = 'CRAB3_tutorial_May2015_Data_analysis'
+config.Site.storageSite               = 'T2_CH_CERN'
 
 if __name__ == '__main__':
 

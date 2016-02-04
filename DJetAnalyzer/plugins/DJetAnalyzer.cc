@@ -1999,6 +1999,14 @@ void DJetAnalyzer::dumpTrackInfo(DisplacedJetEvent& djEvent, const reco::TrackCo
   if(debug > 1 ) std::cout << "[DEBUG] Dumping Track Info for Collection " << collectionID << std::endl;
 
 
+  // const DisplacedJetCollection djetCollection = djEvent.getDisplacedJets();
+  // DisplacedJetCollection::const_iterator djet = djetCollection.begin();
+  // int jj = 0;
+  // for(; djet != djetCollection.end(); ++djet, ++jj) {        
+  //   std::vector<float> theta2d = djet.cosThetaDet2DVector;
+  //   std::vector<float> 2dipsig = djet.ip2dsVector;  
+  // }
+
   reco::TrackCollection::const_iterator tt = tracks.begin();
   for(; tt != tracks.end(); ++tt) {
 
@@ -2134,8 +2142,6 @@ void DJetAnalyzer::dumpTrackInfo(DisplacedJetEvent& djEvent, const reco::TrackCo
     trNFound[nTracks]	     = tt->numberOfValidHits();
     //    trAlgo[nTracks]	     = ;
     trAlgoInt[nTracks]	     = tt->algo();
-
-
 
     nTracks++;
   }      

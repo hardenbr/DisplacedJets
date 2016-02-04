@@ -5,6 +5,9 @@ import CMS_lumi
 import rootlogon
 rootlogon.style()
 
+#varbin_x = [300,350,400,450,500,650,1500]
+varbin_x = [250,300,450,2000]
+
 parser = OptionParser()
 
 rt.gStyle.SetOptStat(0)
@@ -13,7 +16,10 @@ rt.gStyle.SetOptTitle(0)
 parser.add_option("-f","--file",dest="file",
 		                    help="text file containing samples and configuration",
 		                    action="store",type="string")
-
+parser.add_option("--prescale",dest="prescale",
+		                    help="text file containing samples and configuration",
+		                    action="store",type="float",default=1)
+                  
 parser.add_option("-o", "--output", dest="output",
 		                    help="output destination",
 		                    action="store",type="string")
@@ -102,9 +108,15 @@ thisTree = thisFile.Get(options.tree)
 hist1_name  = "h1"
 hist2_name  = "h2"
 
+
+
 hist1 = rt.TH1F(hist1_name, options.label1, nbins, xmin, xmax)
+
+
+
 hist1.SetMarkerStyle(21)
 hist2 = rt.TH1F(hist2_name, options.label2, nbins, xmin, xmax)
+
 hist2.SetMarkerStyle(21)
 
 
@@ -112,12 +124,17 @@ hist2.SetMarkerStyle(21)
 n1 = thisTree.Draw("%s>>%s" % (options.var, hist1_name), options.cut1)
 n2 = thisTree.Draw("%s>>%s" % (options.var, hist2_name), options.cut2)
 
+
+
+hist1 = hist1.Rebin(len(varbin_x)-1, "", array.array("d",varbin_x))
+hist2 = hist2.Rebin(len(varbin_x)-1, "", array.array("d",varbin_x))
+hist2.Scale(options.prescale)
 print "passsing cut1", n1
 print "passsing cut2", n2
 
 
-hist1.Sumw2()
-hist2.Sumw2()
+# hist1.Sumw2()
+# hist2.Sumw2()
 
 hist1.SetLineWidth(2)
 hist1.SetLineColor(rt.kRed)
@@ -172,14 +189,14 @@ hcopy1 = hist1.Clone()
 #hcopy2.Divide(hcopy1)
 graph = rt.TGraphAsymmErrors()
 graph.BayesDivide(hcopy2, hcopy1)
-
+graph.Print()
 graph.SetLineWidth(2)
 graph.SetLineColor(rt.kBlack)
 graph.SetFillColor(0)
 
 
 graph.GetXaxis().SetTitle(options.xlabel)
-graph.GetYaxis().SetTitle("Ratio")
+graph.GetYaxis().SetTitle("Efficiency")
 
 graph.SetTitle(options.label2)
 graph.SetMarkerStyle(21)
@@ -188,7 +205,7 @@ graph.Draw("ap")
 
 graph.GetXaxis().SetTitle(options.xlabel)
 
-#leg2 = canvas2.BuildLegend()
+leg2 = canvas2.BuildLegend()
 
 CMS_lumi.CMS_lumi(canvas2, 4, 0)
 

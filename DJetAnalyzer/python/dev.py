@@ -1,31 +1,33 @@
 import FWCore.ParameterSet.Config as cms
 from Configuration.StandardSequences.Eras import eras
 #output directories
-base                = '/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDIES/CMSSW_7_4_10_patch1/src/DisplacedJets/'
+base                = '/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDIES/CMSSW_7_6_3/src/DisplacedJets/'
 #outputDir           = "/afs/cern.ch/work/h/hardenbr/2015/DIJET/DJANALYSIS/"
 outputDir           = ""
 
 # output options (to be appended to the file name outputted)
-appendSignal        = ""
-appendData          = ""
-appendBkg           = ""
+appendSignal       = ""
+appendData         = ""
+appendBkg          = ""
 ############ FLAGS #############
-debugLevel          = 0
-reportEveryNEvents  = 5000
-isSignalMC          = False
-isMC                = True
-isData              = not isMC
-doedm               = False
-nevents             = 5000
+debugLevel         = 3
+reportEveryNEvents = 5000
+isSignalMC         = False
+isMC               = True
+isData             = not isMC
+is76XTriggers      = False
+doedm              = False
+nevents            = -1
 
 #-------------- globaltags
-#gtag               = "74X_HLT_mcRun2_asymptotic_fromSpring15DR_v0" #spring 15 25ns
-#gtag                = "74X_mcRun2_asymptotic_realisticBS_v1" #realistic beam spot for 74x
-gtag                = "76X_mcRun2_asymptotic_v12"
-#gtag               = "FALL1374_25V4"
-#gtag               = "PHYS14_25_V1"
-#gtag                = "MCRUN2_74_V9" #guns
-#gtag                = "74X_dataRun2_Prompt_v2"  #data
+#gtag              = "74X_HLT_mcRun2_asymptotic_fromSpring15DR_v0" #spring 15 25ns
+#gtag              = "74X_mcRun2_asymptotic_realisticBS_v1" #realistic beam spot for 74x
+#gtag              = "FALL1374_25V4"
+#gtag              = "PHYS14_25_V1"
+#gtag              = "MCRUN2_74_V9" #guns
+#gtag              = "74X_dataRun2_Prompt_v2"  #data
+#gtag               = "76X_dataRun2_v15"
+gtag               = "76X_mcRun2_asymptotic_v12"
 
 ## -------------json
 #JSON               = 'json_DCSONLY_Run2015B.txt'
@@ -36,17 +38,20 @@ gtag                = "76X_mcRun2_asymptotic_v12"
 JSON                = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-260627_13TeV_PromptReco_Collisions15_25ns_JSON_Silver_v2.txt'
 
 #--------------trigger
-trigger_process     = "HLT" if isMC else "HLT"
-
+trigger_process     = "HLT" #if isMC else "HLT"
 #--------------analysis todos
+#$$$$$$$$$trigger fixes
+doApplyTrigger      = True if isData else True #not isSignalMC
+doApplySingleMu     = False
+removePFHT800       = False
+isOnlyMu            = False
+###################
 doEventPreSelection = False
 doJetPreSelection   = False
-doApplySingleMu     = False
-doApplyTrigger      = True if isData else False #not isSignalMC
 dumpGeneralTracks   = False
 # trees to write
 writeTrackTree      = False
-writeV0Tree         = True
+writeV0Tree         = False
 writeEventTree      = True
 writeJetTree        = True
 writeVertexTree     = True
@@ -107,7 +112,7 @@ if input_file_list != None:
    for line in stripped_lines:
       myfilelist.extend([line])
 
-#fillter for the file list
+#filter for the file list
 if isSignalMC and input_file_list == None :
    myfilelist = cms.untracked.vstring()
    print "NO SIGNAL INPUT?" 
@@ -117,10 +122,12 @@ if isSignalMC and input_file_list == None :
 if not isSignalMC and input_file_list == None and not isData:
    myfilelist = cms.untracked.vstring()
 #   myfilelist.extend(['file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/data/Run2015B/DisplacedJet/AOD/PromptReco-v1/000/251/562/00000/F6834634-9A2A-E511-9F6F-02163E012402.root'])   
-   qcd_files = ['/store/mc/RunIIFall15DR76/QCD_Pt_300to470_TuneCUETP8M1_13TeV_pythia8/AODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/40000/0AD1B83E-DCA0-E511-AA14-0025905A60F2.root',
-                '/store/mc/RunIIFall15DR76/QCD_Pt_300to470_TuneCUETP8M1_13TeV_pythia8/AODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/40000/18EEA885-D9A0-E511-9529-0025905A6138.root',
-                '/store/mc/RunIIFall15DR76/QCD_Pt_300to470_TuneCUETP8M1_13TeV_pythia8/AODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/40000/1AD1A49F-D9A0-E511-9484-0CC47A4D7618.root',
-                '/store/mc/RunIIFall15DR76/QCD_Pt_300to470_TuneCUETP8M1_13TeV_pythia8/AODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/40000/1CBB563A-F1A0-E511-A729-002590D9D89C.root']
+   qcd_files = ['file:/tmp/hardenbr/QCD470to600.root']
+   for ff in qcd_files: myfilelist.extend([ff])   
+   # qcd_files = ['/store/mc/RunIIFall15DR76/QCD_Pt_300to470_TuneCUETP8M1_13TeV_pythia8/AODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/40000/0AD1B83E-DCA0-E511-AA14-0025905A60F2.root',
+   #              '/store/mc/RunIIFall15DR76/QCD_Pt_300to470_TuneCUETP8M1_13TeV_pythia8/AODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/40000/18EEA885-D9A0-E511-9529-0025905A6138.root',
+   #              '/store/mc/RunIIFall15DR76/QCD_Pt_300to470_TuneCUETP8M1_13TeV_pythia8/AODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/40000/1AD1A49F-D9A0-E511-9484-0CC47A4D7618.root',
+   #              '/store/mc/RunIIFall15DR76/QCD_Pt_300to470_TuneCUETP8M1_13TeV_pythia8/AODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/40000/1CBB563A-F1A0-E511-A729-002590D9D89C.root']
    # qcd_files = ['/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/5E794759-B9FB-E411-99F3-001E67397E90.root',
    #               '/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/5EADB739-17FB-E411-9D85-0025905B858E.root',
    #               '/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/5EC9A83E-FBFA-E411-87B4-002618943925.root',
@@ -131,10 +138,18 @@ if not isSignalMC and input_file_list == None and not isData:
    #               '/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/6A65D77E-07FB-E411-95C1-002590D0B002.root',
    #               '/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/70AD84BC-DCFB-E411-BF96-0025904CDDF8.root',
    #               '/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/7444B6BD-DCFB-E411-BD11-0025905C96E8.root']
-   for ff in qcd_files: myfilelist.extend([ff])   
+                
 #   myfilelist.extend(['/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/00000/00D76158-CCFC-E411-89EA-AC853DA06B56.root'])
 if isData and input_file_list == None:
-   myfilelist.extend(['/store/data/Run2015C/JetHT/AOD/PromptReco-v1/000/254/905/00000/263140AF-B34B-E511-A678-02163E0146DB.root'])
+   muon_files = ['/store/data/Run2015D/SingleMuon/AOD/16Dec2015-v1/10000/0069A0A7-6EA8-E511-8DF1-0CC47A4C8E56.root',
+                 '/store/data/Run2015D/SingleMuon/AOD/16Dec2015-v1/10000/00A3E567-75A8-E511-AD0D-0CC47A4D769E.root',
+                 '/store/data/Run2015D/SingleMuon/AOD/16Dec2015-v1/10000/00AE62FC-0DA8-E511-9330-549F35AE5024.root',
+                 '/store/data/Run2015D/SingleMuon/AOD/16Dec2015-v1/10000/00AFDA8C-68A8-E511-B68C-0CC47A4D7662.root',
+                 '/store/data/Run2015D/SingleMuon/AOD/16Dec2015-v1/10000/00E41E14-6DA8-E511-A89A-0025905A60C6.root']
+                 #myfilelist.extend(['/store/data/Run2015C/JetHT/AOD/PromptReco-v1/000/254/905/00000/263140AF-B34B-E511-A678-02163E0146DB.root'])
+   for mfile in muon_files: 
+      print mfile
+      myfilelist.extend([mfile])
 #   myfilelist.extend(['file:pickevents.root'])
 
 process = cms.Process("ANA", eras.Run2_25ns)
@@ -146,7 +161,7 @@ process.load('Configuration.StandardSequences.Services_cff')
 process.load("FWCore.MessageLogger.MessageLogger_cfi")
 process.MessageLogger.cerr.FwkReport.reportEvery = reportEveryNEvents
 process.MessageLogger.warnings.suppressInfo = cms.untracked.vstring()
-supressWarnings = ["TwoTrackMinimumDistance", "displacedInclusiveVertexFinder","inclusiveVertexFinder","InclusiveVertexFinder"]
+supressWarnings = ["TwoTrackMinimumDistance", "displacedInclusiveVertexFinder","inclusiveVertexFinder","InclusiveVertexFinder","BasicTrajectoryState"]
 for warning in supressWarnings: process.MessageLogger.suppressWarning.extend([warning])
 
 process.load('Configuration.EventContent.EventContent_cff')
@@ -318,60 +333,40 @@ process.displacedLifetimeTagInfos.jetTracks   = cms.InputTag( "displacedAk4JetTr
 #create the main path to run
 process.p = cms.Path()
 
-# trigger bits to keep
-process.triggerSelection = cms.EDFilter( "TriggerResultsFilter",
-    triggerConditions = cms.vstring(
-      'HLT_HT250_DisplacedDijet40_DisplacedTrack_v*',
-      'HLT_HT350_DisplacedDijet40_DisplacedTrack_v*',
-      'HLT_HT350_DisplacedDijet80_DisplacedTrack_v*',
-      'HLT_HT400_DisplacedDijet40_Inclusive_v*',
-      'HLT_HT500_DisplacedDijet40_Inclusive_v*',
-      'HLT_HT550_DisplacedDijet40_Inclusive_v*',
-      'HLT_HT650_DisplacedDijet80_Inclusive_v*',
-      'HLT_HT750_DisplacedDijet80_Inclusive_v*',
-      'HLT_VBF_DisplacedJet40_Hadronic_v*',
-      'HLT_VBF_DisplacedJet40_DisplacedTrack_v*',
-      'HLT_VBF_DisplacedJet40_DisplacedTrack_v*',                                                  
-      'HLT_VBF_DisplacedJet40_TightID_DisplacedTrack_v*',                                          
-      'HLT_VBF_DisplacedJet40_TightID_Hadronic_v*',                                                
-      'HLT_VBF_DisplacedJet40_VTightID_DisplacedTrack_v*',                                         
-      'HLT_VBF_DisplacedJet40_VTightID_Hadronic_v*',                                               
-      'HLT_VBF_DisplacedJet40_VVTightID_DisplacedTrack_v*',                                        
-      'HLT_VBF_DisplacedJet40_VVTightID_Hadronic_v*',   
-      'HLT_HT200_v*',
-      'HLT_HT275_v*',
-      'HLT_HT325_v*',
-      'HLT_HT425_v*',
-      'HLT_HT575_v*',
-      'HLT_PFHT800_v*',
-      'HLT_L1_TripleJet_VBF_v*',                                                                  
-      'HLT_Mu20_v*',                                                                  
-      'HLT_PFMET170_v*',                                                                  
-      'HLT_PFMET170_NoiseCleaned_v*'                                                                  
-      ),
-    hltResults = cms.InputTag( "TriggerResults", "", trigger_process ),
-    l1tResults = cms.InputTag( "" ),
-    l1tIgnoreMask = cms.bool( False ),
-    l1techIgnorePrescales = cms.bool( False ),
-    daqPartitions = cms.uint32( 1 ),
-    throw = cms.bool( True )
-)
-
-
-process.mcTriggerSelection = cms.EDFilter( "TriggerResultsFilter",
-    triggerConditions = cms.vstring(
-      'HLT_HT350_DisplacedDijet40_DisplacedTrack_v*',
+data_triggers =       [ 'HLT_HT350_DisplacedDijet40_DisplacedTrack_v*',
       'HLT_HT350_DisplacedDijet80_DisplacedTrack_v*',
       'HLT_HT500_DisplacedDijet40_Inclusive_v*',
       'HLT_HT550_DisplacedDijet40_Inclusive_v*',
       'HLT_HT650_DisplacedDijet80_Inclusive_v*',
-      'HLT_HT750_DisplacedDijet80_Inclusive_v*',
-      'HLT_VBF_DisplacedJet40_Hadronic_v*',
-      'HLT_VBF_DisplacedJet40_DisplacedTrack_v*',
-      'HLT_VBF_DisplacedJet40_DisplacedTrack_v*',                                                  
-      'HLT_VBF_DisplacedJet40_Hadronic_v*',                                                        
-      'HLT_VBF_DisplacedJet40_TightID_DisplacedTrack_v*',                                          
-      'HLT_VBF_DisplacedJet40_TightID_Hadronic_v*',                                                
+      'HLT_HT750_DisplacedDijet80_Inclusive_v*']
+#      'HLT_VBF_DisplacedJet40_Hadronic_v*',
+#      'HLT_VBF_DisplacedJet40_DisplacedTrack_v*',
+#      'HLT_VBF_DisplacedJet40_DisplacedTrack_v*',                                                  
+#      'HLT_VBF_DisplacedJet40_TightID_DisplacedTrack_v*',                                          
+#      'HLT_VBF_DisplacedJet40_TightID_Hadronic_v*',                                                
+#      'HLT_VBF_DisplacedJet40_VTightID_DisplacedTrack_v*',                                         
+#      'HLT_VBF_DisplacedJet40_VTightID_Hadronic_v*',                                               
+#      'HLT_VBF_DisplacedJet40_VVTightID_DisplacedTrack_v*',                                        
+#      'HLT_VBF_DisplacedJet40_VVTightID_Hadronic_v*',   
+#      'HLT_PFHT800_v*',
+#      'HLT_L1_TripleJet_VBF_v*',                                                                  
+#      'HLT_PFMET170_v*',                                                                  
+ #     'HLT_PFMET170_NoiseCleaned_v*']
+
+mc_triggers = [ 'HLT_HT250_DisplacedDijet40_DisplacedTrack_v*', #only 76x
+      'HLT_HT350_DisplacedDijet40_DisplacedTrack_v*',
+      'HLT_HT350_DisplacedDijet80_DisplacedTrack_v*', 
+      'HLT_HT400_DisplacedDijet40_Inclusive_v*',   #only 76x
+      'HLT_HT500_DisplacedDijet40_Inclusive_v*',
+      'HLT_HT550_DisplacedDijet40_Inclusive_v*',
+      'HLT_HT650_DisplacedDijet80_Inclusive_v*',
+      'HLT_HT750_DisplacedDijet80_Inclusive_v*']
+      # 'HLT_VBF_DisplacedJet40_Hadronic_v*',
+      # 'HLT_VBF_DisplacedJet40_DisplacedTrack_v*',
+      # 'HLT_VBF_DisplacedJet40_DisplacedTrack_v*',                                                  
+      # 'HLT_VBF_DisplacedJet40_Hadronic_v*',                                                        
+      # 'HLT_VBF_DisplacedJet40_TightID_DisplacedTrack_v*',                                          
+      # 'HLT_VBF_DisplacedJet40_TightID_Hadronic_v*']
 #      'HLT_L1_TripleJet_VBF_v*',                                                                  
 #      'HLT_Mu20_v*',                                                                  
 #      'HLT_PFMET170_v*',                                                                  
@@ -386,8 +381,24 @@ process.mcTriggerSelection = cms.EDFilter( "TriggerResultsFilter",
 #      'HLT_PFHT350_v*',
 #      'HLT_PFHT400_v*',
 #      'HLT_PFHT800_v*',
-#      'HLT_L1_TripleJet_VBF_v*'                                                                  
-      ),
+#      'HLT_L1_TripleJet_VBF_v*'                                                    
+
+# triggers only in runD and the 76X re-reco              
+mc_triggers_76x = ['HLT_HT400_DisplacedDijet40_Inclusive_v*', 'HLT_HT250_DisplacedDijet40_DisplacedTrack_v*', 'HLT_HT325_v*', 'HLT_HT425_v*', 'HLT_HT575_v*', 'HLT_HT200_v*', 'HLT_HT275_v*']
+data_triggers_76x = ['HLT_HT400_DisplacedDijet40_Inclusive_v*', 'HLT_HT250_DisplacedDijet40_DisplacedTrack_v*','HLT_HT200_v*','HLT_HT275_v*','HLT_HT325_v*','HLT_HT425_v*','HLT_HT575_v*' ]
+
+# add the extra triggers if they are available into the filter
+if is76XTriggers: 
+   for trigger in data_triggers_76x: data_triggers.append(trigger)
+   for trigger in mc_triggers_76x:   mc_triggers.append(trigger)
+
+if removePFHT800: 
+   mc_triggers.remove("HLT_PFHT800_v*")
+   data_triggers.remove("HLT_PFHT800_v*")
+
+# trigger bits to keep
+process.triggerSelection = cms.EDFilter( "TriggerResultsFilter",
+    triggerConditions = cms.vstring(*data_triggers ),
     hltResults = cms.InputTag( "TriggerResults", "", trigger_process ),
     l1tResults = cms.InputTag( "" ),
     l1tIgnoreMask = cms.bool( False ),
@@ -396,6 +407,16 @@ process.mcTriggerSelection = cms.EDFilter( "TriggerResultsFilter",
     throw = cms.bool( True )
 )
 
+
+process.mcTriggerSelection = cms.EDFilter( "TriggerResultsFilter",
+    triggerConditions = cms.vstring(*mc_triggers),
+    hltResults = cms.InputTag( "TriggerResults", "", trigger_process ),
+    l1tResults = cms.InputTag( "" ),
+    l1tIgnoreMask = cms.bool( False ),
+    l1techIgnorePrescales = cms.bool( False ),
+    daqPartitions = cms.uint32( 1 ),
+    throw = cms.bool( True )
+)
 # trigger bits to keep
 process.singleMuTrigger = cms.EDFilter( "TriggerResultsFilter",
     triggerConditions = cms.vstring(
@@ -410,14 +431,17 @@ process.singleMuTrigger = cms.EDFilter( "TriggerResultsFilter",
 )
 
 if doApplyTrigger: #apply the triggers and run dj tagging
-   # if doApplySingleMu: 
-   #    process.p *= process.doApplySingleMu
-   if isMC:
-      process.p *= process.mcTriggerSelection *  process.correctJets * process.djtagging
-   else:
-      process.p *= process.triggerSelection *  process.correctJets * process.djtagging
-else: #just run the tagging sequence
-   process.p *=  process.correctJets * process.djtagging
+   if doApplySingleMu: 
+      process.p *= process.singleMuTrigger
+
+   if not (isOnlyMu and doApplySingleMu): # if we want more than just the single mu20 trigger
+      if isMC:
+         process.p *= process.mcTriggerSelection 
+      else:
+         process.p *= process.triggerSelection 
+
+#always add the jet corrections and tagging
+process.p *=  process.correctJets * process.djtagging
 
 if doedm: #just dump the edm output of the djtagging sequence no analyzer
     process.btag_output = cms.EndPath(process.test_output)

@@ -89,3 +89,15 @@ python ratio_plot.py -f displacedJet_oct19_848pb.root -o test_golden.root --cut1
 python ratio_plot.py -f QCD_Pt_170to300_FULL.root -o test_golden.root --cut1 "(jetNTracks>0)" --cut2 "(1)  && caloJetAlphaMax/sumTrackPt < 0.05 && jetMedianIPLogSig2D > 2 && medianCosThetaDet2D > 0.05" -t jets -v nCaloJets --xmin 0 --xmax 8 --nbins 8 --xlabel "N Jets" --ylabel "N Jets" --label1 "all jets" --label2 "tagged" --norm1
 python ratio_plot.py -f QCD_Pt_170to300_FULL.root -o test_golden.root --cut1 "(jetNTracks>0)" --cut2 "(1) && caloJetAlphaMax/sumTrackPt < 0.05 && jetMedianIPLogSig2D > 2 && medianCosThetaDet2D > 0.05" -t jets -v jetNTracks --xmin 0 --xmax 20 --nbins 20 --xlabel "Jet N Tracks" --ylabel "N Jets" --label1 "all jets" --label2 "tagged" --norm1
 python ratio_plot.py -f QCD_Pt_170to300_FULL.root -o test_golden.root --cut1 "(jetNTracks>0)" --cut2 "(1)  && caloJetAlphaMax/sumTrackPt < 0.05 && jetMedianIPLogSig2D > 2 && medianCosThetaDet2D > 0.05" -t jets -v caloJetEta --xmin -3 --xmax 3 --nbins 25 --xlabel "jet Eta" --ylabel "N Jets" --label1 "all jets" --label2 "tagged" --norm1
+
+
+
+# subleading jet pt
+python ratio_plot.py -f tree_SingleMuon_FULL.root -o test.root --loose "subLeadingJetPt > 60" --tight "subLeadingJetPt > 60 && passHT425" -t jets -v caloHT --xmin 300 --xmax 600 --nbins 10 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "HLT_Mu20" --label2 "HLT_HT425"
+
+python ratio_plot_data_mc.py --mc tree_SingleMuon_FULL.root -f tree_SingleMuon_FULL.root -o test.root --loose "subLeadingJetPt > 60" --tight "subLeadingJetPt > 60 && passHT425" -t jets -v caloHT --xmin 300 --xmax 600 --nbins 10 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "HLT_Mu20" --label2 "HLT_HT425"
+
+python ratio_plot_data_mc.py --mc tree_QCD_300_470mm.root -f tree_JetHT_FULL.root -o test.root --loose "passHT275" --tight "passDisplaced350_40" -t jets -v caloHT --xmin 300 --xmax 800 --nbins 1000 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "HLT_Mu20" --label2 "Data" --mclabel "QCD MC"
+
+python ratio_plot_data_mc.py --mc tree_QCD_300_470mm.root -f tree_JetHT_FULL.root -o test.root --loose "passHT575" --tight "passDisplaced500_40" -t jets -v caloHT --xmin 300 --xmax 1000 --nbins 1000 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "HLT_Mu20" --label2 "Data" --mclabel "QCD MC"
+

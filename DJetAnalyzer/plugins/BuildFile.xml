@@ -1,5 +1,6 @@
 <use name="FWCore/Framework"/>
 <use name="FWCore/Common"/>
+<use name="lhapdf"/>
 <use name="FWCore/PluginManager"/>
 <use name="FWCore/ParameterSet"/>
 <use name="DataFormats/VertexReco"/>

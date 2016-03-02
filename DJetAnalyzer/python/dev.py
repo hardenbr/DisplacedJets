@@ -1,8 +1,9 @@
 import FWCore.ParameterSet.Config as cms
 from Configuration.StandardSequences.Eras import eras
-#output directories
+
+# output directories
 base                = '/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDIES/CMSSW_7_6_3/src/DisplacedJets/'
-#outputDir           = "/afs/cern.ch/work/h/hardenbr/2015/DIJET/DJANALYSIS/"
+# outputDir           = "/afs/cern.ch/work/h/hardenbr/2015/DIJET/DJANALYSIS/"
 outputDir           = ""
 
 # output options (to be appended to the file name outputted)
@@ -10,14 +11,13 @@ appendSignal       = ""
 appendData         = ""
 appendBkg          = ""
 ############ FLAGS #############
-debugLevel         = 3
-reportEveryNEvents = 5000
-isSignalMC         = False
-isMC               = True
+debugLevel         = 0
+reportEveryNEvents = 1000
+isSignalMC         = True
+isMC               = True or isSignalMC
 isData             = not isMC
-is76XTriggers      = False
 doedm              = False
-nevents            = -1
+nevents            = 100
 
 #-------------- globaltags
 #gtag              = "74X_HLT_mcRun2_asymptotic_fromSpring15DR_v0" #spring 15 25ns
@@ -38,10 +38,12 @@ gtag               = "76X_mcRun2_asymptotic_v12"
 JSON                = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-260627_13TeV_PromptReco_Collisions15_25ns_JSON_Silver_v2.txt'
 
 #--------------trigger
-trigger_process     = "HLT" #if isMC else "HLT"
+trigger_process     = "HLT" 
 #--------------analysis todos
 #$$$$$$$$$trigger fixes
-doApplyTrigger      = True if isData else True #not isSignalMC
+doApplyTrigger      = True if isData else False #not isSignalMC
+is76XTriggers       = True
+dispTriggersOnly    = False
 doApplySingleMu     = False
 removePFHT800       = False
 isOnlyMu            = False
@@ -49,12 +51,14 @@ isOnlyMu            = False
 doEventPreSelection = False
 doJetPreSelection   = False
 dumpGeneralTracks   = False
+dumpDisplacedTracks = False
 # trees to write
 writeTrackTree      = False
+writeDTrackTree     = False  #displaced tracks
 writeV0Tree         = False
 writeEventTree      = True
 writeJetTree        = True
-writeVertexTree     = True
+writeVertexTree     = False
 writeGenTree        = isSignalMC 
 #----------- matching
 doGenMatch          = isMC #and isSignalMC
@@ -115,7 +119,10 @@ if input_file_list != None:
 #filter for the file list
 if isSignalMC and input_file_list == None :
    myfilelist = cms.untracked.vstring()
-   print "NO SIGNAL INPUT?" 
+   myfilelist.extend(["file:/tmp/hardenbr/xx4j300_30.root"])
+#   myfilelist.extend(["/store/mc/RunIIFall15DR76/XXTo4J_M-300_CTau-30mm_TuneCUETP8M1_13TeV_pythia8/AODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/50000/020A2CB2-AFC4-E511-8C17-002590A2CCF2.root"])
+#   myfilelist.extend(["/store/mc/RunIIFall15DR76/XXTo4J_M-500_CTau-2000mm_TuneCUETP8M1_13TeV_pythia8/AODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/70000/00160C77-CCC6-E511-AB01-0025904C7DF0.root"])
+   #print "NO SIGNAL INPUT?" 
 #   exit(1)
 #   myfilelist.extend(['file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/MC_PRODUCTION/XXTo4J_M-300_CTau_30mm/AODSIM/XXTo4J_M-300_CTau-30mm_reco_102_1_ne5.root',
  #                     'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/MC_PRODUCTION/XXTo4J_M-300_CTau_30mm/AODSIM/XXTo4J_M-300_CTau-30mm_reco_105_1_1MO.root' ])
@@ -123,11 +130,11 @@ if not isSignalMC and input_file_list == None and not isData:
    myfilelist = cms.untracked.vstring()
 #   myfilelist.extend(['file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/data/Run2015B/DisplacedJet/AOD/PromptReco-v1/000/251/562/00000/F6834634-9A2A-E511-9F6F-02163E012402.root'])   
    qcd_files = ['file:/tmp/hardenbr/QCD470to600.root']
-   for ff in qcd_files: myfilelist.extend([ff])   
    # qcd_files = ['/store/mc/RunIIFall15DR76/QCD_Pt_300to470_TuneCUETP8M1_13TeV_pythia8/AODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/40000/0AD1B83E-DCA0-E511-AA14-0025905A60F2.root',
    #              '/store/mc/RunIIFall15DR76/QCD_Pt_300to470_TuneCUETP8M1_13TeV_pythia8/AODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/40000/18EEA885-D9A0-E511-9529-0025905A6138.root',
    #              '/store/mc/RunIIFall15DR76/QCD_Pt_300to470_TuneCUETP8M1_13TeV_pythia8/AODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/40000/1AD1A49F-D9A0-E511-9484-0CC47A4D7618.root',
    #              '/store/mc/RunIIFall15DR76/QCD_Pt_300to470_TuneCUETP8M1_13TeV_pythia8/AODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/40000/1CBB563A-F1A0-E511-A729-002590D9D89C.root']
+   for ff in qcd_files: myfilelist.extend([ff])   
    # qcd_files = ['/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/5E794759-B9FB-E411-99F3-001E67397E90.root',
    #               '/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/5EADB739-17FB-E411-9D85-0025905B858E.root',
    #               '/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/50000/5EC9A83E-FBFA-E411-87B4-002618943925.root',
@@ -215,6 +222,7 @@ else:
 #tree names
 process.analyzerCALO.jetTreeName    = cms.untracked.string('jets')
 process.analyzerCALO.trackTreeName  = cms.untracked.string('tracks')
+process.analyzerCALO.dTrackTreeName  = cms.untracked.string('dtracks')
 process.analyzerCALO.vertexTreeName = cms.untracked.string('vtx')
 process.analyzerCALO.genTreeName    = cms.untracked.string('genp')
 
@@ -229,9 +237,11 @@ process.analyzerVTX.genTreeName     = cms.untracked.string('genp')
 process.analyzerCALO.applyEventPreSelection = cms.untracked.bool(doEventPreSelection)
 process.analyzerCALO.applyJetPreSelection   = cms.untracked.bool(doJetPreSelection)
 process.analyzerCALO.dumpGeneralTracks      = cms.untracked.bool(dumpGeneralTracks)
+process.analyzerCALO.dumpDisplacedTracks    = cms.untracked.bool(dumpDisplacedTracks)
 
 # what to write out 
 process.analyzerCALO.writeTrackTree  = cms.untracked.bool(writeTrackTree)
+process.analyzerCALO.writeDTrackTree  = cms.untracked.bool(writeDTrackTree)
 process.analyzerCALO.writeEventTree  = cms.untracked.bool(writeEventTree)
 process.analyzerCALO.writeJetTree    = cms.untracked.bool(writeJetTree)
 process.analyzerCALO.writeV0Tree    = cms.untracked.bool(writeV0Tree)
@@ -253,6 +263,8 @@ process.analyzerVTX.triggerResultPath  = cms.untracked.string(trigger_process)
 process.analyzerCALO.triggerResultPath = cms.untracked.string(trigger_process)
 process.analyzerVTX.triggerResults     = cms.untracked.InputTag('TriggerResults', '', '')
 process.analyzerCALO.triggerResults    = cms.untracked.InputTag('TriggerResults', '', trigger_process)
+
+
 
 # collection tags
 process.analyzerVTX.generalTracks                  = cms.untracked.InputTag('generalTracks', '', '')
@@ -333,6 +345,14 @@ process.displacedLifetimeTagInfos.jetTracks   = cms.InputTag( "displacedAk4JetTr
 #create the main path to run
 process.p = cms.Path()
 
+
+process.nEventsTotal                      = cms.EDProducer("EventCountProducer")
+process.nEventsFiltered                   = cms.EDProducer("EventCountProducer")
+process.analyzerCALO.eventCounter         = cms.untracked.InputTag('nEventsTotal')
+process.analyzerCALO.eventCounterFiltered = cms.untracked.InputTag('nEventsFiltered')
+
+process.p *= process.nEventsTotal
+
 data_triggers =       [ 'HLT_HT350_DisplacedDijet40_DisplacedTrack_v*',
       'HLT_HT350_DisplacedDijet80_DisplacedTrack_v*',
       'HLT_HT500_DisplacedDijet40_Inclusive_v*',
@@ -384,8 +404,8 @@ mc_triggers = [ 'HLT_HT250_DisplacedDijet40_DisplacedTrack_v*', #only 76x
 #      'HLT_L1_TripleJet_VBF_v*'                                                    
 
 # triggers only in runD and the 76X re-reco              
-mc_triggers_76x = ['HLT_HT400_DisplacedDijet40_Inclusive_v*', 'HLT_HT250_DisplacedDijet40_DisplacedTrack_v*', 'HLT_HT325_v*', 'HLT_HT425_v*', 'HLT_HT575_v*', 'HLT_HT200_v*', 'HLT_HT275_v*']
-data_triggers_76x = ['HLT_HT400_DisplacedDijet40_Inclusive_v*', 'HLT_HT250_DisplacedDijet40_DisplacedTrack_v*','HLT_HT200_v*','HLT_HT275_v*','HLT_HT325_v*','HLT_HT425_v*','HLT_HT575_v*' ]
+mc_triggers_76x = ['HLT_HT400_DisplacedDijet40_Inclusive_v*', 'HLT_HT250_DisplacedDijet40_DisplacedTrack_v*', 'HLT_HT325_v*', 'HLT_HT425_v*', 'HLT_HT575_v*', 'HLT_HT275_v*']
+data_triggers_76x = ['HLT_HT400_DisplacedDijet40_Inclusive_v*', 'HLT_HT250_DisplacedDijet40_DisplacedTrack_v*','HLT_HT275_v*','HLT_HT325_v*','HLT_HT425_v*','HLT_HT575_v*' ]
 
 # add the extra triggers if they are available into the filter
 if is76XTriggers: 
@@ -395,6 +415,16 @@ if is76XTriggers:
 if removePFHT800: 
    mc_triggers.remove("HLT_PFHT800_v*")
    data_triggers.remove("HLT_PFHT800_v*")
+
+# only filter on the displaced jet triggers to reduce file size
+if dispTriggersOnly:
+   mc_triggers = ['HLT_HT500_DisplacedDijet40_Inclusive_v*', 'HLT_HT350_DisplacedDijet40_DisplacedTrack_v*']
+   data_triggers = ['HLT_HT500_DisplacedDijet40_Inclusive_v*', 'HLT_HT350_DisplacedDijet40_DisplacedTrack_v*']
+   if is76XTriggers: 
+      mc_triggers.append('HLT_HT400_DisplacedDijet40_Inclusive_v*') 
+      mc_triggers.append('HLT_HT250_DisplacedDijet40_DisplacedTrack_v*')
+      data_triggers.append('HLT_HT400_DisplacedDijet40_Inclusive_v*') 
+      data_triggers.append('HLT_HT250_DisplacedDijet40_DisplacedTrack_v*')
 
 # trigger bits to keep
 process.triggerSelection = cms.EDFilter( "TriggerResultsFilter",
@@ -420,7 +450,7 @@ process.mcTriggerSelection = cms.EDFilter( "TriggerResultsFilter",
 # trigger bits to keep
 process.singleMuTrigger = cms.EDFilter( "TriggerResultsFilter",
     triggerConditions = cms.vstring(
-      'HLT_Mu20_v*'                                                                 
+      'HLT_IsoMu20_v*'                                                                 
       ),
     hltResults = cms.InputTag( "TriggerResults", "", trigger_process ),
     l1tResults = cms.InputTag( "" ),
@@ -439,6 +469,9 @@ if doApplyTrigger: #apply the triggers and run dj tagging
          process.p *= process.mcTriggerSelection 
       else:
          process.p *= process.triggerSelection 
+
+#count the events filtered 
+process.p *= process.nEventsFiltered
 
 #always add the jet corrections and tagging
 process.p *=  process.correctJets * process.djtagging

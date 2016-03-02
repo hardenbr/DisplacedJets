@@ -492,6 +492,7 @@ class DisplacedJet {
 
   std::vector<float> cosTheta2DVector, cosThetaDet2DVector, cosTheta3DVector, cosThetaDet3DVector; 
   std::vector<float> ip3dVector, ip3dsVector, ip2dVector, ip2dsVector;
+  std::vector<float> trEtaVector, trPhiVector, trPtVector;
 
  private: 
 
@@ -1335,6 +1336,11 @@ void DisplacedJet::addTrackAngles(const DisplacedTrackCollection & tracks) {
       /* std::cout << "COSTHETA3D " << cosTheta3D << std::endl;  */
       /* std::cout << "COSTHETA2D " << cosTheta2D << std::endl;  */
       /* std::cout << " -----------------" << std::endl;  */
+
+      // store the track kinematics in the jet
+      trEtaVector.push_back(tIter->eta);      
+      trPhiVector.push_back(tIter->phi);      
+      trPtVector.push_back(pt);      
 
       cosTheta2DVector.push_back(cosTheta2D);
       cosTheta3DVector.push_back(cosTheta3D);

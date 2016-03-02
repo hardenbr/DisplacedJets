@@ -97,7 +97,10 @@ python ratio_plot.py -f tree_SingleMuon_FULL.root -o test.root --loose "subLeadi
 
 python ratio_plot_data_mc.py --mc tree_SingleMuon_FULL.root -f tree_SingleMuon_FULL.root -o test.root --loose "subLeadingJetPt > 60" --tight "subLeadingJetPt > 60 && passHT425" -t jets -v caloHT --xmin 300 --xmax 600 --nbins 10 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "HLT_Mu20" --label2 "HLT_HT425"
 
-python ratio_plot_data_mc.py --mc tree_QCD_300_470mm.root -f tree_JetHT_FULL.root -o test.root --loose "passHT275" --tight "passDisplaced350_40" -t jets -v caloHT --xmin 300 --xmax 800 --nbins 1000 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "HLT_Mu20" --label2 "Data" --mclabel "QCD MC"
+# displaced trigger mis-modeling
+python ratio_plot_data_mc.py --mc tree_QCD_FULL.root -f tree_DATA_JetHT.root -o test.root --loose "(passHT325 || passHT275)" --tight "(passHT325 || passHT275) && passDisplaced350_40" -t jets -v caloHT --xmin 300 --xmax 1500 --nbins 1000 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "HLT_Mu20" --label2 "Data" --mclabel "QCD MC" --rebin
+python ratio_plot_data_mc.py --mc tree_QCD_FULL.root -f tree_DATA_JetHT.root -o test.root --loose "passHT425" --tight "passHT425 && passDisplaced500_40" -t jets -v caloHT --xmin 300 --xmax 1500 --nbins 1000 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "HLT_Mu20" --label2 "Data" --mclabel "QCD MC" --rebin
 
-python ratio_plot_data_mc.py --mc tree_QCD_300_470mm.root -f tree_JetHT_FULL.root -o test.root --loose "passHT575" --tight "passDisplaced500_40" -t jets -v caloHT --xmin 300 --xmax 1000 --nbins 1000 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "HLT_Mu20" --label2 "Data" --mclabel "QCD MC"
+
+python ratio_plot_data_mc.py --mc tree_QCD_300_470mm.root -f tree_DATA_DisplacedJet.root -o test.root --loose "passDisplaced400_40" --tight "passDisplaced500_40" -t jets -v caloHT --xmin 300 --xmax 1000 --nbins 1000 --xlabel "offline caloHT [GeV]" --ylabel "N Events" --label1 "HLT_Mu20" --label2 "Data" --mclabel "QCD MC"
 

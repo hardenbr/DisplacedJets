@@ -12,6 +12,7 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   // gnerator
   void dumpGenInfo(DisplacedJetEvent&, const reco::GenParticleCollection &); 
   void dumpSimInfo(const edm::SimVertexContainer &);
+  void dumpWeights(const edm::Event &);
   void dumpPreSelection(DisplacedJetEvent&);
 
   // trigger information
@@ -27,15 +28,20 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   void	dumpPVInfo(DisplacedJetEvent &, const reco::VertexCollection &);
   //tree dumping track quantities
   void	dumpTrackInfo(DisplacedJetEvent&, const reco::TrackCollection &, const int & collectionID, const edm::EventSetup& iSetup);
+  void	dumpDisplacedTrackInfo(DisplacedJetEvent& , const edm::EventSetup& iSetup);
   
   virtual void beginJob() override;
+  //virtual void beginRun(edm::Run const& , edm::EventSetup const&) override;
   virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
   virtual void endJob() override;
+  virtual void beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) override;
+  virtual void endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) override;
   
   //file configuration tags
   std::string	outputFileName_;
   std::string	jetTreeName_;
   std::string	trackTreeName_;
+  std::string	dTrackTreeName_;
   std::string	vertexTreeName_;
   std::string	genTreeName_;
 
@@ -46,10 +52,12 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   bool	 applyEventPreSelection_;
   bool	 applyJetPreSelection_;
   bool   dumpGeneralTracks_;
+  bool   dumpDisplacedTracks_;
   // keep trees
   bool   writeJetTree_;
   bool   writeV0Tree_;
   bool   writeTrackTree_;
+  bool   writeDTrackTree_;
   bool   writeEventTree_;
   bool   writeGenTree_;
   bool   writeVertexTree_;
@@ -60,6 +68,11 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   //trigger tags
   std::string triggerResultPath_;
   edm::InputTag tag_triggerResults_;
+
+  edm::EDGetTokenT<edm::MergeableCounter > token_eventCounterTotal;
+  edm::EDGetTokenT<edm::MergeableCounter > token_eventCounterFiltered;
+  edm::InputTag tag_eventCounterTotal_;
+  edm::InputTag tag_eventCounterFiltered_;
 
   //tracking tags
   edm::InputTag tag_generalTracks_;
@@ -97,22 +110,24 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   
   //output related
   TTree*    trackTree_;   
+  TTree*    dTrackTree_;   
   TTree*    jetTree_;   
   TTree*    v0Tree_;   
   TTree*    vertexTree_;
   TTree*    genTree_;
   TTree*    eventTree_; 
   TTree*    runStatTree_;
+  TTree*    filtCountTree_;
 
   static const Int_t    SIM_STATUS_CODE_MATCH = 0; 
   static const Int_t    GEN_STATUS_CODE_MATCH = 23; 
   const float		VERTEX_MATCH_METRIC   = 0.05;
-  static const Int_t	MAX_TRIGGERS	      = 1000;
-  static const Int_t	MAX_TRACKS	      = 5000;
-  static const Int_t	MAX_V0	              = 10000;
-  static const Int_t	MAX_JETS	      = 40;
-  static const Int_t	MAX_VTX		      = 100;
-  static const Int_t	MAX_CAT		      = 100; // max number of tagging categories
+  static const Int_t	MAX_TRIGGERS	      = 200;
+  static const Int_t	MAX_TRACKS	      = 800;
+  static const Int_t	MAX_V0	              = 1000;
+  static const Int_t	MAX_JETS	      = 60;
+  static const Int_t	MAX_VTX		      = 80;
+  static const Int_t	MAX_CAT		      = 4; // max number of tagging categories
   static const Int_t	MAX_GEN		      = 500;
   static const Int_t	FAKE_HIGH_VAL	      = 9999;
 
@@ -125,6 +140,9 @@ class DJetAnalyzer : public edm::EDAnalyzer {
 
   int	evNum = 0;
   Int_t jetid = 0;
+
+  Int_t nEventsTotal;
+  Int_t nEventsFiltered;
 
   //tree variables
   Int_t nLiTracks = 0;
@@ -813,6 +831,26 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   Float_t   pvYErr[MAX_VTX];
   Float_t   pvXErr[MAX_VTX];
 
+  ///////////////////// DISPLACED TRACK INFORMATION ////////////
+
+  // kinematics
+  Int_t nDtr;
+  Int_t dtrJetIndex[MAX_TRACKS];
+  Float_t dtrPt[MAX_TRACKS];
+  Float_t dtrEta[MAX_TRACKS];
+  Float_t dtrPhi[MAX_TRACKS];
+  // tagging variables
+  Float_t dtrTheta2D[MAX_TRACKS];
+  Float_t dtr2DIPSig[MAX_TRACKS];
+  // associated jet information
+  Int_t dtrJetNTracks[MAX_TRACKS];
+  Float_t dtrJetPt[MAX_TRACKS];
+  Float_t dtrJetEta[MAX_TRACKS];
+  Float_t dtrJetPhi[MAX_TRACKS];
+  Float_t dtrJetAlphaMax[MAX_TRACKS];
+  Float_t dtrJetMedian2DIPSig[MAX_TRACKS];
+  Float_t dtrJetMedianTheta2D[MAX_TRACKS];
+
   ///////////////////// TRACK INFORMATION ////////////////////
 
   Int_t   trCollectionID[MAX_TRACKS];
@@ -894,6 +932,14 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   std::string	trAlgo[MAX_TRACKS];
   Int_t		trAlgoInt[MAX_TRACKS];
 
+  // gen sim weights
+  Float_t       genWeight;
+  Float_t       genWeights[MAX_GEN];
+  Float_t       genWeightsRel[MAX_GEN];
+  Float_t       genWeightsRMS;
+  Int_t         nWeights;
+  Float_t       genPU;
+
   // trigger related
   Int_t		nTrig;
   std::vector<std::string>   triggerNames;
@@ -943,8 +989,24 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   edm::Handle<std::vector<double>>                      alpha;
   // trigger related
 
+
+  edm::Handle<edm::MergeableCounter> nEventsTotalCounter;  
+  edm::Handle<edm::MergeableCounter> nEventsFilteredCounter;
   //edm::TriggerNames					tNames;
   //edm::TriggerResultsByName				triggerResultsByName;
 
+  int ipdf = 1;
+
 };
 
+namespace LHAPDF {
+  void   initPDFSet(int nset, const std::string& filename, int member=0);
+  int    numberPDF(int nset);
+  void   usePDFMember(int nset, int member);
+  double xfx(int nset, double x, double Q, int fl);
+  double getXmin(int nset, int member);
+  double getXmax(int nset, int member);
+  double getQ2min(int nset, int member);
+  double getQ2max(int nset, int member);
+  void   extrapolate(bool extrapolate=true);
+}

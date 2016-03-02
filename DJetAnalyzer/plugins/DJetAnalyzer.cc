@@ -58,6 +58,9 @@
 #include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
 
 // gen information
+#include "SimDataFormats/PileupSummaryInfo/interface/PileupSummaryInfo.h"
+#include "SimDataFormats/GeneratorProducts/interface/GenEventInfoProduct.h"
+#include "SimDataFormats/GeneratorProducts/interface/LHERunInfoProduct.h"
 #include "DataFormats/HepMCCandidate/interface/GenParticleFwd.h"
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
 #include "DataFormats/JetReco/interface/GenJetCollection.h"
@@ -107,6 +110,10 @@
 #include <RecoBTag/SecondaryVertex/interface/TrackKinematics.h>
 #include "DataFormats/Math/interface/deltaR.h"
 
+// event counting
+#include "DataFormats/Common/interface/MergeableCounter.h"
+#include <CommonTools/UtilAlgos/plugins/EventCountProducer.cc>
+
 // user defined includes
 #include "DisplacedJets/DisplacedJetSVAssociator/interface/JetVertexAssociation.h"
 #include "DisplacedJets/DisplacedJet/interface/DisplacedTrack.h"
@@ -116,16 +123,21 @@
 #include "DisplacedJets/DisplacedJet/interface/DisplacedJetEvent.h"
 #include "DisplacedJets/DJetAnalyzer/interface/DJetAnalyzer.h"
 
+
 //
 // class declaration
 //
 DJetAnalyzer::DJetAnalyzer(const edm::ParameterSet& iConfig)
 {
+  // initialize the PDFs
+  LHAPDF::initPDFSet( ipdf, "NNPDF23_lo_as_0130_qed.LHgrid");
+
   // output configuration
   debug		  = iConfig.getUntrackedParameter<int>("debugLevel");  
   outputFileName_ = iConfig.getUntrackedParameter<std::string>("outputFileName");
   jetTreeName_	  = iConfig.getUntrackedParameter<std::string>("jetTreeName");
   trackTreeName_  = iConfig.getUntrackedParameter<std::string>("trackTreeName");
+  dTrackTreeName_ = iConfig.getUntrackedParameter<std::string>("dTrackTreeName");
   vertexTreeName_ = iConfig.getUntrackedParameter<std::string>("vertexTreeName");
   genTreeName_	  = iConfig.getUntrackedParameter<std::string>("genTreeName");
 
@@ -147,8 +159,10 @@ DJetAnalyzer::DJetAnalyzer(const edm::ParameterSet& iConfig)
   applyEventPreSelection_ = iConfig.getUntrackedParameter<bool>("applyEventPreSelection");
   applyJetPreSelection_	  = iConfig.getUntrackedParameter<bool>("applyJetPreSelection");
   dumpGeneralTracks_      = iConfig.getUntrackedParameter<bool>("dumpGeneralTracks");
+  dumpDisplacedTracks_    = iConfig.getUntrackedParameter<bool>("dumpDisplacedTracks");
   writeJetTree_		  = iConfig.getUntrackedParameter<bool>("writeJetTree");
   writeV0Tree_		  = iConfig.getUntrackedParameter<bool>("writeV0Tree");
+  writeDTrackTree_	  = iConfig.getUntrackedParameter<bool>("writeDTrackTree");
   writeTrackTree_	  = iConfig.getUntrackedParameter<bool>("writeTrackTree");
   writeEventTree_	  = iConfig.getUntrackedParameter<bool>("writeEventTree");
   writeGenTree_		  = iConfig.getUntrackedParameter<bool>("writeEventTree");
@@ -158,6 +172,12 @@ DJetAnalyzer::DJetAnalyzer(const edm::ParameterSet& iConfig)
   triggerResultPath_  = iConfig.getUntrackedParameter<std::string>("triggerResultPath");
   tag_triggerResults_ = iConfig.getUntrackedParameter<edm::InputTag>("triggerResults");
   consumes<edm::TriggerResults>(tag_triggerResults_);
+
+  // event counters
+  tag_eventCounterTotal_    = iConfig.getUntrackedParameter<edm::InputTag>("eventCounter");
+  tag_eventCounterFiltered_ = iConfig.getUntrackedParameter<edm::InputTag>("eventCounterFiltered");
+  token_eventCounterTotal    = consumes<edm::MergeableCounter, edm::InLumi>(tag_eventCounterTotal_);
+  token_eventCounterFiltered = consumes<edm::MergeableCounter,edm::InLumi>(tag_eventCounterFiltered_);
 
   // collection tags
   tag_generalTracks_		  = iConfig.getUntrackedParameter<edm::InputTag>("generalTracks");
@@ -195,6 +215,10 @@ DJetAnalyzer::DJetAnalyzer(const edm::ParameterSet& iConfig)
     consumes<reco::GenParticleCollection>(tag_genParticles_);
     tag_simVertex_    = iConfig.getUntrackedParameter<edm::InputTag>("simVertices");
     consumes<edm::SimVertexContainer>(tag_simVertex_);
+    // LHE info
+    //consumes<LHERunInfoProduct, edm::InRun>(edm::InputTag("externalLHEProducer"));
+    consumes<GenEventInfoProduct>(edm::InputTag("generator"));
+    consumes<std::vector<PileupSummaryInfo>>(edm::InputTag("addPileupInfo"));
   } 
 }
 
@@ -264,7 +288,7 @@ void DJetAnalyzer::fillTriggerInfo(const edm::Event & iEvent, const edm::Trigger
     std::size_t searchPFMET170	       = name.find("HLT_PFMET170_v");
     std::size_t searchPFMET170NC       = name.find("HLT_PFMET170_NoiseCleaned_v");
     // muon
-    std::size_t searchMu20	       = name.find("HLT_Mu20_v");
+    std::size_t searchMu20	       = name.find("HLT_IsoMu20_v");
 
     // build important bits for the tree
     // control
@@ -424,6 +448,10 @@ void  DJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   djEvent.mergeSVTagInfo(svTagInfo); // add the secondary vertexer from btag
   djEvent.addIVFVertices(incSV); // add the inclusive secondary vertices (includes matching and calculations)
 
+
+  // eventWeights for SIM
+  if(isMC_) dumpWeights(iEvent);
+
   // mc matching (gen vertex and gen particle to calo jet matching) 
   // (genparticles, particle matching, vtx matching, vtx id matching, threshold for vtx match)
   if(isMC_ && doGenMatch_) djEvent.doGenMatching(genCollection, true, true, true, isSignalMC_, 0.3, 0.7, 0.05);    
@@ -462,6 +490,7 @@ void  DJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   // dump the track information
   nTracks = 0;   
   if(dumpGeneralTracks_) dumpTrackInfo(djEvent, generalTracks, 0, iSetup);
+  if(dumpDisplacedTracks_) dumpDisplacedTrackInfo(djEvent, iSetup);
 
   // dump the vertex info in the event
   dumpPVInfo(djEvent, pvCollection);
@@ -474,8 +503,8 @@ void  DJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
     if(debug > 1) std::cout << "[DEBUG] Fill Event Tree" << std::endl;
     if(writeEventTree_) eventTree_->Fill();
     if(debug > 1) std::cout << "[DEBUG] Fill Track Tree" << std::endl;
-
     if(writeTrackTree_) trackTree_->Fill();
+    if(writeDTrackTree_) dTrackTree_->Fill();
     if(debug > 1) std::cout << "[DEBUG] Fill Jet Tree" << std::endl;
     if(writeJetTree_) jetTree_->Fill();
     if(debug > 1) std::cout << "[DEBUG] Fill V0 Tree" << std::endl; 
@@ -487,20 +516,23 @@ void  DJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   }
 }
 
-void DJetAnalyzer::beginJob()
-{
+void DJetAnalyzer::beginJob() {
+  //  consumes<edm::MergeableCounter>(tag_eventCounterTotal_);
+  // consumes<edm::MergeableCounter>(tag_eventCounterFiltered_);
 
   if(debug > 1) std::cout << "[DEBUG 1] Setting Up Output File And Tree" << std::endl;
   
   // storage 
-  outputFile_ = new TFile(outputFileName_.c_str(), "RECREATE");
-  trackTree_  = new TTree(trackTreeName_.c_str(), "track, vertex, jet index tree");
-  jetTree_    = new TTree(jetTreeName_.c_str(), "jet indexed tree");
-  v0Tree_    = new TTree("v0", "jet indexed tree");
-  vertexTree_ = new TTree(vertexTreeName_.c_str(), "vertex indexed tree");
-  genTree_    = new TTree(genTreeName_.c_str(), "Gen Particle Info tree");
-  eventTree_  = new TTree("eventInfo", "Event Information Tree");
-  runStatTree_  = new TTree("runStats", "Run Statistics");
+  outputFile_  = new TFile(outputFileName_.c_str(), "RECREATE");
+  trackTree_   = new TTree(trackTreeName_.c_str(), "track, vertex, jet index tree");
+  dTrackTree_  = new TTree(dTrackTreeName_.c_str(), "displaced track tree");
+  jetTree_     = new TTree(jetTreeName_.c_str(), "jet indexed tree");
+  v0Tree_      = new TTree("v0", "jet indexed tree");
+  vertexTree_  = new TTree(vertexTreeName_.c_str(), "vertex indexed tree");
+  genTree_     = new TTree(genTreeName_.c_str(), "Gen Particle Info tree");
+  eventTree_   = new TTree("eventInfo", "Event Information Tree");
+  runStatTree_ = new TTree("runStats", "Run Statistics");
+  filtCountTree_ = new TTree("filtCount", "Filter Count");
 
   ///////////  ///////////  ///////////  ///////////  ///////////  ///////////  ////
   //////////////////////////////// PROCESSING JOB QUANITIES ////////////////////////////
@@ -519,6 +551,9 @@ void DJetAnalyzer::beginJob()
   runStatTree_->Branch("evNum", &evNum, "evNum/I");
   // analysis information
   runStatTree_->Branch("eventPassEventPreSelection", &eventPassEventPreSelection, "eventPassEventPreSelection/I");
+
+  filtCountTree_->Branch("nEventsTotal",&nEventsTotal,"nEventsTotal/I");
+  filtCountTree_->Branch("nEventsFiltered",&nEventsFiltered,"nEventsFiltered/I");
 
   ///////////  ///////////  ///////////  ///////////  ///////////  ///////////  ////
   //////////////////////////////// EVENT TREE QUANITIES ////////////////////////////
@@ -645,6 +680,17 @@ void DJetAnalyzer::beginJob()
     jetTree_->Branch("bestPVX",&bestPVX, "bestPVX/F");
     jetTree_->Branch("bestPVY",&bestPVY, "bestPVY/F");
     jetTree_->Branch("bestPVZ",&bestPVZ, "bestPVZ/F");
+
+    // eventweight information for MC
+    jetTree_->Branch("nWeights", &nWeights, "nWeights/I");
+    jetTree_->Branch("genPU", &genPU, "genPU/F");
+    // central weight value
+    jetTree_->Branch("genWeight", &genWeight, "genWeight/F");
+    // weights from the members of the nnpdf eigenvectors
+    jetTree_->Branch("genWeights", &genWeights, "genWeights[nWeights]/F");
+    // weights from the members of the nnpdf eigenvectors
+    jetTree_->Branch("genWeightsRel", &genWeightsRel, "genWeightsRel[nWeights]/F");
+    jetTree_->Branch("genWeightsRMS", &genWeightsRMS, "genWeightsRMS/F");
   }
 
   if(isSignalMC_) {
@@ -1130,6 +1176,66 @@ void DJetAnalyzer::beginJob()
   v0Tree_->Branch("v0Track2IP3DSig",&v0Track2IP3DSig , "v0Track2IP3DSig[nV0]/F");
 
 
+
+  ///////////  ///////////  ///////////  ///////////  ///////////  ///////////  ////
+  //////////////////////////////// DISPLACED TRACK TREE QUANITIES ////////////////////////////
+  ///////////  ///////////  ///////////  ///////////  ///////////  /////////// /////
+  //////// Everything is either a flat number or indexed by nCaloJets //////////////
+  dTrackTree_->Branch("run", &run, "run/I");
+  dTrackTree_->Branch("lumi", &lumi, "lumi/I");
+  dTrackTree_->Branch("event", &event, "event/I");
+
+  // trigger 
+  dTrackTree_->Branch("nTrig", &nTrig, "nTrig/I");
+  //dTrackTree_->Branch("triggerNames", &triggerNames);
+  //dTrackTree_->Branch("triggerPass", &triggerPass, "triggerPass[nTrig]/I");
+  dTrackTree_->Branch("passDisplacedOR5e33", &passDisplacedOR5e33, "passDisplacedOR5e33/I");
+  dTrackTree_->Branch("passDisplacedOR14e34", &passDisplacedOR14e34, "passDisplacedOR14e34/I");
+  dTrackTree_->Branch("passHTControl", &passHTControl, "passHTControl/I");
+  dTrackTree_->Branch("passHT200", &passHT200, "passHT200/I");
+  dTrackTree_->Branch("passHT275", &passHT275, "passHT275/I");
+  dTrackTree_->Branch("passHT325", &passHT325, "passHT325/I");
+  dTrackTree_->Branch("passHT425", &passHT425, "passHT425/I");
+  dTrackTree_->Branch("passHT575", &passHT575, "passHT575/I");
+  dTrackTree_->Branch("passDisplaced250_40", &passDisplaced250_40, "passDisplaced250_40/I");
+  dTrackTree_->Branch("passDisplaced350_40", &passDisplaced350_40, "passDisplaced350_40/I");
+  dTrackTree_->Branch("passDisplaced400_40", &passDisplaced400_40, "passDisplaced400_40/I");
+  dTrackTree_->Branch("passDisplaced500_40", &passDisplaced500_40, "passDisplaced500_40/I");
+  dTrackTree_->Branch("passDisplaced550_40", &passDisplaced550_40, "passDisplaced550_40/I");
+  dTrackTree_->Branch("passBigOR", &passBigOR, "passBigOR/I");
+  dTrackTree_->Branch("passPFHT800", &passHT800, "passPFHT800/I");
+  dTrackTree_->Branch("passVBFHadronic", &passVBFHadronic, "passVBFHadronic/I");
+  dTrackTree_->Branch("passVBFDispTrack", &passVBFDispTrack, "passVBFDispTrack/I");
+  dTrackTree_->Branch("passVBFTriple", &passVBFTriple, "passVBFTriple/I");
+  dTrackTree_->Branch("passPFMET170", &passPFMET170, "passPFMET170/I");
+  dTrackTree_->Branch("passPFMET170NC", &passPFMET170NC, "passPFMET170NC/I");
+  dTrackTree_->Branch("passMu20", &passMu20, "passMu20/I");
+  dTrackTree_->Branch("eventPassEventPreSelection", &eventPassEventPreSelection, "eventPassEventPreSelection/I");
+  dTrackTree_->Branch("eventCaloHT", &eventCaloHT, "eventCaloHT/F");
+
+  // local event book keeping 
+  dTrackTree_->Branch("evNum", &evNum, "evNum/I");
+  dTrackTree_->Branch("nCaloJets", &nCaloJets, "nCaloJets/I");
+  // index
+  dTrackTree_->Branch("nDtr", &nDtr, "nDtr/I");
+  dTrackTree_->Branch("dtrJetIndex", &dtrJetIndex, "dtrJetIndex[nDtr]/I");
+  // track qualities
+  dTrackTree_->Branch("dtrPt", &dtrPt, "dtrPt[nDtr]/F");
+  dTrackTree_->Branch("dtrEta", &dtrEta, "dtrEta[nDtr]/F");
+  dTrackTree_->Branch("dtrPhi", &dtrPhi, "dtrPhi[nDtr]/F");
+  // tagging variables
+  dTrackTree_->Branch("dtrTheta2D", &dtrTheta2D, "dtrTheta2D[nDtr]/F");  
+  dTrackTree_->Branch("dtr2DIPSig", &dtr2DIPSig, "dtr2DIPSig[nDtr]/F");  
+  // associated jet
+  dTrackTree_->Branch("dtrJetNTracks", &dtrJetNTracks, "dtrJetNTracks[nDtr]/I");
+  dTrackTree_->Branch("dtrJetPt", &dtrJetPt, "dtrJetPt[nDtr]/F");
+  dTrackTree_->Branch("dtrJetEta", &dtrJetEta, "dtrJetEta[nDtr]/F");
+  dTrackTree_->Branch("dtrJetPhi", &dtrJetPhi, "dtrJetPhi[nDtr]/F");
+  // associated jet tagging variables
+  dTrackTree_->Branch("dtrJetMedian2DIPSig", &dtrJetMedian2DIPSig, "dtrJetMedian2DIPSig[nDtr]/F");
+  dTrackTree_->Branch("dtrJetMedianTheta2D", &dtrJetMedianTheta2D, "dtrJetMedianTheta2D[nDtr]/F");
+  dTrackTree_->Branch("dtrJetAlphaMax", &dtrJetAlphaMax, "dtrJetAlphaMax[nDtr]/F");
+
   ///////////  ///////////  ///////////  ///////////  ///////////  ///////////  ////
   //////////////////////////////// TRACK TREE QUANITIES ////////////////////////////
   ///////////  ///////////  ///////////  ///////////  ///////////  /////////// /////
@@ -1599,13 +1705,57 @@ void DJetAnalyzer::beginJob()
   trackTree_->Branch("trAlgoInt", &trAlgoInt, "trAlgoInt[nTracks]/I");
 
 }
+// void DJetAnalyzer::beginRun(edm::Run const& iRun, edm::EventSetup const& es) {
+//   edm::Handle<LHERunInfoProduct> run; 
+
+//   //edm::InputTag inputtag("externalLHEProducer");
+//   typedef std::vector<LHERunInfoProduct::Header>::const_iterator headers_const_iterator; 
+//   iRun.getByLabel( "externalLHEProducer", run );
+//   LHERunInfoProduct myLHERunInfoProduct = *(run.product());
+ 
+//   for (headers_const_iterator iter=myLHERunInfoProduct.headers_begin(); iter!=myLHERunInfoProduct.headers_end(); iter++){
+//     std::cout << iter->tag() << std::endl;
+//     std::vector<std::string> lines = iter->lines();
+//     for (unsigned int iLine = 0; iLine<lines.size(); iLine++) {
+//       std::cout << lines.at(iLine);
+//     }
+//   }
+// }
+
+
+void DJetAnalyzer::beginLuminosityBlock(edm::LuminosityBlock const& lumi, edm::EventSetup const& setup){
+  //  consumes<edm::MergeableCounter>(tag_eventCounterTotal_);
+  //  consumes<edm::MergeableCounter>(tag_eventCounterFiltered_);
+  std::cout << "Beginning Luminosity Block" << std::endl;
+}
+
+void DJetAnalyzer::endLuminosityBlock(edm::LuminosityBlock const& lumi, edm::EventSetup const& setup) {
+  //edm::Handle<edm::MergeableCounter> nEventsTotalCounter;
+  //  lumi.getByLabel(tag_eventCounterTotal_, nEventsTotalCounter);
+  lumi.getByToken(token_eventCounterTotal, nEventsTotalCounter);
+  int eventsCounted = nEventsTotalCounter->value;
+  std::cout << "[endLuminosityBlock] Adding events to total" << eventsCounted << std::endl;
+  nEventsTotal += eventsCounted;
+
+  //edm::Handle<edm::MergeableCounter> nEventsFilteredCounter;
+  //lumi.getByLabel(tag_eventCounterFiltered_, nEventsFilteredCounter);
+  lumi.getByToken(token_eventCounterFiltered, nEventsFilteredCounter);
+  //  lumi.getByLabel("nEventsFiltered", nEventsFilteredCounter);
+  int eventsFiltered = nEventsFilteredCounter->value;
+  std::cout << "[endLuminosityBlock] Adding events to filtered" << eventsFiltered << std::endl;
+  nEventsFiltered += eventsFiltered;
+}
+
 
 void DJetAnalyzer::endJob() 
 {
+  filtCountTree_->Fill();
   outputFile_->cd();
   runStatTree_->Write();
+  filtCountTree_->Write();
   if(writeJetTree_) jetTree_->Write();
   if(writeTrackTree_) trackTree_->Write();
+  if(writeDTrackTree_) dTrackTree_->Write();
   if(writeV0Tree_) v0Tree_->Write();
   if(writeEventTree_) eventTree_->Write();
   if(writeGenTree_ || isMC_ ) genTree_->Write(); 
@@ -1963,6 +2113,89 @@ void DJetAnalyzer::dumpIPInfo(DisplacedJetEvent & djEvent) {
   }
 }
 
+void DJetAnalyzer::dumpWeights(const edm::Event & iEvent) {
+  // get the true number of pile up interactions
+  edm::Handle<std::vector<PileupSummaryInfo>> puInfo; 
+  iEvent.getByLabel("addPileupInfo", puInfo );
+  std::vector<PileupSummaryInfo>::const_iterator PVI;
+  float Tnpv = -1;
+  for(PVI = puInfo->begin(); PVI != puInfo->end(); ++PVI) {
+    int BX = PVI->getBunchCrossing();
+    if(BX == 0) { 
+      Tnpv = PVI->getTrueNumInteractions();
+      continue;
+    } 
+  }
+  genPU = Tnpv; 
+
+  // get the generator event weights
+  edm::Handle<GenEventInfoProduct> genEvtInfo; 
+  iEvent.getByLabel( "generator", genEvtInfo );
+
+  // parse the underlying process parameters for feeding into the
+  // parton distribution functions
+  // scale of the momentum transfer
+  float  Q    = genEvtInfo->pdf()->scalePDF;
+  // the first id
+  int    id1  = genEvtInfo->pdf()->id.first;
+  double x1   = genEvtInfo->pdf()->x.first; // momentum fraction of first parton
+  //double pdf1 = genEvtInfo->pdf()->xPDF.first;
+  // second 
+  int    id2  = genEvtInfo->pdf()->id.second;
+  double x2   = genEvtInfo->pdf()->x.second; // momentum fraction of second parton
+  //double pdf2 = genEvtInfo->pdf()->xPDF.second;
+  //double weig = genEvtInfo->weight(); // 1 for all pure pythia samples
+
+  // problem where gluons can be set to id 21, LHAPDF expects id=0 for gluons
+  if( id1==21 )  id1=0;
+  if( id2==21 )  id2=0;
+
+  if(debug > 1) std::cout << "[PDF WEIGHTS] id1 " << id1 << " id2 " << id2 << " x1 " << x1 <<  " x2 " << x2 << " Q " << Q << std::endl;
+
+  const double	xpdf1 = LHAPDF::xfx(1, x1, (double)(Q), id1);
+  const double	xpdf2 = LHAPDF::xfx(1, x2, (double)(Q), id2);
+  // central weight
+  double    w0 = xpdf1 * xpdf2;
+  genWeight    = w0; 
+  nWeights     = LHAPDF::numberPDF(ipdf);
+  //cout<<"variation over central value: "<<pdf2*pdf1/w0<<endl;
+
+  //Loop over members of a given PDF set and get the mean
+  float mean = 0;
+  for(int ii=1; ii <= nWeights; ++ii){
+    LHAPDF::usePDFMember(ipdf,ii); // the member is specificed by ii. ii =0 is teh central value
+    const double xpdf1_new = LHAPDF::xfx(1, x1, Q, id1);
+    const double xpdf2_new = LHAPDF::xfx(1, x2, Q, id2);
+    double weight = xpdf1_new * xpdf2_new;
+    genWeights[ii] = weight;
+    genWeightsRel[ii] = weight / w0;
+    mean += weight; 
+  }
+  mean /= nWeights;
+
+  // loop again for the rms
+  float rmssq = 0;
+  for(int ii=1; ii <= nWeights; ++ii){
+    LHAPDF::usePDFMember(ipdf,ii); // the member is specificed by ii. ii =0 is teh central value
+    const double xpdf1_new = LHAPDF::xfx(1, x1, Q, id1);
+    const double xpdf2_new = LHAPDF::xfx(1, x2, Q, id2);
+    double weight = xpdf1_new * xpdf2_new;
+    rmssq += (weight - mean)*(weight - mean);
+  }
+  rmssq		/= float((nWeights - 1));
+  genWeightsRMS	 = std::sqrt(rmssq);
+
+  // get the weights stored inside of the generator event info
+  // for pythia only samples this is always 1
+  // const std::vector<double> evtWeights = genEvtInfo->weights();
+  // float theWeight = genEvtInfo->weight();  
+  // genWeight = theWeight;
+  // nWeights  = evtWeights.size();
+  // for(int ii = 0; ii < nWeights; ++ii) {
+  //   genWeights[ii]  = evtWeights[ii];
+  // }
+}
+
 
 void
 DJetAnalyzer::dumpSimInfo(const edm::SimVertexContainer & simVtx) {
@@ -1994,18 +2227,66 @@ DJetAnalyzer::dumpSimInfo(const edm::SimVertexContainer & simVtx) {
   }
 }
 
+// dump all of the tracking variables indexed PER TRACK
+void DJetAnalyzer::dumpDisplacedTrackInfo(DisplacedJetEvent& djEvent, const edm::EventSetup& iSetup) {
+
+  if(debug > 1) std::cout << "[DEBUG 1] Starting dump of dispalced tracks" << std::endl;
+
+  const DisplacedJetCollection djetCollection = djEvent.getDisplacedJets();
+  DisplacedJetCollection::const_iterator djet = djetCollection.begin();
+  int jj = 0;
+  nDtr = 0;
+  if(debug > 2) std::cout << "[DEBUG 2] Looping Displaced Jets.." << std::endl;
+  for(; djet != djetCollection.end(); ++djet, ++jj) {        
+
+    // individual tagging variables values
+    std::vector<float> theta2d = djet->cosThetaDet2DVector;
+    std::vector<float> ipsig2d = djet->ip2dsVector;  
+
+    // kinematics for the tracks
+    std::vector<float> pt = djet->trPtVector;
+    std::vector<float> eta = djet->trEtaVector;
+    std::vector<float> phi = djet->trPhiVector;
+
+    // the aggregate tagging variables for the jet
+    float   alphaMax	     = djet->alphaMax / djet->sumTrackPt;
+    float   medianIPLogSig2D = djet->medianIPLogSig2D;
+    float   medianThetaDet2D = djet->medianCosThetaDet2D;
+    int	    ntrackSize	     = ipsig2d.size();
+
+    if(debug > 2) std::cout << "n  tracks in jet.." << ntrackSize << std::endl;
+    for(int tt = 0; tt < ntrackSize; ++tt) {
+      if(debug > 2) std::cout << "Looping tracks in jet.." << std::endl;
+      // track kinematics
+      dtrPt[nDtr]		= pt[tt];
+      dtrEta[nDtr]		= eta[tt];
+      dtrPhi[nDtr]		= phi[tt];
+      if(debug > 3) std::cout << "2dipsig jet.." << ipsig2d[tt] << std::endl;
+      // tagging variables
+      dtrTheta2D[nDtr]		= theta2d[tt];
+      dtr2DIPSig[nDtr]		= ipsig2d[tt];
+      // associated jet information
+      dtrJetNTracks[nDtr]	= djet->nTracks;
+      // kiematics
+      dtrJetIndex[nDtr]         = jj;
+      dtrJetPt[nDtr]		= djet->caloPt;
+      dtrJetEta[nDtr]		= djet->caloEta;
+      dtrJetPhi[nDtr]		= djet->caloPhi;
+      // tagging variables
+      if(debug > 3) std::cout << "jet alphamax" << alphaMax << std::endl;
+      dtrJetAlphaMax[nDtr]      = alphaMax;
+      dtrJetMedian2DIPSig[nDtr] = medianIPLogSig2D;
+      dtrJetMedianTheta2D[nDtr] = medianThetaDet2D;      
+      nDtr++;
+    }
+  }
+}
+
+
 // dump all of the track info available at AOD into the branches and label with a collection ID
 void DJetAnalyzer::dumpTrackInfo(DisplacedJetEvent& djEvent, const reco::TrackCollection & tracks, const int & collectionID, const edm::EventSetup& iSetup) {
   if(debug > 1 ) std::cout << "[DEBUG] Dumping Track Info for Collection " << collectionID << std::endl;
 
-
-  // const DisplacedJetCollection djetCollection = djEvent.getDisplacedJets();
-  // DisplacedJetCollection::const_iterator djet = djetCollection.begin();
-  // int jj = 0;
-  // for(; djet != djetCollection.end(); ++djet, ++jj) {        
-  //   std::vector<float> theta2d = djet.cosThetaDet2DVector;
-  //   std::vector<float> 2dipsig = djet.ip2dsVector;  
-  // }
 
   reco::TrackCollection::const_iterator tt = tracks.begin();
   for(; tt != tracks.end(); ++tt) {
@@ -2325,7 +2606,7 @@ void DJetAnalyzer::dumpV0Info(DisplacedJetEvent & djEvent) {
       //DisplacedTrack& track1 = vertex.track1;
       //DisplacedTrack& track2 = vertex.track2;
 
-      if(debug > 3 ) std::cout << "[DEBUG 3] filling info" << std::endl;
+      if(debug > 5 ) std::cout << "[DEBUG 5] filling info" << std::endl;
 
       // associated jet information
       v0JetEta[nV0]		 = djet->caloEta;
@@ -2337,13 +2618,13 @@ void DJetAnalyzer::dumpV0Info(DisplacedJetEvent & djEvent) {
       v0JetClusterSize[nV0]	 = djet->jetV0ClusterSize;
       // bool for if the vertex is in a cluster
       
-      if(debug > 3 ) std::cout << "[DEBUG 3] filing cluster related" << std::endl;      
-      if(debug > 3 ) std::cout << "[DEBUG 3] checking v0 cluster null " << std::endl;      
+      if(debug > 5 ) std::cout << "[DEBUG 5] filing cluster related" << std::endl;      
+      if(debug > 5 ) std::cout << "[DEBUG 5] checking v0 cluster null " << std::endl;      
       // check that the pointers aren't null first
       if(djet->v0Cluster != NULL) {
-	if(debug > 3 ) std::cout << "[DEBUG 3] de-referencing pointer " << std::endl;      
+	if(debug > 5 ) std::cout << "[DEBUG 5] de-referencing pointer " << std::endl;      
 	//DisplacedCluster cluster = *djet->v0Cluster;
-	if(debug > 3 ) std::cout << "[DEBUG 3] checking containment " << std::endl;      
+	if(debug > 5 ) std::cout << "[DEBUG 5] checking containment " << std::endl;      
 	v0InCluster[nV0] = 0;//cluster.containsVertex(vertex);
       }
       else{
@@ -2466,6 +2747,7 @@ void DJetAnalyzer::dumpDJTags(DisplacedJetEvent & djEvent) {
 
   }
 }
+
 
 //define this as a plug-in
 DEFINE_FWK_MODULE(DJetAnalyzer);

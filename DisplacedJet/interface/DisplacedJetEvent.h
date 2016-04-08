@@ -82,6 +82,11 @@ class DisplacedJetEvent {
   float genMatchMetric2D(const reco::GenParticle & particle, const reco::Vertex& vertex);
   float genMatchMetric(const reco::GenParticle & particle, const reco::Vertex& vertex);
 
+  // check the number of events passing the specific requirements
+  int	getNJetsPassHLTDisp();
+  int	getNJetsPassHLTPrompt();
+  int	getNJetsPassHLTPromptAndDisp();
+
   // accessors
   int	getNJets() { return djets.size(); } 
   std::vector<int>  getNNoVertexTags() { return nNoVertexTagsVector; }
@@ -104,6 +109,7 @@ class DisplacedJetEvent {
     
   // jet associated info mergers
   void mergeTrackAssociations(const reco::JetTracksAssociation::Container&, const reco::JetTracksAssociation::Container&);
+  void mergeRegionalTrackingIteration(const reco::JetTracksAssociation::Container&, const int& collectionID);
   void mergeCaloIPTagInfo(const reco::TrackIPTagInfoCollection&, const reco::VertexCollection&);
   void mergeSVTagInfo(const reco::SecondaryVertexTagInfoCollection&);
   void fillLeadingSubleadingJets(const bool & isHLT);
@@ -179,6 +185,35 @@ private:
 
 };
 
+int DisplacedJetEvent::getNJetsPassHLTDisp() {
+  int nPass = 0;
+  std::vector<DisplacedJet>::iterator djetIter = djets.begin();
+  for(; djetIter != djets.end(); ++djetIter) {    
+    if(djetIter->passHLTDisp) nPass++;
+  }  
+  return nPass;
+}
+
+// number of jets passing  the HLT prompt tracking requirements
+int DisplacedJetEvent::getNJetsPassHLTPrompt() {
+  int nPass = 0;
+  std::vector<DisplacedJet>::iterator djetIter = djets.begin();
+  for(; djetIter != djets.end(); ++djetIter) {    
+    if(djetIter->passHLTPrompt) nPass++;
+  }    
+  return nPass;
+}
+
+// number of jets passing both the displaced trakcing and prompt requirements
+// at most 2 promtp tracks and at least 1 displaced tracks
+int DisplacedJetEvent::getNJetsPassHLTPromptAndDisp() {
+  int nPass = 0;
+  std::vector<DisplacedJet>::iterator djetIter = djets.begin();
+  for(; djetIter != djets.end(); ++djetIter) {    
+    if(djetIter->passHLTPromptAndDisp) nPass++;
+  }  
+  return nPass;
+}
 
 // fill leading sub leading quantities for displaced jets
 void DisplacedJetEvent::fillLeadingSubleadingJets(const bool & isHLT) {
@@ -400,6 +435,22 @@ void DisplacedJetEvent::mergeSVTagInfo(const reco::SecondaryVertexTagInfoCollect
     djet.addSVTagInfo(*svinfo);
   }
 }
+
+void DisplacedJetEvent::mergeRegionalTrackingIteration(const reco::JetTracksAssociation::Container& jetAssociation, const int& collectionID) {
+  // get the jet references from the jet track association
+  std::vector<reco::JetBaseRef> caloJets   = reco::JetTracksAssociation::allJets(jetAssociation);
+  std::vector<reco::JetBaseRef>::const_iterator jetIter = caloJets.begin();
+
+  // loop over the jets and add the track references using "getValue"
+  for(; jetIter != caloJets.end(); ++jetIter){
+    float pt = (*jetIter)->pt(), eta = (*jetIter)->eta(), phi = (*jetIter)->phi();    
+    if (pt < minPT || fabs(eta) > minEta) continue;    // dont look for jets outside of acceptance
+    DisplacedJet & djet = findDisplacedJetByPtEtaPhi(pt, eta, phi);
+    // add the regional tracks with the corresponding collectionID
+    djet.addRegionalTracks(reco::JetTracksAssociation::getValue(jetAssociation, *jetIter), collectionID);    
+  }
+}
+
 
 void DisplacedJetEvent::mergeTrackAssociations(const reco::JetTracksAssociation::Container& caloMatched, const reco::JetTracksAssociation::Container& vertexMatched) {
   std::vector<reco::JetBaseRef> caloJets   = reco::JetTracksAssociation::allJets(caloMatched);

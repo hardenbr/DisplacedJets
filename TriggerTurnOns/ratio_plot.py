@@ -78,6 +78,12 @@ parser.add_option( "--norm1", dest="norm1",
 		                    help="normalize to 1",
 		                    action="store_true",default = False)
 
+
+parser.add_option( "--rebin", dest="rebin",
+		                    help="normalize to 1",
+		                    action="store_true",default = False)
+
+
 (options, args) = parser.parse_args()
 
 #output root file
@@ -125,10 +131,11 @@ n1 = thisTree.Draw("%s>>%s" % (options.var, hist1_name), options.cut1)
 n2 = thisTree.Draw("%s>>%s" % (options.var, hist2_name), options.cut2)
 
 
+if options.rebin:
+    hist1 = hist1.Rebin(len(varbin_x)-1, "", array.array("d",varbin_x))
+    hist2 = hist2.Rebin(len(varbin_x)-1, "", array.array("d",varbin_x))
 
-hist1 = hist1.Rebin(len(varbin_x)-1, "", array.array("d",varbin_x))
-hist2 = hist2.Rebin(len(varbin_x)-1, "", array.array("d",varbin_x))
-hist2.Scale(options.prescale)
+#hist2.Scale(options.prescale)
 print "passsing cut1", n1
 print "passsing cut2", n2
 

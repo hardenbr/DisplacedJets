@@ -1,10 +1,11 @@
+
 import FWCore.ParameterSet.Config as cms
 from Configuration.StandardSequences.Eras import eras
 
 # output directories
 base                = '/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDIES/CMSSW_7_6_3/src/DisplacedJets/'
-# outputDir           = "/afs/cern.ch/work/h/hardenbr/2015/DIJET/DJANALYSIS/"
-outputDir           = ""
+outputDir           = "/afs/cern.ch/work/h/hardenbr/2015/DIJET/DJANALYSIS/JetHT"
+#outputDir           = ""
 
 # output options (to be appended to the file name outputted)
 appendSignal       = ""
@@ -12,12 +13,12 @@ appendData         = ""
 appendBkg          = ""
 ############ FLAGS #############
 debugLevel         = 0
-reportEveryNEvents = 1000
-isSignalMC         = True
-isMC               = True or isSignalMC
+reportEveryNEvents = 100
+isSignalMC         = False
+isMC               = False or isSignalMC
 isData             = not isMC
 doedm              = False
-nevents            = 100
+nevents            = 1000
 
 #-------------- globaltags
 #gtag              = "74X_HLT_mcRun2_asymptotic_fromSpring15DR_v0" #spring 15 25ns
@@ -26,8 +27,8 @@ nevents            = 100
 #gtag              = "PHYS14_25_V1"
 #gtag              = "MCRUN2_74_V9" #guns
 #gtag              = "74X_dataRun2_Prompt_v2"  #data
-#gtag               = "76X_dataRun2_v15"
-gtag               = "76X_mcRun2_asymptotic_v12"
+gtag               = "76X_dataRun2_v15"
+#gtag               = "76X_mcRun2_asymptotic_v12"
 
 ## -------------json
 #JSON               = 'json_DCSONLY_Run2015B.txt'
@@ -41,20 +42,25 @@ JSON                = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Colli
 trigger_process     = "HLT" 
 #--------------analysis todos
 #$$$$$$$$$trigger fixes
-doApplyTrigger      = True if isData else False #not isSignalMC
 is76XTriggers       = True
-dispTriggersOnly    = False
+doApplyTrigger      = False if isData else False #not isSignalMC
+##mu related
 doApplySingleMu     = False
-removePFHT800       = False
 isOnlyMu            = False
+###
+dispTriggersOnly    = False
+removePFHT800       = False #NOT USED
 ###################
 doEventPreSelection = False
 doJetPreSelection   = False
 dumpGeneralTracks   = False
-dumpDisplacedTracks = False
+dumpDisplacedTracks = True
+#regional tracking
+addRegionalTracking = True #regional tracking will be added into the jetTree
+dumpRegionalTracks  = True #ONLY FOR RAWAOD++
 # trees to write
 writeTrackTree      = False
-writeDTrackTree     = False  #displaced tracks
+writeDTrackTree     = True  #displaced tracks
 writeV0Tree         = False
 writeEventTree      = True
 writeJetTree        = True
@@ -73,7 +79,6 @@ longTagThreshold    = 30
 dHTWorkingPoint     = 2
 
 ######### input lists #########
-
 input_file_list     = None
 #----xx4j samples
 #input_file_list    = '/SignalMCLists/740patch1/mx300_1000mm_aod.list'
@@ -100,7 +105,11 @@ input_file_list     = None
 #input_file_list = 'SignalMCLists/DIJET_GUN/dijet_gun_m300_flat_1mm_1000mm.list'
 #input_file_list = 'SignalMCLists/DIJET_GUN/dijet_gun_m300_ctau0mm_bbar.list'
 
+#---RAWAOD++ samples
+input_file_list = 'RAW_CONTENT_QCD_Pt_170to300_TuneCUETP8M1_13TeV_pythia8.list'
+
 #----data samples
+input_file_list = 'DataSampleLists/JetHT_AVR5_RAW_CONTENT.list'
 #input_file_list  = 'DataSampleLists/PD_DisplacedJet_Run2015D_Sept21.txt'
 #input_file_list = 'DataSampleLists/PD_DisplacedJet_Jul17AOD.txt'
 #input_file_list = 'DataSampleLists/PD_JetHT_Jul17AOD.txt'
@@ -119,7 +128,8 @@ if input_file_list != None:
 #filter for the file list
 if isSignalMC and input_file_list == None :
    myfilelist = cms.untracked.vstring()
-   myfilelist.extend(["file:/tmp/hardenbr/xx4j300_30.root"])
+#   myfilelist.extend(["file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/group/phys_susy/razor/josh/RAZOR_DIJET/PRODUCTION_74XGSDR/XX4J_M-600_CTAU30_NOPU/CRAB_PrivateMC/crab_XX4J_M-600_30mm_NOPU/600_30_nopu.root"])
+   myfilelist.extend(["file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/group/phys_susy/razor/josh/RAZOR_DIJET/PRODUCTION_74XGSDR/XX4J_M-600_CTAU30_NOPU/CRAB_PrivateMC/crab_XX4J_M-600_30mm_NOPU/160223_103026/0000/xx4j_600GeV_30mm_nopu_1kEv.root"])
 #   myfilelist.extend(["/store/mc/RunIIFall15DR76/XXTo4J_M-300_CTau-30mm_TuneCUETP8M1_13TeV_pythia8/AODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/50000/020A2CB2-AFC4-E511-8C17-002590A2CCF2.root"])
 #   myfilelist.extend(["/store/mc/RunIIFall15DR76/XXTo4J_M-500_CTau-2000mm_TuneCUETP8M1_13TeV_pythia8/AODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/70000/00160C77-CCC6-E511-AB01-0025904C7DF0.root"])
    #print "NO SIGNAL INPUT?" 
@@ -128,8 +138,10 @@ if isSignalMC and input_file_list == None :
  #                     'file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/caf/user/hardenbr/DIJET/MC_PRODUCTION/XXTo4J_M-300_CTau_30mm/AODSIM/XXTo4J_M-300_CTau-30mm_reco_105_1_1MO.root' ])
 if not isSignalMC and input_file_list == None and not isData:
    myfilelist = cms.untracked.vstring()
-#   myfilelist.extend(['file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/data/Run2015B/DisplacedJet/AOD/PromptReco-v1/000/251/562/00000/F6834634-9A2A-E511-9F6F-02163E012402.root'])   
-   qcd_files = ['file:/tmp/hardenbr/QCD470to600.root']
+   #   myfilelist.extend(['file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/data/Run2015B/DisplacedJet/AOD/PromptReco-v1/000/251/562/00000/F6834634-9A2A-E511-9F6F-02163E012402.root'])   
+#   qcd_files = ['/store/mc/RunIIFall15DR76/TTJets_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/AODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/30000/00348C6E-599F-E511-B51D-02163E00F4BF.root'] 
+#   qcd_files = ['file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/group/phys_susy/razor/josh/RAZOR_DIJET/RAW_CONTENT_FILES/QCD_MAR31_REGIONALTRACKING_NOTRIGSUM_NOLOCALITY_FIXOUT/QCD_Pt_470to600_TuneCUETP8M1_13TeV_pythia8/crab_qcd470_600/160331_115244/0000/edmoutput_18.root']
+   qcd_files = ['file:/afs/cern.ch/user/h/hardenbr//eos/cms/store/group/phys_susy/razor/josh/RAZOR_DIJET/RAW_CONTENT_FILES/QCD_MAR31_REGIONALTRACKING_NOTRIGSUM_NOLOCALITY_FIXOUT/QCD_Pt_170to300_TuneCUETP8M1_13TeV_pythia8/crab_qcd170_300/160331_115231/0000/edmoutput_55.root']
    # qcd_files = ['/store/mc/RunIIFall15DR76/QCD_Pt_300to470_TuneCUETP8M1_13TeV_pythia8/AODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/40000/0AD1B83E-DCA0-E511-AA14-0025905A60F2.root',
    #              '/store/mc/RunIIFall15DR76/QCD_Pt_300to470_TuneCUETP8M1_13TeV_pythia8/AODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/40000/18EEA885-D9A0-E511-9529-0025905A6138.root',
    #              '/store/mc/RunIIFall15DR76/QCD_Pt_300to470_TuneCUETP8M1_13TeV_pythia8/AODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/40000/1AD1A49F-D9A0-E511-9484-0CC47A4D7618.root',
@@ -148,13 +160,8 @@ if not isSignalMC and input_file_list == None and not isData:
                 
 #   myfilelist.extend(['/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/00000/00D76158-CCFC-E411-89EA-AC853DA06B56.root'])
 if isData and input_file_list == None:
-   muon_files = ['/store/data/Run2015D/SingleMuon/AOD/16Dec2015-v1/10000/0069A0A7-6EA8-E511-8DF1-0CC47A4C8E56.root',
-                 '/store/data/Run2015D/SingleMuon/AOD/16Dec2015-v1/10000/00A3E567-75A8-E511-AD0D-0CC47A4D769E.root',
-                 '/store/data/Run2015D/SingleMuon/AOD/16Dec2015-v1/10000/00AE62FC-0DA8-E511-9330-549F35AE5024.root',
-                 '/store/data/Run2015D/SingleMuon/AOD/16Dec2015-v1/10000/00AFDA8C-68A8-E511-B68C-0CC47A4D7662.root',
-                 '/store/data/Run2015D/SingleMuon/AOD/16Dec2015-v1/10000/00E41E14-6DA8-E511-A89A-0025905A60C6.root']
-                 #myfilelist.extend(['/store/data/Run2015C/JetHT/AOD/PromptReco-v1/000/254/905/00000/263140AF-B34B-E511-A678-02163E0146DB.root'])
-   for mfile in muon_files: 
+   these_files = ['file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/group/phys_susy/razor/josh/RAZOR_DIJET/RAW_CONTENT_FILES/JetHT_AVR5_RAW_CONTENT/JetHT/crab_JetHT/160405_130026/JetHT_0000_head200.root']
+   for mfile in these_files: 
       print mfile
       myfilelist.extend([mfile])
 #   myfilelist.extend(['file:pickevents.root'])
@@ -232,12 +239,15 @@ process.analyzerVTX.vertexTreeName  = cms.untracked.string('vtx')
 process.analyzerVTX.genTreeName     = cms.untracked.string('genp')
 
 # analysis dependent flags
-#  applyEventPreSelection_ = iConfig.getUntrackedParameter<bool>("applyEventPreSelection");
-#  applyJetPreSelection_   = iConfig.getUntrackedParameter<bool>("applyJetPreSelection");
+#  applyEventPreSelection_                  = iConfig.getUntrackedParameter<bool>("applyEventPreSelection");
+#  applyJetPreSelection_                    = iConfig.getUntrackedParameter<bool>("applyJetPreSelection");
 process.analyzerCALO.applyEventPreSelection = cms.untracked.bool(doEventPreSelection)
 process.analyzerCALO.applyJetPreSelection   = cms.untracked.bool(doJetPreSelection)
 process.analyzerCALO.dumpGeneralTracks      = cms.untracked.bool(dumpGeneralTracks)
 process.analyzerCALO.dumpDisplacedTracks    = cms.untracked.bool(dumpDisplacedTracks)
+process.analyzerCALO.dumpRegionalTracks     = cms.untracked.bool(dumpRegionalTracks)
+process.analyzerCALO.addRegionalTracking    = cms.untracked.bool(addRegionalTracking)
+
 
 # what to write out 
 process.analyzerCALO.writeTrackTree  = cms.untracked.bool(writeTrackTree)
@@ -264,18 +274,28 @@ process.analyzerCALO.triggerResultPath = cms.untracked.string(trigger_process)
 process.analyzerVTX.triggerResults     = cms.untracked.InputTag('TriggerResults', '', '')
 process.analyzerCALO.triggerResults    = cms.untracked.InputTag('TriggerResults', '', trigger_process)
 
-
-
 # collection tags
-process.analyzerVTX.generalTracks                  = cms.untracked.InputTag('generalTracks', '', '')
-process.analyzerVTX.ak4CaloJets                    = cms.untracked.InputTag('ak4CaloJets', '', '')
-process.analyzerVTX.genParticles                   = cms.untracked.InputTag('genParticles', '', '')
+process.analyzerVTX.generalTracks          = cms.untracked.InputTag('generalTracks', '', '')
+process.analyzerVTX.ak4CaloJets            = cms.untracked.InputTag('ak4CaloJets', '', '')
+process.analyzerVTX.genParticles           = cms.untracked.InputTag('genParticles', '', '')
+
+# regional tracking rom the HLT
+process.analyzerVTX.regionalTracksIter012         = cms.untracked.InputTag('displacedAk4JetTracksAssociatorAtVertexRegionalIter012', '', '')
+process.analyzerVTX.regionalTracksIter0124        = cms.untracked.InputTag('displacedAk4JetTracksAssociatorAtVertexRegionalIter0124', '', '')
+process.analyzerVTX.regionalTracksIter4           = cms.untracked.InputTag('displacedAk4JetTracksAssociatorAtVertexRegionalIter4', '', '')
+# process.analyzerVTX.regionalTracksIter012  = cms.untracked.InputTag('hltIter2MergedForBTag', '', '')
+# process.analyzerVTX.regionalTracksIter0124 = cms.untracked.InputTag('hltIter4MergedWithIter012DisplacedJets', '', '')
+# process.analyzerVTX.regionalTracksIter4    = cms.untracked.InputTag('hltDisplacedhltIter4PFlowTrackSelectionHighPurity', '', '')
+
 process.analyzerCALO.generalTracks                 = cms.untracked.InputTag('generalTracks', '', '')
 process.analyzerCALO.ak4CaloJets                   = cms.untracked.InputTag('ak4CaloJetsL2L3', '', '')
 process.analyzerCALO.genParticles                  = cms.untracked.InputTag('genParticles', '', '')
 process.analyzerCALO.caloMatchedTrackAssociation   = cms.untracked.InputTag('displacedAk4JetTracksAssociatorAtCaloFace','','ANA')
 process.analyzerCALO.vertexMatchedTrackAssociation = cms.untracked.InputTag('displacedAk4JetTracksAssociatorAtVertex','','ANA')
-
+#regional tracking
+process.analyzerCALO.regionalTracksIter012         = cms.untracked.InputTag('displacedAk4JetTracksAssociatorAtVertexRegionalIter012', '', '')
+process.analyzerCALO.regionalTracksIter0124        = cms.untracked.InputTag('displacedAk4JetTracksAssociatorAtVertexRegionalIter0124', '', '')
+process.analyzerCALO.regionalTracksIter4           = cms.untracked.InputTag('displacedAk4JetTracksAssociatorAtVertexRegionalIter4', '', '')
 
 # jet tagging categories
 process.analyzerCALO.shortTagThreshold  = cms.untracked.double(shortTagThreshold)
@@ -475,6 +495,9 @@ process.p *= process.nEventsFiltered
 
 #always add the jet corrections and tagging
 process.p *=  process.correctJets * process.djtagging
+
+#add in the regional track jet associations if we are running on RAWAOD+
+if addRegionalTracking:  process.p *= process.regionalTrackAssocations 
 
 if doedm: #just dump the edm output of the djtagging sequence no analyzer
     process.btag_output = cms.EndPath(process.test_output)

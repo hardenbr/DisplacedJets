@@ -96,7 +96,7 @@ class DisplacedTrack {
       // angles related to the primary vertex 
       angleMomentumAndPVAtInnerHit2D = (-1 * (pvVector2D - innerPos2D)).Angle((refMom2D)); 
       angleMomentumAndPVAtInnerHit3D = (-1 * (pvVector3D - innerPos3D)).Angle((refMom3D));
-      angleMomentumAndPVAtOuterHit2D = (-1 * (pvVector2D - innerPos2D)).Angle((innerMom2D)); 
+      angleMomentumAndPVAtOuterHit2D = (-1 * (pvVector2D - innerPos2D)).Angle((innerMom2D));  //NOTE THAT DESPITE THE NAME THIS IS ACTUALY FROM THE INNER HITa
       angleMomentumAndPVAtOuterHit3D = (-1 * (pvVector3D - innerPos3D)).Angle((innerMom3D));
 
       // coorindates

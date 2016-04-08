@@ -3,10 +3,26 @@ import FWCore.ParameterSet.Config as cms
 from TrackPropagation.SteppingHelixPropagator.SteppingHelixPropagatorAlong_cfi import * ##propagator
 
 from RecoJets.JetAssociationProducers.j2tParametersCALO_cfi import *
-from RecoJets.JetAssociationProducers.j2tParametersVX_cfi import *
+from DisplacedJets.DisplacedJetAssociationProducers.j2tParametersVX_cfi import *
 
 displacedAk4JetTracksAssociatorAtVertex = cms.EDProducer("JetTracksAssociatorAtVertex",
     j2tParametersVX,
+    jets = cms.InputTag("ak4CaloJetsL2L3")
+)
+
+
+displacedAk4JetTracksAssociatorAtVertexRegionalIter0124 = cms.EDProducer("JetTracksAssociatorAtVertex",
+    j2tParametersVXRegionalIter0124,
+    jets = cms.InputTag("ak4CaloJetsL2L3")
+)
+
+displacedAk4JetTracksAssociatorAtVertexRegionalIter012 = cms.EDProducer("JetTracksAssociatorAtVertex",
+    j2tParametersVXRegionalIter012,
+    jets = cms.InputTag("ak4CaloJetsL2L3")
+)
+
+displacedAk4JetTracksAssociatorAtVertexRegionalIter4 = cms.EDProducer("JetTracksAssociatorAtVertex",
+    j2tParametersVXRegionalIter4,
     jets = cms.InputTag("ak4CaloJetsL2L3")
 )
 

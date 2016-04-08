@@ -29,7 +29,8 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   //tree dumping track quantities
   void	dumpTrackInfo(DisplacedJetEvent&, const reco::TrackCollection &, const int & collectionID, const edm::EventSetup& iSetup);
   void	dumpDisplacedTrackInfo(DisplacedJetEvent& , const edm::EventSetup& iSetup);
-  
+  void  dumpRegionalTrackInfo(DisplacedJetEvent& , const edm::EventSetup& iSetup);
+
   virtual void beginJob() override;
   //virtual void beginRun(edm::Run const& , edm::EventSetup const&) override;
   virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
@@ -49,10 +50,14 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   // analysis to dos
   bool	 doGenMatch_;
   bool	 doSimMatch_;
+
   bool	 applyEventPreSelection_;
   bool	 applyJetPreSelection_;
+  bool   addRegionalTracking_;  // ONLY POSSIBLE OF RE_PROCESSED RAW
   bool   dumpGeneralTracks_;
   bool   dumpDisplacedTracks_;
+  bool   dumpRegionalTracks_;
+
   // keep trees
   bool   writeJetTree_;
   bool   writeV0Tree_;
@@ -81,6 +86,10 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   edm::InputTag tag_secondaryVertexTagInfo_; 
   edm::InputTag tag_caloMatchedTracks_;
   edm::InputTag tag_vertexMatchedTracks_;
+  // extra tracking collections for online regional tracking
+  edm::InputTag tag_regionalTracksIter012_;
+  edm::InputTag tag_regionalTracksIter0124_;
+  edm::InputTag tag_regionalTracksIter4_;
 
   //vertex tags
   edm::InputTag tag_secondaryVertices_;
@@ -225,6 +234,25 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   ///////////////////// TRACK MATCHING ////////////////////
 
   Int_t   jetNTracks[MAX_JETS];  
+  Int_t   jetNTracksPrompt[MAX_JETS];    
+  Int_t   jetNTracksDisp[MAX_JETS];    
+  // regional tracking
+  Int_t   jetNTracksRegPrompt[MAX_JETS];  // 2DIP > 0.05
+  Int_t   jetNTracksRegDisp[MAX_JETS];  // 2DIPSig > 5? 
+  Int_t   jetNTracksReg0124[MAX_JETS];  
+  Int_t   jetNTracksReg012[MAX_JETS];  
+  Int_t   jetNTracksReg4[MAX_JETS];  
+  // jet indexed passing of each requirements
+  Int_t   jetPassRegHLTPrompt[MAX_JETS];
+  Int_t   jetPassRegHLTDisp[MAX_JETS];
+  Int_t   jetPassRegHLTPromptAndDisp[MAX_JETS];
+
+
+
+  // aggregate counts of jets passing the specific requirements
+  Int_t   nJetsPassRegHLTPrompt; 
+  Int_t   nJetsPassRegHLTDisp;
+  Int_t   nJetsPassRegHLTPromptAndDisp;
 
   //////////////////// LIFETIME TAG /////////////////  
 
@@ -831,6 +859,38 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   Float_t   pvYErr[MAX_VTX];
   Float_t   pvXErr[MAX_VTX];
 
+
+  ///////////////////// REGIONAL TRACK INFORMATION ////////////
+
+  // kinematics
+  Int_t nDtrReg;
+  Int_t dtrRegCollection[MAX_TRACKS];
+  Int_t dtrRegJetIndex[MAX_TRACKS];
+  Float_t dtrRegPt[MAX_TRACKS];
+  Float_t dtrRegEta[MAX_TRACKS];
+  Float_t dtrRegPhi[MAX_TRACKS];
+  // tagging variables
+  Float_t dtrRegTheta2D[MAX_TRACKS];
+  Float_t dtrReg2DIPSig[MAX_TRACKS];
+  Float_t dtrReg2DIP[MAX_TRACKS];
+  Int_t   dtrRegTagged[MAX_TRACKS];
+  // associated jet information
+  Float_t dtrRegJetPt[MAX_TRACKS];
+  Float_t dtrRegJetEta[MAX_TRACKS];
+  Float_t dtrRegJetPhi[MAX_TRACKS];
+  // tracks multiplicities
+  Int_t dtrRegJetNTracks[MAX_TRACKS];
+  Int_t dtrRegJetNTracksReg012[MAX_TRACKS];
+  Int_t dtrRegJetNTracksReg0124[MAX_TRACKS];
+  Int_t dtrRegJetNTracksReg4[MAX_TRACKS];
+  Int_t dtrRegJetNTracksPrompt[MAX_TRACKS];
+  Int_t dtrRegJetNTracksPromptAndDisp[MAX_TRACKS];
+  Int_t dtrRegJetNTracksDisp[MAX_TRACKS];
+  Int_t dtrRegJetNTaggedTracks[MAX_TRACKS];
+  // associated jet tagginginformation
+  Float_t dtrRegJetMedian2DIPSig[MAX_TRACKS];
+  Float_t dtrRegJetMedianTheta2D[MAX_TRACKS];
+  Float_t dtrRegJetAlphaMax[MAX_TRACKS];
   ///////////////////// DISPLACED TRACK INFORMATION ////////////
 
   // kinematics
@@ -842,15 +902,19 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   // tagging variables
   Float_t dtrTheta2D[MAX_TRACKS];
   Float_t dtr2DIPSig[MAX_TRACKS];
+  Int_t   dtrTagged[MAX_TRACKS];
   // associated jet information
   Int_t dtrJetNTracks[MAX_TRACKS];
+  Int_t dtrJetNTaggedTracks[MAX_TRACKS];
+
+
   Float_t dtrJetPt[MAX_TRACKS];
   Float_t dtrJetEta[MAX_TRACKS];
   Float_t dtrJetPhi[MAX_TRACKS];
   Float_t dtrJetAlphaMax[MAX_TRACKS];
   Float_t dtrJetMedian2DIPSig[MAX_TRACKS];
   Float_t dtrJetMedianTheta2D[MAX_TRACKS];
-
+  
   ///////////////////// TRACK INFORMATION ////////////////////
 
   Int_t   trCollectionID[MAX_TRACKS];
@@ -968,9 +1032,12 @@ class DJetAnalyzer : public edm::EDAnalyzer {
 
   ///////////////////HANDLES////////////////////
   // tracks
-  edm::Handle<reco::TrackCollection>			gTracks;
+  edm::Handle<reco::TrackCollection>			           gTracks;
   edm::Handle<reco::JetTracksAssociation::Container>               caloMatchedTracks; 
   edm::Handle<reco::JetTracksAssociation::Container>               vertexMatchedTracks;
+  edm::Handle<reco::JetTracksAssociation::Container>               regionalTracksIter012; 
+  edm::Handle<reco::JetTracksAssociation::Container>               regionalTracksIter0124; 
+  edm::Handle<reco::JetTracksAssociation::Container>               regionalTracksIter4; 
 
   // jets
   edm::Handle<reco::CaloJetCollection>			ak4CaloJets;

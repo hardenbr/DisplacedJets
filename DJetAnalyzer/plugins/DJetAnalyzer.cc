@@ -158,8 +158,13 @@ DJetAnalyzer::DJetAnalyzer(const edm::ParameterSet& iConfig)
   doSimMatch_		  = iConfig.getUntrackedParameter<bool>("doSimMatch");
   applyEventPreSelection_ = iConfig.getUntrackedParameter<bool>("applyEventPreSelection");
   applyJetPreSelection_	  = iConfig.getUntrackedParameter<bool>("applyJetPreSelection");
+  // tree dumping
   dumpGeneralTracks_      = iConfig.getUntrackedParameter<bool>("dumpGeneralTracks");
   dumpDisplacedTracks_    = iConfig.getUntrackedParameter<bool>("dumpDisplacedTracks");
+  dumpRegionalTracks_	  = iConfig.getUntrackedParameter<bool>("dumpRegionalTracks");
+  // add in the tracks from the RAWAOD++
+  addRegionalTracking_    = iConfig.getUntrackedParameter<bool>("addRegionalTracking");
+  // write commands
   writeJetTree_		  = iConfig.getUntrackedParameter<bool>("writeJetTree");
   writeV0Tree_		  = iConfig.getUntrackedParameter<bool>("writeV0Tree");
   writeDTrackTree_	  = iConfig.getUntrackedParameter<bool>("writeDTrackTree");
@@ -180,18 +185,25 @@ DJetAnalyzer::DJetAnalyzer(const edm::ParameterSet& iConfig)
   token_eventCounterFiltered = consumes<edm::MergeableCounter,edm::InLumi>(tag_eventCounterFiltered_);
 
   // collection tags
-  tag_generalTracks_		  = iConfig.getUntrackedParameter<edm::InputTag>("generalTracks");
+  tag_generalTracks_	      = iConfig.getUntrackedParameter<edm::InputTag>("generalTracks");
   consumes<reco::TrackCollection>(tag_generalTracks_);
-  tag_ak4CaloJets_		  = iConfig.getUntrackedParameter<edm::InputTag>("ak4CaloJets");
+  tag_ak4CaloJets_	      = iConfig.getUntrackedParameter<edm::InputTag>("ak4CaloJets");
   consumes<reco::CaloJetCollection>(tag_ak4CaloJets_);
-  tag_secondaryVertexTagInfo_	  = iConfig.getUntrackedParameter<edm::InputTag>("secondaryVertexTagInfo");  
+  tag_secondaryVertexTagInfo_ = iConfig.getUntrackedParameter<edm::InputTag>("secondaryVertexTagInfo");  
   consumes<reco::SecondaryVertexTagInfoCollection>(tag_secondaryVertexTagInfo_);
-  tag_lifetimeIPTagInfo_	  = iConfig.getUntrackedParameter<edm::InputTag>("lifetimeIPTagInfo"); 
+  tag_lifetimeIPTagInfo_      = iConfig.getUntrackedParameter<edm::InputTag>("lifetimeIPTagInfo"); 
   consumes<reco::TrackIPTagInfoCollection>(tag_lifetimeIPTagInfo_);
-  tag_caloMatchedTracks_          = iConfig.getUntrackedParameter<edm::InputTag>("caloMatchedTrackAssociation"); 
+  tag_caloMatchedTracks_      = iConfig.getUntrackedParameter<edm::InputTag>("caloMatchedTrackAssociation"); 
   consumes<reco::JetTracksAssociationCollection>(tag_caloMatchedTracks_);
-  tag_vertexMatchedTracks_        = iConfig.getUntrackedParameter<edm::InputTag>("vertexMatchedTrackAssociation"); 
+  tag_vertexMatchedTracks_    = iConfig.getUntrackedParameter<edm::InputTag>("vertexMatchedTrackAssociation"); 
   consumes<reco::JetTracksAssociationCollection>(tag_vertexMatchedTracks_);
+  // extra collections for online regional tracking 
+  tag_regionalTracksIter012_  = iConfig.getUntrackedParameter<edm::InputTag>("regionalTracksIter012");
+  consumes<reco::JetTracksAssociationCollection>(tag_regionalTracksIter012_);
+  tag_regionalTracksIter0124_ = iConfig.getUntrackedParameter<edm::InputTag>("regionalTracksIter0124");
+  consumes<reco::JetTracksAssociationCollection>(tag_regionalTracksIter0124_);
+  tag_regionalTracksIter4_    = iConfig.getUntrackedParameter<edm::InputTag>("regionalTracksIter4");
+  consumes<reco::JetTracksAssociationCollection>(tag_regionalTracksIter4_);
 
   // vertex tags
   tag_secondaryVertices_	  = iConfig.getUntrackedParameter<edm::InputTag>("secondaryVertex"); 
@@ -352,6 +364,13 @@ void DJetAnalyzer::fillHandles(const edm::Event & iEvent ) {
   iEvent.getByLabel(tag_lifetimeIPTagInfo_, lifetimeIPTagInfo);
   iEvent.getByLabel(tag_secondaryVertexTagInfo_, secondaryVertexTagInfo);  
 
+  // only get the regional tracks if we are running on the AODRAW+
+  if(addRegionalTracking_) {
+    iEvent.getByLabel(tag_regionalTracksIter012_, regionalTracksIter012);
+    iEvent.getByLabel(tag_regionalTracksIter0124_, regionalTracksIter0124);
+    iEvent.getByLabel(tag_regionalTracksIter4_, regionalTracksIter4);    
+  }
+
   // vertex info
   iEvent.getByLabel(tag_secondaryVertices_, secondaryVertices);  
   iEvent.getByLabel(tag_inclusiveVertexCandidates_, inclusiveVertexCandidates);  
@@ -393,24 +412,31 @@ void  DJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   fillTriggerInfo(iEvent, *(triggerResults.product()));
 
   // collection products
-  const reco::CaloJetCollection &		    caloJets		   = *(ak4CaloJets.product());
-  const reco::VertexCollection &                    pvCollection	   = *(offlinePrimaryVertices.product());
-  const reco::TrackIPTagInfoCollection &	    lifetimeTagInfo	   = *(lifetimeIPTagInfo.product()); ;
-  const reco::SecondaryVertexTagInfoCollection &    svTagInfo		   = *(secondaryVertexTagInfo.product()); 
-  //  const reco::VertexCollection &		    inc			   = *(inclusiveVertexCandidates.product());
-  const reco::VertexCollection &		    incSV		   = *(inclusiveSecondaryVertices.product());
-  const reco::GenParticleCollection &		    genCollection	   = *(genParticles.product());     
-  const edm::SimVertexContainer &		    simVtxCollection	   = *(simVertices.product()); 
-  const reco::TrackCollection &                     generalTracks	   = *(gTracks.product());
+  const reco::CaloJetCollection &		    caloJets			      = *(ak4CaloJets.product());
+  const reco::VertexCollection &                    pvCollection		      = *(offlinePrimaryVertices.product());
+  const reco::TrackIPTagInfoCollection &	    lifetimeTagInfo		      = *(lifetimeIPTagInfo.product()); ;
+  const reco::SecondaryVertexTagInfoCollection &    svTagInfo			      = *(secondaryVertexTagInfo.product()); 
+  //  const reco::VertexCollection &		    inc				      = *(inclusiveVertexCandidates.product());
+  const reco::VertexCollection &		    incSV			      = *(inclusiveSecondaryVertices.product());
+  const reco::GenParticleCollection &		    genCollection		      = *(genParticles.product());     
+  const edm::SimVertexContainer &		    simVtxCollection		      = *(simVertices.product()); 
+  const reco::TrackCollection &                     generalTracks		      = *(gTracks.product());
   // track associatiosns
-  const reco::JetTracksAssociationCollection &      caloTrackAssociation   = *(caloMatchedTracks.product());
-  const reco::JetTracksAssociationCollection &      vertexTrackAssociation = *(vertexMatchedTracks.product());
-
+  const reco::JetTracksAssociationCollection &      caloTrackAssociation	      = *(caloMatchedTracks.product());
+  const reco::JetTracksAssociationCollection &      vertexTrackAssociation	      = *(vertexMatchedTracks.product());
+  // regional associations
+  const reco::JetTracksAssociationCollection &	    regionalTracksIter012Association  = *(regionalTracksIter012.product());
+  const reco::JetTracksAssociationCollection &	    regionalTracksIter0124Association = *(regionalTracksIter0124.product());
+  const reco::JetTracksAssociationCollection &	    regionalTracksIter4Association    = *(regionalTracksIter4.product());
+  // extra tracks from re-running regional tracking over RAW
   
   if(debug > 0) std::cout << "[----------------- HANDLES RETRIEVED -------------------] " <<std::endl;
 
   // build the displaced event from the calo jet collection and kinematic cuts
   DisplacedJetEvent djEvent(isMC_, caloJets, pvCollection, cut_jetPt, cut_jetEta, iSetup, debug);
+
+  // add in the extra track collections from reprocessing online tracking
+  
 
   // pull out the first primary vertex in the collection (the default PV)
   //  const reco::Vertex & firstPV = *pvCollection.begin(); 
@@ -432,6 +458,13 @@ void  DJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 
   // merge in the event info MUST BE DONE AFTER ASSOCIATIONS
   djEvent.mergeCaloIPTagInfo(lifetimeTagInfo, pvCollection); // add the ip info built from the JTA
+
+  // add the regional tracking if running on RAWAOD+
+  if(addRegionalTracking_){
+    djEvent.mergeRegionalTrackingIteration(regionalTracksIter0124Association, 0); // colleciton id of 0 for the full collection
+    djEvent.mergeRegionalTrackingIteration(regionalTracksIter012Association, 1); // collection id 1 for prompt tracks
+    djEvent.mergeRegionalTrackingIteration(regionalTracksIter4Association, 2); // collection id 2 for the displaced online tracking
+  }
 
   // dump information related to the preselection
   dumpPreSelection(djEvent);
@@ -491,6 +524,7 @@ void  DJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   nTracks = 0;   
   if(dumpGeneralTracks_) dumpTrackInfo(djEvent, generalTracks, 0, iSetup);
   if(dumpDisplacedTracks_) dumpDisplacedTrackInfo(djEvent, iSetup);
+  if(dumpRegionalTracks_ && addRegionalTracking_) dumpRegionalTrackInfo(djEvent, iSetup);
 
   // dump the vertex info in the event
   dumpPVInfo(djEvent, pvCollection);
@@ -1067,11 +1101,31 @@ void DJetAnalyzer::beginJob() {
   jetTree_->Branch("jetV0NJetClusterIntercept", &jetV0NJetClusterIntercept,"jetV0NJetClusterIntercept[nCaloJets]/F");
   jetTree_->Branch("jetV0NJetClusterAngleMom", &jetV0NJetClusterAngleMom,"jetV0NJetClusterAngleMom[nCaloJets]/F");
   jetTree_->Branch("jetV0NJetClusterNTracks", &jetV0NJetClusterNTracks,"jetV0NJetClusterNTracks[nCaloJets]/I");
+  jetTree_->Branch("jetNTracksPrompt", &jetNTracksPrompt,"jetNTracksPrompt[nCaloJets]/I");    
+  jetTree_->Branch("jetNTracksDisp", &jetNTracksDisp,"jetNTracksDisp[nCaloJets]/I");    
 
-  ///////////  ///////////  ///////////  ///////////  ///////////  ///////////  ////
+  // HLT RELATED TRACKING FOR RAWAOD++
+  if(dumpRegionalTracks_ && addRegionalTracking_) {
+    // global number of jets passing requirements
+    jetTree_->Branch("nJetsPassRegHLTPrompt", &nJetsPassRegHLTPrompt,"nJetsPassRegHLTPrompt/I");    
+    jetTree_->Branch("nJetsPassRegHLTDisp", &nJetsPassRegHLTDisp,"nJetsPassRegHLTDisp/I");    
+    jetTree_->Branch("nJetsPassRegHLTPromptAndDisp", &nJetsPassRegHLTPromptAndDisp,"nJetsPassRegHLTPromptAndDisp/I");    
+    // jet indexed passing the onling requirements
+    jetTree_->Branch("jetPassRegHLTPrompt", &jetPassRegHLTPrompt,"jetPassRegHLTPrompt[nCaloJets]/I");    
+    jetTree_->Branch("jetPassRegHLTDisp", &jetPassRegHLTDisp,"jetPassRegHLTDisp[nCaloJets]/I");    
+    jetTree_->Branch("jetPassRegHLTPromptAdnDisp", &jetPassRegHLTPromptAndDisp,"jetPassRegHLTPromptAndDisp[nCaloJets]/I");    
+    // track multiplicities without ip or ipsig requirements
+    jetTree_->Branch("jetNTracksReg0124", &jetNTracksReg0124,"jetNTracksReg0124[nCaloJets]/I");    
+    jetTree_->Branch("jetNTracksReg012", &jetNTracksReg012,"jetNTracksReg012[nCaloJets]/I");    
+    jetTree_->Branch("jetNTracksReg4", &jetNTracksReg4,"jetNTracksReg4[nCaloJets]/I");    
+    jetTree_->Branch("jetNTracksRegPrompt", &jetNTracksRegPrompt,"jetNTracksRegPrompt[nCaloJets]/I");    
+    jetTree_->Branch("jetNTracksRegDisp", &jetNTracksRegDisp,"jetNTracksRegDisp[nCaloJets]/I");    
+  }  
+
+  ///////////  ///////////  ///////////  ///////////  ///////////  ///////////  //
   //////////////////////////////// V0 Candidate QUANITIES ////////////////////////
-  ///////////  ///////////  ///////////  ///////////  ///////////  /////////// /////
-  //////// Everything is either a flat number or indexed by nV0 //////////////
+  ///////////  ///////////  ///////////  ///////////  ///////////  /////////// ///
+  //////// Everything is either a flat number or indexed by nV0 //////////////////
 
   //jet quantities
 
@@ -1185,6 +1239,19 @@ void DJetAnalyzer::beginJob() {
   dTrackTree_->Branch("lumi", &lumi, "lumi/I");
   dTrackTree_->Branch("event", &event, "event/I");
 
+  if(isSignalMC_) {
+    dTrackTree_->Branch("genMom1CTau0", &genMom1CTau0, "genMom1CTau0/F");
+    dTrackTree_->Branch("genMom2CTau0", &genMom2CTau0, "genMom2CTau0/F");
+    dTrackTree_->Branch("genMom1Lxy", &genMom1Lxy, "genMom1Lxy/F");
+    dTrackTree_->Branch("genMom2Lxy", &genMom2Lxy, "genMom2Lxy/F");
+    dTrackTree_->Branch("genMom1Lxyz", &genMom1Lxyz, "genMom1Lxyz/F");
+    dTrackTree_->Branch("genMom2Lxyz", &genMom2Lxyz, "genMom2Lxyz/F");
+    dTrackTree_->Branch("genMom1Lz", &genMom1Lz, "genMom1Lz/F");
+    dTrackTree_->Branch("genMom2Lz", &genMom2Lz, "genMom2Lz/F");
+    dTrackTree_->Branch("genMom1Pt", &genMom1Pt, "genMom1Pt/F");
+    dTrackTree_->Branch("genMom2Pt", &genMom2Pt, "genMom2Pt/F");
+  }
+
   // trigger 
   dTrackTree_->Branch("nTrig", &nTrig, "nTrig/I");
   //dTrackTree_->Branch("triggerNames", &triggerNames);
@@ -1235,6 +1302,37 @@ void DJetAnalyzer::beginJob() {
   dTrackTree_->Branch("dtrJetMedian2DIPSig", &dtrJetMedian2DIPSig, "dtrJetMedian2DIPSig[nDtr]/F");
   dTrackTree_->Branch("dtrJetMedianTheta2D", &dtrJetMedianTheta2D, "dtrJetMedianTheta2D[nDtr]/F");
   dTrackTree_->Branch("dtrJetAlphaMax", &dtrJetAlphaMax, "dtrJetAlphaMax[nDtr]/F");
+
+  // 
+  // Regional Track Collections
+  // 
+  dTrackTree_->Branch("nDtrReg", &nDtrReg, "nDtrReg/I");
+  dTrackTree_->Branch("dtrRegJetIndex", &dtrRegJetIndex, "dtrRegJetIndex[nDtrReg]/I");
+  dTrackTree_->Branch("dtrRegCollection", &dtrRegCollection, "dtrRegCollectiond[nDtrReg]/I");
+  // track qualities
+  dTrackTree_->Branch("dtrRegPt", &dtrRegPt, "dtrRegPt[nDtrReg]/F");
+  dTrackTree_->Branch("dtrRegEta", &dtrRegEta, "dtrRegEta[nDtrReg]/F");
+  dTrackTree_->Branch("dtrRegPhi", &dtrRegPhi, "dtrRegPhi[nDtrReg]/F");
+  // tagging variables
+  dTrackTree_->Branch("dtrRegTheta2D", &dtrRegTheta2D, "dtrRegTheta2D[nDtrReg]/F");  
+  dTrackTree_->Branch("dtrReg2DIPSig", &dtrReg2DIPSig, "dtrReg2DIPSig[nDtrReg]/F");  
+  dTrackTree_->Branch("dtrReg2DIP", &dtrReg2DIP, "dtrReg2DIP[nDtrReg]/F");  
+  // associated jet qualities
+  dTrackTree_->Branch("dtrRegJetNTracks", &dtrRegJetNTracks, "dtrRegJetNTracks[nDtrReg]/I");
+  dTrackTree_->Branch("dtrRegJetNTracksPrompt", &dtrRegJetNTracksPrompt, "dtrRegJetNTracksPrompt[nDtrReg]/I");
+  dTrackTree_->Branch("dtrRegJetNTracksDisp", &dtrRegJetNTracksDisp, "dtrRegJetNTracksDisp[nDtrReg]/I");
+  dTrackTree_->Branch("dtrRegJetNTracksPromptAndDisp", &dtrRegJetNTracksPromptAndDisp, "dtrRegJetNTracksPromptAndDisp[nDtrReg]/I");
+  dTrackTree_->Branch("dtrRegJetNTracksReg012", &dtrRegJetNTracksReg012, "dtrRegJetNTracksReg012[nDtrReg]/I");
+  dTrackTree_->Branch("dtrRegJetNTracksReg0124", &dtrRegJetNTracksReg0124, "dtrRegJetNTracksReg0124[nDtrReg]/I");
+  dTrackTree_->Branch("dtrRegJetNTracksReg4", &dtrRegJetNTracksReg4, "dtrRegJetNTracksReg4[nDtrReg]/I");
+  dTrackTree_->Branch("dtrRegJetPt", &dtrRegJetPt, "dtrRegJetPt[nDtrReg]/F");
+  dTrackTree_->Branch("dtrRegJetEta", &dtrRegJetEta, "dtrRegJetEta[nDtrReg]/F");
+  dTrackTree_->Branch("dtrRegJetPhi", &dtrRegJetPhi, "dtrRegJetPhi[nDtrReg]/F");
+  // associated jet tagging variables
+  dTrackTree_->Branch("dtrRegJetMedian2DIPSig", &dtrRegJetMedian2DIPSig, "dtrRegJetMedian2DIPSig[nDtrReg]/F");
+  dTrackTree_->Branch("dtrRegJetMedianTheta2D", &dtrRegJetMedianTheta2D, "dtrRegJetMedianTheta2D[nDtrReg]/F");
+  dTrackTree_->Branch("dtrRegJetAlphaMax", &dtrRegJetAlphaMax, "dtrRegJetAlphaMax[nDtrReg]/F");
+
 
   ///////////  ///////////  ///////////  ///////////  ///////////  ///////////  ////
   //////////////////////////////// TRACK TREE QUANITIES ////////////////////////////
@@ -2081,12 +2179,12 @@ void DJetAnalyzer::dumpIPInfo(DisplacedJetEvent & djEvent) {
     //
     // Hit Related
     //
-    jetMedianInnerHitPos[jj]	      = djet->jetMedianInnerHitPos;
-    jetMedianOuterHitPos[jj]	      = djet->jetMedianOuterHitPos;
-    jetMeanInnerHitPos[jj]	      = djet->jetMeanInnerHitPos;
-    jetMeanOuterHitPos[jj]	      = djet->jetMeanOuterHitPos;
-    jetVarianceInnerHitPos[jj]	      = djet->jetVarianceInnerHitPos;
-    jetVarianceOuterHitPos[jj]	      = djet->jetVarianceOuterHitPos;
+    jetMedianInnerHitPos[jj]	       = djet->jetMedianInnerHitPos;
+    jetMedianOuterHitPos[jj]	       = djet->jetMedianOuterHitPos;
+    jetMeanInnerHitPos[jj]	       = djet->jetMeanInnerHitPos;
+    jetMeanOuterHitPos[jj]	       = djet->jetMeanOuterHitPos;
+    jetVarianceInnerHitPos[jj]	       = djet->jetVarianceInnerHitPos;
+    jetVarianceOuterHitPos[jj]	       = djet->jetVarianceOuterHitPos;
     // distributions from inside the pixel layers
     jetMedianInnerHitPosInPixel[jj]    = djet->jetMedianInnerHitPosInPixel;
     jetMedianOuterHitPosInPixel[jj]    = djet->jetMedianOuterHitPosInPixel;
@@ -2103,13 +2201,17 @@ void DJetAnalyzer::dumpIPInfo(DisplacedJetEvent & djEvent) {
     jetVarianceOuterHitPosOutPixel[jj] = djet->jetVarianceOuterHitPosOutPixel;
     // fraction valid hits
     jetMedianTrackValidHitFrac[jj]     = djet->jetMedianTrackValidHitFrac;
-    jetMeanTrackValidHitFrac[jj]	      = djet->jetMeanTrackValidHitFrac;
+    jetMeanTrackValidHitFrac[jj]       = djet->jetMeanTrackValidHitFrac;
     jetVarianceTrackValidHitFrac[jj]   = djet->jetVarianceTrackValidHitFrac;
     // track counting
-    jetNTracksNoPixel[jj]	      = djet->jetNTracksNoPixel;
-    jetNTracksPixel[jj]		      = djet->jetNTracksPixel;
-    jetPtSumTracksNoPixel[jj]	      = djet->jetPtSumTracksNoPixel;
-    jetPtSumTracksPixel[jj]	      = djet->jetPtSumTracksPixel;
+    jetNTracksNoPixel[jj]	       = djet->jetNTracksNoPixel;
+    jetNTracksPixel[jj]		       = djet->jetNTracksPixel;
+    jetPtSumTracksNoPixel[jj]	       = djet->jetPtSumTracksNoPixel;
+    jetPtSumTracksPixel[jj]	       = djet->jetPtSumTracksPixel;
+
+    // displaced / prompt track counting
+    jetNTracksPrompt[jj]	       = djet->nTracksPrompt;
+    jetNTracksDisp[jj]		       = djet->nTracksDisp;
   }
 }
 
@@ -2227,6 +2329,35 @@ DJetAnalyzer::dumpSimInfo(const edm::SimVertexContainer & simVtx) {
   }
 }
 
+// dump information when running on RAWAOD++ for the regional HLT requirements
+void DJetAnalyzer::dumpRegionalTrackInfo(DisplacedJetEvent& djEvent, const edm::EventSetup& iSetup) {
+
+  if(debug > 1) std::cout << "[DEBUG 1] Starting dump of Regional Track Information" << std::endl;
+  //first get the global counts of jets from the event
+  nJetsPassRegHLTPrompt	       = djEvent.getNJetsPassHLTPrompt();
+  nJetsPassRegHLTDisp	       = djEvent.getNJetsPassHLTDisp();
+  nJetsPassRegHLTPromptAndDisp = djEvent.getNJetsPassHLTPromptAndDisp();
+
+  const DisplacedJetCollection djetCollection = djEvent.getDisplacedJets();
+  DisplacedJetCollection::const_iterator djet = djetCollection.begin();
+  int jj = 0;
+  if(debug > 2) std::cout << "[DEBUG 2] Looping Displaced Jets.." << std::endl;
+  for(; djet != djetCollection.end(); ++djet, ++jj) {        
+    // jet indexed passing the regional HLT requirements
+    jetPassRegHLTPrompt[jj]	   = djet->passHLTPrompt;
+    jetPassRegHLTDisp[jj]	   = djet->passHLTDisp;
+    jetPassRegHLTPromptAndDisp[jj] = djet->passHLTPromptAndDisp;
+    // number of tracks matched with no ip requirements
+    jetNTracksReg0124[jj]	   = djet->regionalTracks0124.size();
+    jetNTracksReg012[jj]	   = djet->regionalTracks012.size();
+    jetNTracksReg4[jj]		   = djet->regionalTracks4.size();    
+    // number of tracks passing the specific ip and ipsig requirements at HLT
+    jetNTracksRegDisp[jj]          = djet->nTracksRegDisp;
+    jetNTracksRegPrompt[jj]        = djet->nTracksRegPrompt;
+  }
+}
+
+
 // dump all of the tracking variables indexed PER TRACK
 void DJetAnalyzer::dumpDisplacedTrackInfo(DisplacedJetEvent& djEvent, const edm::EventSetup& iSetup) {
 
@@ -2234,8 +2365,9 @@ void DJetAnalyzer::dumpDisplacedTrackInfo(DisplacedJetEvent& djEvent, const edm:
 
   const DisplacedJetCollection djetCollection = djEvent.getDisplacedJets();
   DisplacedJetCollection::const_iterator djet = djetCollection.begin();
-  int jj = 0;
-  nDtr = 0;
+  int	jj = 0;
+  nDtr	   = 0;
+  nDtrReg  = 0;
   if(debug > 2) std::cout << "[DEBUG 2] Looping Displaced Jets.." << std::endl;
   for(; djet != djetCollection.end(); ++djet, ++jj) {        
 
@@ -2253,35 +2385,111 @@ void DJetAnalyzer::dumpDisplacedTrackInfo(DisplacedJetEvent& djEvent, const edm:
     float   medianIPLogSig2D = djet->medianIPLogSig2D;
     float   medianThetaDet2D = djet->medianCosThetaDet2D;
     int	    ntrackSize	     = ipsig2d.size();
+    if(dumpRegionalTracks_) {
+      // loop over all vertex matched tracks
+      if(debug > 2) std::cout << "n  tracks in jet.." << ntrackSize << std::endl;
+      for(int tt = 0; tt < ntrackSize; ++tt) {
+	if(debug > 2) std::cout << "Looping tracks in jet.." << std::endl;
+	// track kinematics
+	dtrPt[nDtr]		= pt[tt];
+	dtrEta[nDtr]		= eta[tt];
+	dtrPhi[nDtr]		= phi[tt];
+	if(debug > 3) std::cout << "2dipsig jet.." << ipsig2d[tt] << std::endl;
+	// tagging variables
+	dtrTheta2D[nDtr]		= theta2d[tt];
+	dtr2DIPSig[nDtr]		= ipsig2d[tt];
+	// associated jet information
+	dtrJetNTracks[nDtr]	= djet->nTracks;
+	// kiematics
+	dtrJetIndex[nDtr]         = jj;
+	dtrJetPt[nDtr]		= djet->caloPt;
+	dtrJetEta[nDtr]		= djet->caloEta;
+	dtrJetPhi[nDtr]		= djet->caloPhi;
+	// tagging variables
+	if(debug > 3) std::cout << "jet alphamax" << alphaMax << std::endl;
+	dtrJetAlphaMax[nDtr]      = alphaMax;
+	dtrJetMedian2DIPSig[nDtr] = medianIPLogSig2D;
+	dtrJetMedianTheta2D[nDtr] = medianThetaDet2D;      
+	nDtr++;
+      } // nTracks 
 
-    if(debug > 2) std::cout << "n  tracks in jet.." << ntrackSize << std::endl;
-    for(int tt = 0; tt < ntrackSize; ++tt) {
-      if(debug > 2) std::cout << "Looping tracks in jet.." << std::endl;
-      // track kinematics
-      dtrPt[nDtr]		= pt[tt];
-      dtrEta[nDtr]		= eta[tt];
-      dtrPhi[nDtr]		= phi[tt];
-      if(debug > 3) std::cout << "2dipsig jet.." << ipsig2d[tt] << std::endl;
-      // tagging variables
-      dtrTheta2D[nDtr]		= theta2d[tt];
-      dtr2DIPSig[nDtr]		= ipsig2d[tt];
-      // associated jet information
-      dtrJetNTracks[nDtr]	= djet->nTracks;
-      // kiematics
-      dtrJetIndex[nDtr]         = jj;
-      dtrJetPt[nDtr]		= djet->caloPt;
-      dtrJetEta[nDtr]		= djet->caloEta;
-      dtrJetPhi[nDtr]		= djet->caloPhi;
-      // tagging variables
-      if(debug > 3) std::cout << "jet alphamax" << alphaMax << std::endl;
-      dtrJetAlphaMax[nDtr]      = alphaMax;
-      dtrJetMedian2DIPSig[nDtr] = medianIPLogSig2D;
-      dtrJetMedianTheta2D[nDtr] = medianThetaDet2D;      
-      nDtr++;
-    }
-  }
-}
+      // loop over and add all the regional track collections
+      // PROMPT REGIONAL TRACKS
+      if(debug > 2) std::cout << "n  tracks in jet.." << ntrackSize << std::endl;
+      int			nRegTracks012  = djet->regionalTracks012.size();
+      for(int tt = 0; tt < nRegTracks012; ++tt, nDtrReg++) {
+	if(debug > 2) std::cout << "Looping regional tracks iter012 in jet.." << std::endl;
+	// first designate the collection
+	dtrRegCollection[nDtrReg]	       = 0; // prompt tracks
+	const DisplacedTrack &	dtReg	       = djet->regionalTracks0124[tt];
+	dtrRegPt[nDtrReg]		       = dtReg.pt;
+	dtrRegEta[nDtrReg]		       = dtReg.eta;
+	dtrRegPhi[nDtrReg]		       = dtReg.phi;
+	// tagging variables
+	dtrRegTheta2D[nDtrReg]		       = dtReg.angleMomentumAndPVAtOuterHit2D;	//NOTE THAT DESPITE THIS NAME IT IS AT THE INNER HIT SEE DOCUMENTATIONS
+	dtrReg2DIPSig[nDtrReg]		       = dtReg.ip2dSig;
+	dtrReg2DIP[nDtrReg]		       = dtReg.ip2d;
+	// associated jet information
+	dtrRegJetNTracks[nDtrReg]	       = djet->nTracks;
+	dtrRegJetNTracksPrompt[nDtrReg]	       = djet->nTracksRegPrompt; //
+	dtrRegJetNTracksDisp[nDtrReg]	       = djet->nTracksRegDisp;
+	dtrRegJetNTracksPromptAndDisp[nDtrReg] = -1;  // dont fil for now
+	// kinematics
+	dtrRegJetIndex[nDtrReg]		       = jj;
+	dtrRegJetPt[nDtrReg]		       = djet->caloPt;
+	dtrRegJetEta[nDtrReg]		       = djet->caloEta;
+	dtrRegJetPhi[nDtrReg]		       = djet->caloPhi;
+	// tagging variables
+	dtrRegJetAlphaMax[nDtrReg]	       = alphaMax;
+	dtrRegJetMedian2DIPSig[nDtrReg]	       = medianIPLogSig2D;
+	dtrRegJetMedianTheta2D[nDtrReg]	       = medianThetaDet2D;      
+	// track multiplicities for the associated jet
+	dtrRegJetNTracksReg012[nDtrReg]	       = djet->nTracksReg012;
+	dtrRegJetNTracksReg4[nDtrReg]	       = djet->nTracksReg4;
 
+	 // all regional tracks will go in the same array but different index tracked by the collection type
+      } // end loop over regional prompt tracks
+
+      // DISPLACED REGIONAL TRACKS
+      int nRegTracks4 = djet->regionalTracks4.size();    
+      for(int tt = 0; tt < nRegTracks4; ++tt, nDtrReg++) {
+	if(debug > 2) std::cout << "Looping regional tracks iter4 in jet.." << std::endl;      
+	// first designate the collection
+	dtrRegCollection[nDtrReg]	= 1;	// displaced tracks      
+	const DisplacedTrack &	dtReg	= djet->regionalTracks4[tt];
+	dtrRegPt[nDtrReg]		= dtReg.pt;
+	dtrRegEta[nDtrReg]		= dtReg.eta;
+	dtrRegPhi[nDtrReg]		= dtReg.phi;
+	// tagging variables
+	dtrRegTheta2D[nDtrReg]		= dtReg.angleMomentumAndPVAtOuterHit2D;	//NOTE THAT DESPITE THIS NAME IT IS AT THE INNER HIT SEE DOCUMENTATIONS
+	//std::cout << " Regional Theta Val " << dtrRegTheta2D[nDtrReg]  << " tt " << tt << " nDTrReg " << nDtrReg << std::endl;
+	dtrReg2DIPSig[nDtrReg]		= dtReg.ip2dSig;
+	dtrReg2DIP[nDtrReg]		= dtReg.ip2d;
+	// associated jet information
+	dtrRegJetNTracks[nDtrReg]	= djet->nTracks;
+	dtrRegJetNTracksPrompt[nDtrReg]	       = djet->nTracksRegPrompt; //
+	dtrRegJetNTracksDisp[nDtrReg]	       = djet->nTracksRegDisp;
+	dtrRegJetNTracksPromptAndDisp[nDtrReg] = -1;  // dont fil for now
+	// kiematics
+	dtrRegJetIndex[nDtrReg]         = jj;
+	dtrRegJetPt[nDtrReg]		= djet->caloPt;
+	dtrRegJetEta[nDtrReg]		= djet->caloEta;
+	dtrRegJetPhi[nDtrReg]		= djet->caloPhi;
+	// tagging variables
+	dtrRegJetAlphaMax[nDtrReg]      = alphaMax;
+	dtrRegJetMedian2DIPSig[nDtrReg] = medianIPLogSig2D;
+	dtrRegJetMedianTheta2D[nDtrReg] = medianThetaDet2D;      
+	// track multiplicities for the associated jet
+	dtrRegJetNTracksReg012[nDtrReg] = djet->nTracksReg012;
+	dtrRegJetNTracksReg4[nDtrReg]	= djet->nTracksReg4;
+
+      } // end loop over regional displaced tracks
+
+      // std::cout << " number of regional tracks? " << nDtrReg << std:: endl;
+
+    } // close if for dumping regional tracks into the displaced track tree
+  } // end loop over dispalcd jets
+} // end dumping displaced track info for displaced track tree
 
 // dump all of the track info available at AOD into the branches and label with a collection ID
 void DJetAnalyzer::dumpTrackInfo(DisplacedJetEvent& djEvent, const reco::TrackCollection & tracks, const int & collectionID, const edm::EventSetup& iSetup) {

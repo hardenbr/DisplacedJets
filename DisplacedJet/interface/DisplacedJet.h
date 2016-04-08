@@ -10,7 +10,20 @@ class DisplacedJet {
    :  debug(debug_), iSetup(iSetup_), jet(jet_), isMC(isMC_), jetID(jetID_), selPV(primaryVertex){
 
     // track association variables
-    nTracks       = 0;
+    nTracks	     = 0;
+    nTracksPrompt    = 0;
+    nTracksDisp      = 0;
+    // regional tracking counts
+    nTracksRegPrompt = -1;
+    nTracksRegDisp   = -1;
+    nTracksReg0124   = -1;
+    nTracksReg012    = -1;
+    nTracksReg4	     = -1;
+
+    // pass the HLT requirements?
+    passHLTPrompt	 = false;
+    passHLTDisp		 = false;
+    passHLTPromptAndDisp = false;
 
     // initialize calo related variables
     caloPt	  = jet.pt();
@@ -222,6 +235,7 @@ class DisplacedJet {
 
   // jet info integration
   void addCaloTrackInfo(const reco::TrackRefVector&);
+  void addRegionalTracks(const reco::TrackRefVector&, const int & collectionID);
   void addVertexTrackInfo(const reco::TrackRefVector&);
   void addIVFCollection(const reco::VertexCollection&, const float& compatibilityScore);
   void addIPTagInfo(const reco::TrackIPTagInfo&);
@@ -280,6 +294,14 @@ class DisplacedJet {
   //////////////CALO INFORMATION////////////
   // track association variables
   int nTracks;
+  int nTracksPrompt;
+  int nTracksDisp;
+  int nTracksRegPrompt;
+  int nTracksRegDisp;
+  int nTracksReg0124,nTracksReg012, nTracksReg4;
+
+  bool passHLTPrompt, passHLTDisp, passHLTPromptAndDisp;
+
   float sumTrackPt;  
   // calo related variables
   float caloPt, caloEta, caloPhi;
@@ -494,14 +516,20 @@ class DisplacedJet {
   std::vector<float> ip3dVector, ip3dsVector, ip2dVector, ip2dsVector;
   std::vector<float> trEtaVector, trPhiVector, trPtVector;
 
+  // related regional track collections
+  DisplacedTrackCollection displacedTracks;
+  DisplacedTrackCollection regionalTracks0124;
+  DisplacedTrackCollection regionalTracks012;
+  DisplacedTrackCollection regionalTracks4;
+
  private: 
 
   static const int GEN_STATUS_CODE_MATCH = 23; 
   const float FAKE_HIGH_NUMBER = 999999999;
   // calo jet the displaced jet is built upon
 
-  // related track collections
-  DisplacedTrackCollection displacedTracks;
+
+  // related  track collections  
   reco::TrackCollection caloMatchedTracks; 
   reco::TrackCollection vertexMatchedTracks; 
   reco::TrackRefVector  vertexMatchedTrackRefs; 
@@ -725,14 +753,65 @@ void DisplacedJet::addCaloTrackInfo(const reco::TrackRefVector & trackRefs) {
     }    
 }
 
+void DisplacedJet::addRegionalTracks(const reco::TrackRefVector & trackRefs, const int & collectionID) {
+  if (debug > 2) std::cout << "[DEBUG] Adding Vertex Matched Track Info  " << std::endl;
+  reco::TrackRefVector::const_iterator trackIter = trackRefs.begin();
+  
+  for(; trackIter != trackRefs.end(); ++trackIter) {
+    // build the displacedTrack
+    DisplacedTrack dTrack(*trackIter, selPV, iSetup, debug);
+
+    // based on the collection ID add the displaced track to the correct set of tracks
+    if(collectionID == 0) regionalTracks0124.push_back(dTrack);
+    else if(collectionID == 1) regionalTracks012.push_back(dTrack);
+    else if(collectionID == 2) regionalTracks4.push_back(dTrack);
+    else {
+      std::cout << "INVALID REGIONAL TRACKING COLLECTION ID: " << collectionID << std::endl;
+    }   
+
+  } // end loop over references from jet track association
+
+  // make sure this colleciton hasnt been merged before
+  // count the number of prompt tracks from the regional tracking
+  int ntrack012 = regionalTracks012.size();
+  if(collectionID == 1 && nTracksRegDisp == -1) {
+    nTracksRegDisp = 0;
+    for(int tt = 0; tt < ntrack012; ++tt) {
+      if (regionalTracks012[tt].pt  < 1.0) continue;
+      float ip2d = regionalTracks012[tt].ip2d;
+      if(fabs(ip2d) < 0.1) nTracksRegPrompt++;
+    }
+  }  
+
+  // make sure this colleciton hasnt been merged before
+  // count the number of displaced tracks from the regional tracking
+  if(collectionID == 0 && nTracksRegPrompt == -1) {
+    nTracksRegPrompt = 0;
+    int ntrack0124 = regionalTracks0124.size();
+    for(int tt = 0; tt < ntrack0124; ++tt) {
+      if (regionalTracks0124[tt].pt  < 1.0) continue;
+      float ip2dSig = regionalTracks0124[tt].ip2dSig;
+      float ip2d    = regionalTracks0124[tt].ip2d;
+      if(fabs(ip2dSig) > 5.0 && fabs(ip2d) > 0.05) nTracksRegDisp++;
+    }
+  }  
+
+  // decided whether the jet passed the event or not
+  if(nTracksRegPrompt <= 2) passHLTPrompt = true;
+  if(nTracksRegDisp >= 1) passHLTDisp	  = true;
+  passHLTPromptAndDisp			  = passHLTPrompt && passHLTDisp; 
+}
+
 // count the number of tracks based on the association at the vertex
 void DisplacedJet::addVertexTrackInfo(const reco::TrackRefVector & trackRefs) {
   vertexMatchedTrackRefs = trackRefs;
 
   if (debug > 2) std::cout << "[DEBUG] Adding Vertex Matched Track Info  " << std::endl;
   reco::TrackRefVector::const_iterator trackIter = trackRefs.begin();
-  nTracks = 0;
-  sumTrackPt = 0;
+  nTracks	= 0;
+  sumTrackPt	= 0;
+  nTracksPrompt = 0;
+  nTracksDisp	= 0;
   for(; trackIter != trackRefs.end(); ++trackIter) {
     // build the displacedTrack
     DisplacedTrack dTrack(*trackIter, selPV, iSetup, debug);
@@ -744,6 +823,10 @@ void DisplacedJet::addVertexTrackInfo(const reco::TrackRefVector & trackRefs) {
       nTracks++;
       sumTrackPt += pt;
       vertexMatchedTracks.push_back(**trackIter);
+
+      // incre
+      if(dTrack.ip2d < 0.1) nTracksPrompt++;
+      if(dTrack.ip2d > 0.05 && fabs(dTrack.ip2dSig) > 5.0) nTracksDisp++; 
     }
   }    
 }
@@ -1278,6 +1361,44 @@ void DisplacedJet::addHitInfo(const reco::TrackCollection tracks) {
     } // end hits valid
   } //end loop filling vectors of hits
 
+  bool check_medians = false;
+  if(check_medians) {
+    // test that the median calculation is working
+    float even[]		= {1, 3.2 , 4, 5};
+    float odd[]		= {1, 3.2 , 4, 5, 9};
+    float inverted_odd[]	= {3.2, 5 , 4, 5, 9};
+    float inverted_even[] = {3.2 ,5 ,4,1};
+    float large_nums[]	= {3,4,7,6,5,4,7,5,2,3,4,5,6,7,8,9,10,10,10,10,7,6,5,4,7,5,7,6,5,4,7,5};
+    float one[]		= {3};
+    float pos_neg[]	= {-1.3, 3.2, 5, -4, 1};
+
+    // vectors
+    std::vector<float> even_vec (even, even + sizeof(even) / sizeof(int));
+    std::vector<float> odd_vec (odd, odd + sizeof(odd) / sizeof(int));
+    std::vector<float> inverted_odd_vec (inverted_odd, inverted_odd + sizeof(inverted_odd) / sizeof(int));
+    std::vector<float> inverted_even_vec (inverted_even, inverted_even + sizeof(inverted_even) / sizeof(int));
+    std::vector<float> large_nums_vec (large_nums, large_nums + sizeof(large_nums) / sizeof(int));
+    std::vector<float> one_vec (one, one + sizeof(one) / sizeof(int));
+    std::vector<float> pos_neg_vec(pos_neg, pos_neg + sizeof(pos_neg) / sizeof(int));  
+
+    // check the jet medians
+    float even_diff	   = fabs(getJetMedian(even_vec, false) - 3.6);
+    float odd_diff	   = fabs(getJetMedian(odd_vec, false) - 4);
+    float inverted_odd_diff  = fabs(getJetMedian(inverted_odd_vec, false) - 5);
+    float inverted_even_diff = fabs(getJetMedian(inverted_even_vec, false) - 3.6);
+    float large_nums_diff    = fabs(getJetMedian(large_nums_vec, false) - 6);
+    float one_diff	   = fabs(getJetMedian(one_vec, false) - 3);
+    float pos_neg_diff	   = fabs(getJetMedian(pos_neg_vec, true) - 1);
+
+    // check the jet medians
+    if(even_diff > 0.001) std::cout << "[jetMedian TEST] even array diff val: " << even_diff << " median= " << getJetMedian(even_vec, false)<< std::endl;
+    if(odd_diff > 0.001) std::cout << "[jetMedian TEST]  odd  array diff val: " << odd_diff <<  " median= " << getJetMedian(odd_vec, false) << std::endl;
+    if(inverted_odd_diff > 0.001) std::cout << "[jetMedian TEST] inverted odd array diff val: " << inverted_odd_diff <<  " median= " << getJetMedian(inverted_odd_vec, false) << std::endl;
+    if(inverted_even_diff > 0.001) std::cout << "[jetMedian TEST] inverted even array diff val: " <<  inverted_even_diff <<  " median= " << getJetMedian(inverted_even_vec, false) << std::endl;
+    if(large_nums_diff > 0.001) std::cout << "[jetMedian TEST] large nums array diff val: " << large_nums_diff <<  " median= " << getJetMedian(large_nums_vec, false) << std::endl;
+    if(one_diff > 0.001) std::cout << "[jetMedian TEST] one array diff val: " << one_diff << " median= " << getJetMedian(one_vec, false) << std::endl;
+    if(pos_neg_diff > 0.001) std::cout << "[jetMedian TEST] pos neg diff diff val: " << pos_neg_diff  << " median= " << getJetMedian(pos_neg_vec, false) << std::endl;
+  }
   // fill the jet parameters
   // overall distribution
   jetMedianInnerHitPos		 = getJetMedian(innerHitPos, false); 

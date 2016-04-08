@@ -54,3 +54,5 @@ djtagging = cms.Sequence( #track matching for ak5 jets
      displacedInclusiveVertexing 
 )
  
+
+regionalTrackAssocations = cms.Sequence( displacedAk4JetTracksAssociatorAtVertexRegionalIter4 + displacedAk4JetTracksAssociatorAtVertexRegionalIter012 + displacedAk4JetTracksAssociatorAtVertexRegionalIter0124)

@@ -116,6 +116,7 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   int dHTWorkingPoint;
   //cuts
   float cut_jetPt, cut_jetEta;
+  float smear_2dip, smear_2dipsig; 
   
   //output related
   TTree*    trackTree_;   
@@ -239,6 +240,12 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   // regional tracking
   Int_t   jetNTracksRegPrompt[MAX_JETS];  // 2DIP > 0.05
   Int_t   jetNTracksRegDisp[MAX_JETS];  // 2DIPSig > 5? 
+  // up
+  Int_t   jetNTracksRegPromptUp[MAX_JETS];  // 2DIP > 0.05
+  Int_t   jetNTracksRegDispUp[MAX_JETS];  // 2DIPSig > 5? 
+  // dn
+  Int_t   jetNTracksRegPromptDn[MAX_JETS];  // 2DIP > 0.05
+  Int_t   jetNTracksRegDispDn[MAX_JETS];  // 2DIPSig > 5? 
   Int_t   jetNTracksReg0124[MAX_JETS];  
   Int_t   jetNTracksReg012[MAX_JETS];  
   Int_t   jetNTracksReg4[MAX_JETS];  
@@ -246,6 +253,14 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   Int_t   jetPassRegHLTPrompt[MAX_JETS];
   Int_t   jetPassRegHLTDisp[MAX_JETS];
   Int_t   jetPassRegHLTPromptAndDisp[MAX_JETS];
+  // up
+  Int_t   jetPassRegHLTPromptUp[MAX_JETS];
+  Int_t   jetPassRegHLTDispUp[MAX_JETS];
+  Int_t   jetPassRegHLTPromptAndDispUp[MAX_JETS];
+  // dn
+  Int_t   jetPassRegHLTPromptDn[MAX_JETS];
+  Int_t   jetPassRegHLTDispDn[MAX_JETS];
+  Int_t   jetPassRegHLTPromptAndDispDn[MAX_JETS];
 
 
 
@@ -253,6 +268,16 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   Int_t   nJetsPassRegHLTPrompt; 
   Int_t   nJetsPassRegHLTDisp;
   Int_t   nJetsPassRegHLTPromptAndDisp;
+  // up
+  Int_t   nJetsPassRegHLTPromptUp; 
+  Int_t   nJetsPassRegHLTDispUp;
+  Int_t   nJetsPassRegHLTPromptAndDispUp;
+  // dn
+  Int_t   nJetsPassRegHLTPromptDn; 
+  Int_t   nJetsPassRegHLTDispDn;
+  Int_t   nJetsPassRegHLTPromptAndDispDn;
+
+
 
   //////////////////// LIFETIME TAG /////////////////  
 
@@ -873,6 +898,8 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   Float_t dtrRegTheta2D[MAX_TRACKS];
   Float_t dtrReg2DIPSig[MAX_TRACKS];
   Float_t dtrReg2DIP[MAX_TRACKS];
+  Float_t dtrRegDxySig[MAX_TRACKS];
+  Float_t dtrRegDxy[MAX_TRACKS];
   Int_t   dtrRegTagged[MAX_TRACKS];
   // associated jet information
   Float_t dtrRegJetPt[MAX_TRACKS];
@@ -886,6 +913,16 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   Int_t dtrRegJetNTracksPrompt[MAX_TRACKS];
   Int_t dtrRegJetNTracksPromptAndDisp[MAX_TRACKS];
   Int_t dtrRegJetNTracksDisp[MAX_TRACKS];
+  // variations of the tracking systematics
+  // up
+  Int_t dtrRegJetNTracksDispUp[MAX_TRACKS];  
+  Int_t dtrRegJetNTracksPromptUp[MAX_TRACKS];
+  Int_t dtrRegJetNTracksPromptAndDispUp[MAX_TRACKS];
+  // dn
+  Int_t dtrRegJetNTracksDispDn[MAX_TRACKS];  
+  Int_t dtrRegJetNTracksPromptDn[MAX_TRACKS];
+  Int_t dtrRegJetNTracksPromptAndDispDn[MAX_TRACKS];
+
   Int_t dtrRegJetNTaggedTracks[MAX_TRACKS];
   // associated jet tagginginformation
   Float_t dtrRegJetMedian2DIPSig[MAX_TRACKS];

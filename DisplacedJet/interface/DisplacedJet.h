@@ -10,19 +10,28 @@ class DisplacedJet {
    :  debug(debug_), iSetup(iSetup_), jet(jet_), isMC(isMC_), jetID(jetID_), selPV(primaryVertex){
 
     // track association variables
-    nTracks	     = 0;
-    nTracksPrompt    = 0;
-    nTracksDisp      = 0;
+    nTracks		 = 0;
+    nTracksPrompt	 = 0;
+    nTracksDisp		 = 0;
     // regional tracking counts
-    nTracksRegPrompt = -1;
-    nTracksRegDisp   = -1;
-    nTracksReg0124   = -1;
-    nTracksReg012    = -1;
-    nTracksReg4	     = -1;
-
+    nTracksRegPrompt	 = -1;
+    nTracksRegDisp	 = -1;
+    nTracksRegPromptUp	 = -1;
+    nTracksRegPromptDn	 = -1;
+    nTracksRegDispUp	 = -1;
+    nTracksRegDispDn	 = -1;
+    nTracksRegDisp	 = -1;
+    nTracksReg0124	 = -1;
+    nTracksReg012	 = -1;
+    nTracksReg4		 = -1;
     // pass the HLT requirements?
     passHLTPrompt	 = false;
     passHLTDisp		 = false;
+    // up and down varied systematics
+    passHLTPromptUp	 = false;
+    passHLTDispUp	 = false;
+    passHLTPromptDn	 = false;
+    passHLTDispDn	 = false;
     passHLTPromptAndDisp = false;
 
     // initialize calo related variables
@@ -235,7 +244,7 @@ class DisplacedJet {
 
   // jet info integration
   void addCaloTrackInfo(const reco::TrackRefVector&);
-  void addRegionalTracks(const reco::TrackRefVector&, const int & collectionID);
+  void addRegionalTracks(const reco::TrackRefVector&, const int & collectionID, const float & smear_2dip, const float & smear_2dipsig);
   void addVertexTrackInfo(const reco::TrackRefVector&);
   void addIVFCollection(const reco::VertexCollection&, const float& compatibilityScore);
   void addIPTagInfo(const reco::TrackIPTagInfo&);
@@ -298,10 +307,14 @@ class DisplacedJet {
   int nTracksDisp;
   int nTracksRegPrompt;
   int nTracksRegDisp;
+  int nTracksRegPromptUp, nTracksRegPromptDn;
+  int nTracksRegDispUp, nTracksRegDispDn;
+  float smear_2dipsig, smear_2dip;
   int nTracksReg0124,nTracksReg012, nTracksReg4;
 
   bool passHLTPrompt, passHLTDisp, passHLTPromptAndDisp;
-
+  bool passHLTPromptUp, passHLTDispUp;
+  bool passHLTPromptDn, passHLTDispDn;
   float sumTrackPt;  
   // calo related variables
   float caloPt, caloEta, caloPhi;
@@ -753,14 +766,14 @@ void DisplacedJet::addCaloTrackInfo(const reco::TrackRefVector & trackRefs) {
     }    
 }
 
-void DisplacedJet::addRegionalTracks(const reco::TrackRefVector & trackRefs, const int & collectionID) {
+void DisplacedJet::addRegionalTracks(const reco::TrackRefVector & trackRefs, const int & collectionID, const float & smear_2dip, const float & smear_2dipsig) {	     
   if (debug > 2) std::cout << "[DEBUG] Adding Vertex Matched Track Info  " << std::endl;
   reco::TrackRefVector::const_iterator trackIter = trackRefs.begin();
   
+  // loop ver all the track associations and buid the displaced track collecitons first
   for(; trackIter != trackRefs.end(); ++trackIter) {
     // build the displacedTrack
     DisplacedTrack dTrack(*trackIter, selPV, iSetup, debug);
-
     // based on the collection ID add the displaced track to the correct set of tracks
     if(collectionID == 0) regionalTracks0124.push_back(dTrack);
     else if(collectionID == 1) regionalTracks012.push_back(dTrack);
@@ -768,38 +781,85 @@ void DisplacedJet::addRegionalTracks(const reco::TrackRefVector & trackRefs, con
     else {
       std::cout << "INVALID REGIONAL TRACKING COLLECTION ID: " << collectionID << std::endl;
     }   
-
   } // end loop over references from jet track association
 
   // make sure this colleciton hasnt been merged before
   // count the number of prompt tracks from the regional tracking
-  int ntrack012 = regionalTracks012.size();
-  if(collectionID == 1 && nTracksRegDisp == -1) {
-    nTracksRegDisp = 0;
-    for(int tt = 0; tt < ntrack012; ++tt) {
-      if (regionalTracks012[tt].pt  < 1.0) continue;
-      float ip2d = regionalTracks012[tt].ip2d;
-      if(fabs(ip2d) < 0.1) nTracksRegPrompt++;
-    }
-  }  
 
+  if(collectionID == 1) {
+    int ntrack012 = regionalTracks012.size();
+    if(debug > 3) std::cout << "n tracks 012: " << ntrack012 << std::endl;
+    nTracksRegPrompt   = 0;
+    nTracksReg012      = 0;
+    nTracksRegPromptUp = 0;
+    nTracksRegPromptDn = 0;
+    
+    for(int tt = 0; tt < ntrack012; ++tt) {
+      const DisplacedTrack & track = regionalTracks012[tt];
+      if(debug > 3) std::cout << "012: checking track pt: " << track.pt << std::endl;
+      if (track.pt  < 1.0) continue;
+      float ip2d = track.ip2d;
+      nTracksReg012++;
+      if(fabs(ip2d) < 0.1) nTracksRegPrompt++;
+      if(fabs(ip2d)*(1+smear_2dip) < 0.1) nTracksRegPromptUp++;
+      if(fabs(ip2d)*(1-smear_2dip) < 0.1) nTracksRegPromptDn++;
+    }
+  }// close collectoinID 1  
   // make sure this colleciton hasnt been merged before
   // count the number of displaced tracks from the regional tracking
-  if(collectionID == 0 && nTracksRegPrompt == -1) {
-    nTracksRegPrompt = 0;
+  else if(collectionID == 0) {
+    nTracksRegDisp   = 0;
+    nTracksReg0124   = 0;
+    nTracksRegDispUp = 0;
+    nTracksRegDispDn = 0;
+
     int ntrack0124 = regionalTracks0124.size();
+    if(debug > 3)  std::cout << "n tracks 0124: " << ntrack0124 << std::endl;
     for(int tt = 0; tt < ntrack0124; ++tt) {
-      if (regionalTracks0124[tt].pt  < 1.0) continue;
-      float ip2dSig = regionalTracks0124[tt].ip2dSig;
-      float ip2d    = regionalTracks0124[tt].ip2d;
+      const DisplacedTrack & track = regionalTracks0124[tt];
+      if(debug > 3) std::cout << "0124: checking track pt: " << track.pt << std::endl;
+      if(track.pt < 1.0) continue;
+      float ip2dSig = track.ip2dSig;
+      float ip2d    = track.ip2d;
+      nTracksReg0124++;
       if(fabs(ip2dSig) > 5.0 && fabs(ip2d) > 0.05) nTracksRegDisp++;
+      if((fabs(ip2dSig)*(1+smear_2dipsig)) > 5.0 && (fabs(ip2d)*(1+smear_2dip)) > 0.05) nTracksRegDispUp++;
+      if((fabs(ip2dSig)*(1-smear_2dipsig)) > 5.0 && (fabs(ip2d)*(1-smear_2dip)) > 0.05) nTracksRegDispDn++;
     }
-  }  
+  }   // close collectionID 0 if  
+  // check this collection has not yet been counted
+  // only cout tracks with pt > 1.0
+  else if(collectionID == 2) {
+    int ntrack4 = regionalTracks4.size();
+    if(debug > 3) std::cout << "n tracks 4: " << ntrack4 << std::endl;
+    nTracksReg4 = 0;
+    for(int tt = 0; tt < ntrack4; ++tt) {
+      const DisplacedTrack & track = regionalTracks4[tt];
+      if(debug > 3) std::cout << "4: checking track pt: " << track.pt << std::endl;
+      if (track.pt  < 1.0) continue;
+      nTracksReg4++;
+    }    
+  }
+  else {
+    std::cout << "INVALID COLLECTION ID FOR REGIONAL TRACK MERGER...EXITING" << std::endl;
+    exit(1);
+  }
 
   // decided whether the jet passed the event or not
-  if(nTracksRegPrompt <= 2) passHLTPrompt = true;
-  if(nTracksRegDisp >= 1) passHLTDisp	  = true;
-  passHLTPromptAndDisp			  = passHLTPrompt && passHLTDisp; 
+  if(nTracksRegPrompt <= 2 && collectionID == 1) passHLTPrompt = true; //can only test this after checking the 012 iters
+  if(nTracksRegDisp >= 1 && collectionID == 0) passHLTDisp = true; //can only test this after checking the 0124 iters
+  // up and down systematics
+  // up varied ip and ip2dsig
+  if(nTracksRegPromptUp <= 2 && collectionID == 1) passHLTPromptUp = true; //can only test this after checking the 012 iters
+  if(nTracksRegPromptDn <= 2 && collectionID == 1) passHLTPromptDn = true; //can only test this after checking the 012 iters
+  // down varied ip and ip2dsig
+  if(nTracksRegDispUp >= 1 && collectionID == 0) passHLTDispUp = true; //can only test this after checking the 0124 iters
+  if(nTracksRegDispDn >= 1 && collectionID == 0) passHLTDispDn = true; //can only test this after checking the 0124 iters
+
+  passHLTPromptAndDisp			  = false; // this is meaningless as it stands because it can only be decided after all tracking collections have been checked
+
+  if(debug > 3) std::cout << "colID: " << collectionID << "jet status of track counting 0124 " << nTracksReg0124 << " 012: " << nTracksReg012 << " 4: " << nTracksReg4 << std::endl;
+  
 }
 
 // count the number of tracks based on the association at the vertex
@@ -1728,9 +1788,10 @@ std::vector<bool> DisplacedJet::passMediumTag(const std::vector<float> thres, fl
   std::vector<bool> passResults;
   std::vector<float>::const_iterator thresIter = thres.begin();
   for(; thresIter != thres.end(); ++thresIter) {
-    bool didPass = false;
-    if(nTracks > 0 && medianIPLogSig2D > (.5 * (*thresIter)) && (alphaMax / sumTrackPt) < .8) didPass = true;
-    passResults.push_back(didPass);
+    bool result = nTracks > 0 && medianIPLogSig2D > 2 && (alphaMax / sumTrackPt) < 0.1 && medianCosThetaDet2D > 0.05;
+    passResults.push_back(result);
+    //if (nTracks > 0 && medianIPLogSig2D > (.5 * (*thresIter)) && (alphaMax / sumTrackPt) < .8) didPass = true;
+    passResults.push_back(result);
   }
   mediumTagsVector = passResults;
   return passResults;  
@@ -1740,12 +1801,13 @@ std::vector<bool> DisplacedJet::passLongTag(const std::vector<float> thres, floa
   std::vector<bool> passResults;
   std::vector<float>::const_iterator thresIter = thres.begin();
   for(; thresIter != thres.end(); ++thresIter) {
-    bool didPass = false;
-    if( medianCosThetaDet2D > 0.05 && nTracks > 0 && medianIPLogSig2D > (*thresIter)
-	&& (alphaMax / sumTrackPt) < 0.05) didPass = true;
-    passResults.push_back(didPass);
+    bool result = nTracks > 0 && medianIPLogSig2D > 1.0 && (alphaMax / sumTrackPt) < 0.5 && medianCosThetaDet2D > 0.02;
+    //    if( medianCosThetaDet2D > 0.05 && nTracks > 0 && medianIPLogSig2D > (*thresIter)
+    //	&& (alphaMax / sumTrackPt) < 0.05) didPass = true;
+    passResults.push_back(result);
   }
   longTagsVector = passResults;
+
   return passResults;  
 }
 

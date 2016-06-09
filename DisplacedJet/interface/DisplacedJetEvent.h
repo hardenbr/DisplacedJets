@@ -86,6 +86,10 @@ class DisplacedJetEvent {
   int	getNJetsPassHLTDisp();
   int	getNJetsPassHLTPrompt();
   int	getNJetsPassHLTPromptAndDisp();
+  // systematically varied
+  int	getNJetsPassHLTDispSYS(const bool & isUp);
+  int	getNJetsPassHLTPromptSYS(const bool & isUp);
+  int	getNJetsPassHLTPromptAndDispSYS(const bool & isUp);
 
   // accessors
   int	getNJets() { return djets.size(); } 
@@ -109,7 +113,7 @@ class DisplacedJetEvent {
     
   // jet associated info mergers
   void mergeTrackAssociations(const reco::JetTracksAssociation::Container&, const reco::JetTracksAssociation::Container&);
-  void mergeRegionalTrackingIteration(const reco::JetTracksAssociation::Container&, const int& collectionID);
+  void mergeRegionalTrackingIteration(const reco::JetTracksAssociation::Container&, const int& collectionID, const float& smear_2dip, const float& smear_2dipsig);
   void mergeCaloIPTagInfo(const reco::TrackIPTagInfoCollection&, const reco::VertexCollection&);
   void mergeSVTagInfo(const reco::SecondaryVertexTagInfoCollection&);
   void fillLeadingSubleadingJets(const bool & isHLT);
@@ -185,6 +189,42 @@ private:
 
 };
 
+// systematically varied hlt jets
+int DisplacedJetEvent::getNJetsPassHLTDispSYS(const bool & isUp) {
+  int nPass = 0;
+  std::vector<DisplacedJet>::iterator djetIter = djets.begin();
+  for(; djetIter != djets.end(); ++djetIter) {    
+    if(isUp && djetIter->passHLTDispUp) nPass++;
+    else if( djetIter->passHLTDispDn) nPass++;
+  }  
+  return nPass;
+}
+
+// systematically varied
+int DisplacedJetEvent::getNJetsPassHLTPromptSYS(const bool & isUp) {
+  int nPass = 0;
+  std::vector<DisplacedJet>::iterator djetIter = djets.begin();
+  for(; djetIter != djets.end(); ++djetIter) {    
+    if(isUp && djetIter->passHLTPromptUp) nPass++;
+    else if(djetIter->passHLTPromptDn) nPass++;
+  }    
+  return nPass;
+}
+
+// number of jets passing both the displaced trakcing and prompt requirements
+// at most 2 promtp tracks and at least 1 displaced tracks
+int DisplacedJetEvent::getNJetsPassHLTPromptAndDispSYS(const bool & isUp) {
+  int nPass = 0;
+  std::vector<DisplacedJet>::iterator djetIter = djets.begin();
+  for(; djetIter != djets.end(); ++djetIter) {    
+    if(isUp && djetIter->passHLTPromptUp && djetIter->passHLTDispUp) nPass++;
+    else if(djetIter->passHLTPromptDn && djetIter->passHLTDispDn) nPass++;
+  }  
+  return nPass;
+}
+
+
+
 int DisplacedJetEvent::getNJetsPassHLTDisp() {
   int nPass = 0;
   std::vector<DisplacedJet>::iterator djetIter = djets.begin();
@@ -210,7 +250,7 @@ int DisplacedJetEvent::getNJetsPassHLTPromptAndDisp() {
   int nPass = 0;
   std::vector<DisplacedJet>::iterator djetIter = djets.begin();
   for(; djetIter != djets.end(); ++djetIter) {    
-    if(djetIter->passHLTPromptAndDisp) nPass++;
+    if(djetIter->passHLTPrompt && djetIter->passHLTDisp) nPass++;
   }  
   return nPass;
 }
@@ -436,10 +476,12 @@ void DisplacedJetEvent::mergeSVTagInfo(const reco::SecondaryVertexTagInfoCollect
   }
 }
 
-void DisplacedJetEvent::mergeRegionalTrackingIteration(const reco::JetTracksAssociation::Container& jetAssociation, const int& collectionID) {
+void DisplacedJetEvent::mergeRegionalTrackingIteration(const reco::JetTracksAssociation::Container& jetAssociation, 
+						       const int& collectionID, 
+						       const float& smear_2dip, const float& smear_2dipsig) {
   // get the jet references from the jet track association
-  std::vector<reco::JetBaseRef> caloJets   = reco::JetTracksAssociation::allJets(jetAssociation);
-  std::vector<reco::JetBaseRef>::const_iterator jetIter = caloJets.begin();
+  std::vector<reco::JetBaseRef>			caloJets = reco::JetTracksAssociation::allJets(jetAssociation);
+  std::vector<reco::JetBaseRef>::const_iterator jetIter	 = caloJets.begin();
 
   // loop over the jets and add the track references using "getValue"
   for(; jetIter != caloJets.end(); ++jetIter){
@@ -447,7 +489,7 @@ void DisplacedJetEvent::mergeRegionalTrackingIteration(const reco::JetTracksAsso
     if (pt < minPT || fabs(eta) > minEta) continue;    // dont look for jets outside of acceptance
     DisplacedJet & djet = findDisplacedJetByPtEtaPhi(pt, eta, phi);
     // add the regional tracks with the corresponding collectionID
-    djet.addRegionalTracks(reco::JetTracksAssociation::getValue(jetAssociation, *jetIter), collectionID);    
+    djet.addRegionalTracks(reco::JetTracksAssociation::getValue(jetAssociation, *jetIter), collectionID, smear_2dip, smear_2dipsig);    
   }
 }
 

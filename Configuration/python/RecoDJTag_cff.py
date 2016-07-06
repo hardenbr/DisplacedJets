@@ -30,7 +30,7 @@ djtagging = cms.Sequence( #track matching for ak5 jets
      #ak4JTA_InnerHit + #jet track matching at the inner hit                  
      #make the track collections for tracks matched to the jets
      displacedAssocToTracks + 
-     displacedAssocToTracksCaloFace + 
+#     displacedAssocToTracksCaloFace + 
 #     displacedJetVertexAssociation + 
 #     displacedAssocToTracksInnerHit + 
      #impact parameter info
@@ -49,7 +49,7 @@ djtagging = cms.Sequence( #track matching for ak5 jets
      displacedSecondaryVertexTagInfosNoPVCaloFace + #noPV 
      displacedTagsToVerticesNoPVCaloFace + #noPV 
      displacedSecondaryVertexTagInfosCaloFace +
-     displacedTagsToVerticesCaloFace+
+     displacedTagsToVerticesCaloFace +
      #inclusive vertexing
      displacedInclusiveVertexing 
 )

@@ -308,22 +308,24 @@ void DJetAnalyzer::fillTriggerInfo(const edm::Event & iEvent, const edm::Trigger
 
     // build important bits for the tree
     // control
-    bool    pfht800      = searchPFHT800 != std::string::npos ;
-    bool    ht200        = searchHT200 != std::string::npos ;
-    bool    ht275        = searchHT275 != std::string::npos ;
-    bool    ht325        = searchHT325 != std::string::npos ;
-    bool    ht425        = searchHT425 != std::string::npos ;
-    bool    ht575        = searchHT575 != std::string::npos ;    
+    bool    pfht800	   = searchPFHT800 != std::string::npos ;
+    bool    ht200	   = searchHT200 != std::string::npos ;
+    bool    ht275	   = searchHT275 != std::string::npos ;
+    bool    ht325	   = searchHT325 != std::string::npos ;
+    bool    ht425	   = searchHT425 != std::string::npos ;
+    bool    ht575	   = searchHT575 != std::string::npos ;    
     // displaced triggers
     // displaced track
+    bool    ht200_40       = name.find("HLT_HT200_DisplacedDijet40_DisplacedTrack_v") != std::string::npos ;
     bool    ht250_40       = name.find("HLT_HT250_DisplacedDijet40_DisplacedTrack_v") != std::string::npos ;
     bool    ht350_40       = searchHT350DispTrack40 != std::string::npos ;
-    //    bool    ht350_80       = searchHT350DispTrack80 != std::string::npos ;
+    //    bool    ht350_80 = searchHT350DispTrack80 != std::string::npos ;
     // inclusive
+    bool    ht350_40DT     = name.find("HLT_HT350_DisplacedDijet40_Inclusive_v") != std::string::npos ;
     bool    ht400_40       = name.find("HLT_HT400_DisplacedDijet40_Inclusive_v") != std::string::npos ;
     bool    ht500_40       = searchHT500Inclusive40 != std::string::npos ;
     bool    ht550_40       = searchHT550Inclusive40 != std::string::npos ;
-    //    bool    ht650_80       = searchHT650Inclusive80 != std::string::npos ;
+    //    bool    ht650_80 = searchHT650Inclusive80 != std::string::npos ;
     // vbf displaced
     bool    vbfHadronic    = searchVBFHadronic  != std::string::npos ;
     bool    vbfDispTrack   = searchVBFDispTrack != std::string::npos ;
@@ -343,8 +345,10 @@ void DJetAnalyzer::fillTriggerInfo(const edm::Event & iEvent, const edm::Trigger
     passHT575		 = (passHT575)   || ht575;
     passDisplacedOR5e33	 = (passDisplacedOR5e33) || ht250_40 || ht400_40;
     passDisplacedOR14e34 = (passDisplacedOR14e34) || ht350_40 || ht500_40;
+    passDisplaced200_40  = passDisplaced200_40 || ht200_40; 
     passDisplaced250_40  = passDisplaced250_40 || ht250_40; 
     passDisplaced350_40  = passDisplaced350_40 || ht350_40; 
+    passDisplaced350_40DT = passDisplaced350_40DT || ht350_40DT; 
     passDisplaced400_40  = passDisplaced400_40 || ht400_40; 
     passDisplaced500_40  = passDisplaced500_40 || ht500_40;
     passDisplaced550_40  = passDisplaced550_40 || ht550_40;
@@ -493,7 +497,7 @@ void  DJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 
   // mc matching (gen vertex and gen particle to calo jet matching) 
   // (genparticles, particle matching, vtx matching, vtx id matching, threshold for vtx match)
-  if(isMC_ && doGenMatch_) djEvent.doGenMatching(genCollection, true, false, false, isSignalMC_, 1.0, 0.4, 0.05);    
+  if(isMC_ && doGenMatch_) djEvent.doGenMatching(genCollection, true, false, false, isSignalMC_, 0.6, 0.4, 0.05);    
   // only dump sim information for matching
   if(isMC_ && doSimMatch_) dumpSimInfo(simVtxCollection);  
 
@@ -642,8 +646,10 @@ void DJetAnalyzer::beginJob() {
   eventTree_->Branch("passHT325", &passHT325, "passHT325/I");
   eventTree_->Branch("passHT425", &passHT425, "passHT425/I");
   eventTree_->Branch("passHT575", &passHT575, "passHT575/I");
+  eventTree_->Branch("passDisplaced200_40", &passDisplaced200_40, "passDisplaced200_40/I");
   eventTree_->Branch("passDisplaced250_40", &passDisplaced250_40, "passDisplaced250_40/I");
   eventTree_->Branch("passDisplaced350_40", &passDisplaced350_40, "passDisplaced350_40/I");
+  eventTree_->Branch("passDisplaced350_40DT", &passDisplaced350_40DT, "passDisplaced350_40DT/I");
   eventTree_->Branch("passDisplaced400_40", &passDisplaced400_40, "passDisplaced400_40/I");
   eventTree_->Branch("passDisplaced500_40", &passDisplaced500_40, "passDisplaced500_40/I");
   eventTree_->Branch("passDisplaced550_40", &passDisplaced550_40, "passDisplaced550_40/I");

@@ -2,7 +2,7 @@ import FWCore.ParameterSet.Config as cms
 from Configuration.StandardSequences.Eras import eras
 
 # output directories
-base                = '/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDIES/CMSSW_7_6_3/src/DisplacedJets/'
+base                = '/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDIES/CMSSW_8_0_11/src/DisplacedJets/'
 #outputDir           = "/afs/cern.ch/work/h/hardenbr/2015/DIJET/DJANALYSIS/XX4J_mx500_30mm_rawaodplus_5k_SYS"
 #outputDir           = "/afs/cern.ch/work/h/hardenbr/2015/DIJET/DJANALYSIS/NOSYS_XX4J_300_1000mm"
 outputDir           = ""
@@ -13,12 +13,12 @@ appendData         = ""
 appendBkg          = ""
 ############ FLAGS #############
 debugLevel         = -1
-reportEveryNEvents = 1000
+reportEveryNEvents = 100
 isSignalMC         = False
 isMC               = True or isSignalMC
 isData             = not isMC
 doedm              = False
-nevents            = 500
+nevents            = 100
 
 #-------------- globaltags
 #gtag              = "74X_HLT_mcRun2_asymptotic_fromSpring15DR_v0" #spring 15 25ns
@@ -29,21 +29,22 @@ nevents            = 500
 #gtag              = "74X_dataRun2_Prompt_v2"  #data
 #gtag               = "76X_dataRun2_v15"
 #gtag               = "76X_mcRun2_asymptotic_v12"
+gtag               = "80X_mcRun2_asymptotic_2016_v3"
+#gtag               = "80X_dataRun2_Prompt_v8"
 
-gtag               = "Spring16_25nsV2_MC"
 ## -------------json
 #JSON               = 'json_DCSONLY_Run2015B.txt'
 #JSON               = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-251883_13TeV_PromptReco_Collisions15_JSON.txt'
 #JSON               = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-255031_13TeV_PromptReco_Collisions15_25ns_JSON_v2.txt'
 #JSON               = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-258714_13TeV_PromptReco_Collisions15_25ns_JSON.txt'
 #silver json
-JSON                = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-260627_13TeV_PromptReco_Collisions15_25ns_JSON_Silver_v2.txt'
+JSON                = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions16/13TeV/Cert_271036-274443_13TeV_PromptReco_Collisions16_JSON.txt'
 
 #--------------trigger
 trigger_process     = "HLT" 
 #--------------analysis todos
 #$$$$$$$$$trigger fixes
-is76XTriggers       = True
+is76XTriggers       = False
 doApplyTrigger      = False if isData else False #not isSignalMC
 ##mu related
 doApplySingleMu     = False
@@ -71,7 +72,7 @@ writeGenTree        = isSignalMC
 doGenMatch          = isMC #and isSignalMC
 doSimVtxMatch       = False
 #----------- analysis cuts
-cut_jetPt           = 20
+cut_jetPt           = 60
 cut_jetEta          = 2.0
 #----------- smearing parameters for regional cuts
 smear_2dip          = 0.2
@@ -163,7 +164,14 @@ if not isSignalMC and input_file_list == None and not isData:
    # JET CORRECTIONS
 #   qcd_files = ['/store/mc/RunIIFall15DR76/QCD_Pt-15to3000_TuneCUETP8M1_Flat_13TeV_pythia8/AODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/00000/000431BE-03A9-E511-9E31-90B11C2AA16C.root']
    # JET CORRECTIONS 80X
-   qcd_files = ['/store/mc/RunIISpring16DR80/QCD_Pt-15to7000_TuneCUETP8M1_Flat_13TeV_pythia8/AODSIM/PUFlat0to50_magnetOn_80X_mcRun2_asymptotic_2016_v3-v1/20000/80DF13CB-05F2-E511-B32F-0025905C3D3E.root']
+   #    tmp file
+#   qcd_files = ['file:/tmp/hardenbr/QCD_FLAT_80X.root']
+
+   qcd_files = ['/store/mc/RunIISpring16DR80/QCD_Pt-15to3000_TuneCUETP8M1_Flat_13TeV_pythia8/AODSIM/FlatPU8to37HcalNZSRAW_withHLT_80X_mcRun2_asymptotic_v14-v1/90000/F6A9368D-5D33-E611-8593-0025905A6070.root',
+                '/store/mc/RunIISpring16DR80/QCD_Pt-15to3000_TuneCUETP8M1_Flat_13TeV_pythia8/AODSIM/FlatPU8to37HcalNZSRAW_withHLT_80X_mcRun2_asymptotic_v14-v1/90000/F8C3FFF4-1F33-E611-B0E4-0CC47A4D7698.root',
+                '/store/mc/RunIISpring16DR80/QCD_Pt-15to3000_TuneCUETP8M1_Flat_13TeV_pythia8/AODSIM/FlatPU8to37HcalNZSRAW_withHLT_80X_mcRun2_asymptotic_v14-v1/90000/F8D2D89E-3833-E611-9788-0025905A60CA.root']
+
+#   qcd_files = ['/store/mc/RunIISpring16DR80/QCD_Pt-15to7000_TuneCUETP8M1_Flat_13TeV_pythia8/AODSIM/PUFlat0to50_magnetOn_80X_mcRun2_asymptotic_2016_v3-v1/20000/80DF13CB-05F2-E511-B32F-0025905C3D3E.root']
 #   qcd_files = ['file:/afs/cern.ch/user/h/hardenbr//eos/cms/store/group/phys_susy/razor/josh/RAZOR_DIJET/RAW_CONTENT_FILES/QCD_MAR31_REGIONALTRACKING_NOTRIGSUM_NOLOCALITY_FIXOUT/QCD_Pt_170to300_TuneCUETP8M1_13TeV_pythia8/crab_qcd170_300/160331_115231/0000/edmoutput_55.root']
    # qcd_files = ['/store/mc/RunIIFall15DR76/QCD_Pt_300to470_TuneCUETP8M1_13TeV_pythia8/AODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/40000/0AD1B83E-DCA0-E511-AA14-0025905A60F2.root',
    #              '/store/mc/RunIIFall15DR76/QCD_Pt_300to470_TuneCUETP8M1_13TeV_pythia8/AODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/40000/18EEA885-D9A0-E511-9529-0025905A6138.root',
@@ -183,7 +191,27 @@ if not isSignalMC and input_file_list == None and not isData:
                 
 #   myfilelist.extend(['/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/00000/00D76158-CCFC-E411-89EA-AC853DA06B56.root'])
 if isData and input_file_list == None:
-   these_files = ['file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/group/phys_susy/razor/josh/RAZOR_DIJET/RAW_CONTENT_FILES/JetHT_AVR5_RAW_CONTENT/JetHT/crab_JetHT/160405_130026/JetHT_0000_head200.root']
+   these_files = [
+      '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/60A3AB84-A728-E611-9B79-02163E0145C8.root',
+      '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/6C35F74B-AB28-E611-9E24-02163E0142B5.root',
+      '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/80312814-A728-E611-B42B-02163E012152.root',
+      '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/807E5387-A728-E611-99BF-02163E013754.root',
+      '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/8AD2477B-A728-E611-9B68-02163E013451.root',
+      '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/8CC17B49-AA28-E611-B270-02163E013827.root',
+      '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/8ED4FDA2-AF28-E611-9873-02163E014204.root',
+      '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/8EFDF42B-A728-E611-87EF-02163E0142D7.root',
+      '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/903DCC26-A728-E611-932D-02163E011AE1.root',
+      '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/92C47378-A728-E611-BD94-02163E014257.root',
+      '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/94EC16BC-AF28-E611-9144-02163E012B47.root',
+      '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/960BC5D3-AF28-E611-9B22-02163E012449.root',
+      '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/9AA8082F-A728-E611-8FB2-02163E0121D2.root',
+      '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/9AD5CBEF-B928-E611-826F-02163E01439B.root',
+      '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/A2B88C53-AF28-E611-9415-02163E0142B3.root',
+      '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/A41BE741-AC28-E611-8473-02163E011912.root',
+      '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/AC42C250-A728-E611-8739-02163E013469.root',
+      '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/BAD96F53-AC28-E611-8E22-02163E01452F.root']
+#   these_files = ['/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/273/150/00000/5A8A3B1F-D819-E611-8559-02163E01421D.root']
+#   these_files = ['file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/group/phys_susy/razor/josh/RAZOR_DIJET/RAW_CONTENT_FILES/JetHT_AVR5_RAW_CONTENT/JetHT/crab_JetHT/160405_130026/JetHT_0000_head200.root']
    for mfile in these_files: 
       print mfile
       myfilelist.extend([mfile])
@@ -225,37 +253,43 @@ import FWCore.PythonUtilities.LumiList as LumiList
 if isData:
    process.source.lumisToProcess = LumiList.LumiList(filename = JSON).getVLuminosityBlockRange()
 
-################################################################################################
+#get the jet energy corrections from the db file
+process.load("CondCore.CondDB.CondDB_cfi") 
+process.jec = cms.ESSource("PoolDBESSource",
+      DBParameters = cms.PSet(
+        messageLevel = cms.untracked.int32(0)
+        ),
+                           timetype = cms.string('runnumber'),
+                           toGet = cms.VPSet(
+      cms.PSet(
+         record = cms.string('JetCorrectionsRecord'),
+         # DATA
+         #tag    = cms.string('JetCorrectorParametersCollection_Spring16_V3_DATA_AK4Calo'),
+         # MC
+         tag    = cms.string('JetCorrectorParametersCollection_Spring16_25nsV3_MC_AK4Calo'),
+         label  = cms.untracked.string('AK4Calo')
+         ),
+      ), 
+      # DATA
+#      connect = cms.string('sqlite_file:Spring16_V3_DATA.db')
+      # MC
+      connect = cms.string('sqlite_file:Spring16_25nsV3_MC.db')
+)
 
-process.hltAK4CaloFastJetCorrector = cms.EDProducer( "L1FastjetCorrectorProducer",
-    srcRho = cms.InputTag( "fixedGridRhoFastjetAllCalo"),
-    algorithm = cms.string( "AK4Calo" ),
-    level = cms.string( "L1FastJet" )
-)
-process.hltAK4CaloRelativeCorrector = cms.EDProducer( "LXXXCorrectorProducer",
-    algorithm = cms.string( "AK4Calo" ),
-    level = cms.string( "L2Relative" )
-)
-process.hltAK4CaloAbsoluteCorrector = cms.EDProducer( "LXXXCorrectorProducer",
-    algorithm = cms.string( "AK4Calo" ),
-    level = cms.string( "L3Absolute" )
-)
-process.hltAK4CaloCorrector = cms.EDProducer( "ChainedJetCorrectorProducer",
-    correctors = cms.VInputTag( 'hltAK4CaloFastJetCorrector','hltAK4CaloRelativeCorrector','hltAK4CaloAbsoluteCorrector' )
-)
-process.ak4CaloJetsL2L3 = cms.EDProducer( "CorrectedCaloJetProducer",
-    src = cms.InputTag( "ak4CaloJets" ),
-    correctors = cms.VInputTag( 'hltAK4CaloCorrector' )
+# #make sure we use the db source and not the global tag
+process.es_prefer_jec = cms.ESPrefer('PoolDBESSource','jec')
+process.get = cms.EDAnalyzer("EventSetupRecordDataGetter",
+    toGet = cms.VPSet(cms.PSet(
+        record = cms.string('JetCorrectionsRecord'),
+        data = cms.vstring('JetCorrectorParametersCollection/AK4Calo')
+    )
+    ),
+    verbose = cms.untracked.bool(True)
 )
 
-#jet corrections taken from the global tag
-#process.ak4CaloL2RelativeCorrector.algorithm = cms.string("AK4PF")
-#process.ak4CaloL3AbsoluteCorrector.algorithm = cms.string("AK4PF")
-#process.ak4CaloL2L3Corrector.algorithm = cms.string("ak4CaloHLT")
-#process.correctJets = cms.Sequence(process.ak4CaloL2L3CorrectorChain * process.ak4CaloJetsL2L3)
-process.correctJets = cms.Sequence(process.hltAK4CaloFastJetCorrector * 
-                                   process.hltAK4CaloRelativeCorrector * 
-                                   process.hltAK4CaloAbsoluteCorrector * process.hltAK4CaloCorrector * process.ak4CaloJetsL2L3)
+process.ak4CaloL2RelativeCorrector.algorithm = cms.string("AK4Calo")
+process.ak4CaloL3AbsoluteCorrector.algorithm = cms.string("AK4Calo")
+process.correctJets = cms.Sequence( process.get * process.ak4CaloL2L3CorrectorChain * process.ak4CaloJetsL2L3)
 
 #configure the analyzers
 process.analyzerVTX  = cms.EDAnalyzer('DJetAnalyzer')
@@ -341,7 +375,7 @@ process.analyzerVTX.regionalTracksIter4           = cms.untracked.InputTag('disp
 process.analyzerCALO.generalTracks                 = cms.untracked.InputTag('generalTracks', '', '')
 process.analyzerCALO.ak4CaloJets                   = cms.untracked.InputTag('ak4CaloJetsL2L3', '', '')
 process.analyzerCALO.genParticles                  = cms.untracked.InputTag('genParticles', '', '')
-process.analyzerCALO.caloMatchedTrackAssociation   = cms.untracked.InputTag('displacedAk4JetTracksAssociatorAtCaloFace','','ANA')
+process.analyzerCALO.caloMatchedTrackAssociation   = cms.untracked.InputTag('displacedAk4JetTracksAssociatorAtVertex','','ANA')
 process.analyzerCALO.vertexMatchedTrackAssociation = cms.untracked.InputTag('displacedAk4JetTracksAssociatorAtVertex','','ANA')
 #regional tracking
 process.analyzerCALO.regionalTracksIter012         = cms.untracked.InputTag('displacedAk4JetTracksAssociatorAtVertexRegionalIter012', '', '')
@@ -510,7 +544,6 @@ process.triggerSelection = cms.EDFilter( "TriggerResultsFilter",
     daqPartitions = cms.uint32( 1 ),
     throw = cms.bool( True )
 )
-
 
 process.mcTriggerSelection = cms.EDFilter( "TriggerResultsFilter",
     triggerConditions = cms.vstring(*mc_triggers),

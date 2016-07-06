@@ -1053,8 +1053,10 @@ class DJetAnalyzer : public edm::EDAnalyzer {
   Int_t         passHT325; 
   Int_t         passHT425; 
   Int_t         passHT575; 
+  Int_t         passDisplaced200_40; 
   Int_t         passDisplaced250_40; 
   Int_t         passDisplaced350_40;
+  Int_t         passDisplaced350_40DT;
   Int_t         passDisplaced400_40; 
   Int_t         passDisplaced500_40;
   Int_t         passDisplaced550_40;

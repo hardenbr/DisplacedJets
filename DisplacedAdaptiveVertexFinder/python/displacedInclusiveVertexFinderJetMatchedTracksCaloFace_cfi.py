@@ -3,7 +3,8 @@ import FWCore.ParameterSet.Config as cms
 displacedInclusiveVertexFinderJetMatchedTracksCaloFace  = cms.EDProducer("InclusiveVertexFinder",
        beamSpot = cms.InputTag("offlineBeamSpot"),
        primaryVertices = cms.InputTag("offlinePrimaryVertices"),
-       tracks = cms.InputTag("displacedAssocToTracksCaloFace","displacedAssocToTracksCaloFace","ANA"), #dijet
+       tracks = cms.InputTag("displacedAssocToTracks","displacedAssocToTracks","ANA"),
+#       tracks = cms.InputTag("displacedAssocToTracksCaloFace","displacedAssocToTracksCaloFace","ANA"), #dijet
        minHits = cms.uint32(0), #djet 8 -> 0 AOD produciton has problems with nhits
        maximumLongitudinalImpactParameter = cms.double(9999), #djet  .3 -> infty
        minPt = cms.double(1.0), #djet .8 -> 1 

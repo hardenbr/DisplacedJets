@@ -28,9 +28,9 @@ nevents            = 500
 #gtag              = "MCRUN2_74_V9" #guns
 #gtag              = "74X_dataRun2_Prompt_v2"  #data
 #gtag               = "76X_dataRun2_v15"
-#gtag               = "76X_mcRun2_asymptotic_v12"
+gtag               = "76X_mcRun2_asymptotic_v12"
 
-gtag               = "Spring16_25nsV2_MC"
+#gtag               = "Spring16_25nsV2_MC"
 ## -------------json
 #JSON               = 'json_DCSONLY_Run2015B.txt'
 #JSON               = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-251883_13TeV_PromptReco_Collisions15_JSON.txt'
@@ -161,9 +161,9 @@ if not isSignalMC and input_file_list == None and not isData:
 #   qcd_files = ['/store/mc/RunIIFall15DR76/TTJets_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/AODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/30000/00348C6E-599F-E511-B51D-02163E00F4BF.root'] 
 #   qcd_files = ['file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/group/phys_susy/razor/josh/RAZOR_DIJET/RAW_CONTENT_FILES/QCD_MAR31_REGIONALTRACKING_NOTRIGSUM_NOLOCALITY_FIXOUT/QCD_Pt_470to600_TuneCUETP8M1_13TeV_pythia8/crab_qcd470_600/160331_115244/0000/edmoutput_18.root']
    # JET CORRECTIONS
-#   qcd_files = ['/store/mc/RunIIFall15DR76/QCD_Pt-15to3000_TuneCUETP8M1_Flat_13TeV_pythia8/AODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/00000/000431BE-03A9-E511-9E31-90B11C2AA16C.root']
+   qcd_files = ['/store/mc/RunIIFall15DR76/QCD_Pt-15to3000_TuneCUETP8M1_Flat_13TeV_pythia8/AODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/00000/000431BE-03A9-E511-9E31-90B11C2AA16C.root']
    # JET CORRECTIONS 80X
-   qcd_files = ['/store/mc/RunIISpring16DR80/QCD_Pt-15to7000_TuneCUETP8M1_Flat_13TeV_pythia8/AODSIM/PUFlat0to50_magnetOn_80X_mcRun2_asymptotic_2016_v3-v1/20000/80DF13CB-05F2-E511-B32F-0025905C3D3E.root']
+#   qcd_files = ['/store/mc/RunIISpring16DR80/QCD_Pt-15to7000_TuneCUETP8M1_Flat_13TeV_pythia8/AODSIM/PUFlat0to50_magnetOn_80X_mcRun2_asymptotic_2016_v3-v1/20000/80DF13CB-05F2-E511-B32F-0025905C3D3E.root']
 #   qcd_files = ['file:/afs/cern.ch/user/h/hardenbr//eos/cms/store/group/phys_susy/razor/josh/RAZOR_DIJET/RAW_CONTENT_FILES/QCD_MAR31_REGIONALTRACKING_NOTRIGSUM_NOLOCALITY_FIXOUT/QCD_Pt_170to300_TuneCUETP8M1_13TeV_pythia8/crab_qcd170_300/160331_115231/0000/edmoutput_55.root']
    # qcd_files = ['/store/mc/RunIIFall15DR76/QCD_Pt_300to470_TuneCUETP8M1_13TeV_pythia8/AODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/40000/0AD1B83E-DCA0-E511-AA14-0025905A60F2.root',
    #              '/store/mc/RunIIFall15DR76/QCD_Pt_300to470_TuneCUETP8M1_13TeV_pythia8/AODSIM/PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/40000/18EEA885-D9A0-E511-9529-0025905A6138.root',
@@ -227,35 +227,35 @@ if isData:
 
 ################################################################################################
 
-process.hltAK4CaloFastJetCorrector = cms.EDProducer( "L1FastjetCorrectorProducer",
-    srcRho = cms.InputTag( "fixedGridRhoFastjetAllCalo"),
-    algorithm = cms.string( "AK4Calo" ),
-    level = cms.string( "L1FastJet" )
-)
-process.hltAK4CaloRelativeCorrector = cms.EDProducer( "LXXXCorrectorProducer",
-    algorithm = cms.string( "AK4Calo" ),
-    level = cms.string( "L2Relative" )
-)
-process.hltAK4CaloAbsoluteCorrector = cms.EDProducer( "LXXXCorrectorProducer",
-    algorithm = cms.string( "AK4Calo" ),
-    level = cms.string( "L3Absolute" )
-)
-process.hltAK4CaloCorrector = cms.EDProducer( "ChainedJetCorrectorProducer",
-    correctors = cms.VInputTag( 'hltAK4CaloFastJetCorrector','hltAK4CaloRelativeCorrector','hltAK4CaloAbsoluteCorrector' )
-)
-process.ak4CaloJetsL2L3 = cms.EDProducer( "CorrectedCaloJetProducer",
-    src = cms.InputTag( "ak4CaloJets" ),
-    correctors = cms.VInputTag( 'hltAK4CaloCorrector' )
-)
+# process.hltAK4CaloFastJetCorrector = cms.EDProducer( "L1FastjetCorrectorProducer",
+#     srcRho = cms.InputTag( "fixedGridRhoFastjetAllCalo"),
+#     algorithm = cms.string( "AK4Calo" ),
+#     level = cms.string( "L1FastJet" )
+# )
+# process.hltAK4CaloRelativeCorrector = cms.EDProducer( "LXXXCorrectorProducer",
+#     algorithm = cms.string( "AK4Calo" ),
+#     level = cms.string( "L2Relative" )
+# )
+# process.hltAK4CaloAbsoluteCorrector = cms.EDProducer( "LXXXCorrectorProducer",
+#     algorithm = cms.string( "AK4Calo" ),
+#     level = cms.string( "L3Absolute" )
+# )
+# process.hltAK4CaloCorrector = cms.EDProducer( "ChainedJetCorrectorProducer",
+#     correctors = cms.VInputTag( 'hltAK4CaloFastJetCorrector','hltAK4CaloRelativeCorrector','hltAK4CaloAbsoluteCorrector' )
+# )
+# process.ak4CaloJetsL2L3 = cms.EDProducer( "CorrectedCaloJetProducer",
+#     src = cms.InputTag( "ak4CaloJets" ),
+#     correctors = cms.VInputTag( 'hltAK4CaloCorrector' )
+# )
 
-#jet corrections taken from the global tag
-#process.ak4CaloL2RelativeCorrector.algorithm = cms.string("AK4PF")
-#process.ak4CaloL3AbsoluteCorrector.algorithm = cms.string("AK4PF")
+# jet corrections taken from the global tag
+process.ak4CaloL2RelativeCorrector.algorithm = cms.string("AK4Calo")
+process.ak4CaloL3AbsoluteCorrector.algorithm = cms.string("AK4Calo")
 #process.ak4CaloL2L3Corrector.algorithm = cms.string("ak4CaloHLT")
-#process.correctJets = cms.Sequence(process.ak4CaloL2L3CorrectorChain * process.ak4CaloJetsL2L3)
-process.correctJets = cms.Sequence(process.hltAK4CaloFastJetCorrector * 
-                                   process.hltAK4CaloRelativeCorrector * 
-                                   process.hltAK4CaloAbsoluteCorrector * process.hltAK4CaloCorrector * process.ak4CaloJetsL2L3)
+process.correctJets = cms.Sequence(process.ak4CaloL2L3CorrectorChain * process.ak4CaloJetsL2L3)
+# process.correctJets = cms.Sequence(process.hltAK4CaloFastJetCorrector * 
+#                                    process.hltAK4CaloRelativeCorrector * 
+#                                    process.hltAK4CaloAbsoluteCorrector * process.hltAK4CaloCorrector * process.ak4CaloJetsL2L3)
 
 #configure the analyzers
 process.analyzerVTX  = cms.EDAnalyzer('DJetAnalyzer')

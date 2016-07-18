@@ -2,7 +2,7 @@ import FWCore.ParameterSet.Config as cms
 from Configuration.StandardSequences.Eras import eras
 
 # output directories
-base                = '/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDIES/CMSSW_8_0_11/src/DisplacedJets/'
+base                = '/afs/cern.ch/user/h/hardenbr/2014/LL_DIJET/TRACKING_STUDIES/CMSSW_7_6_3/src/DisplacedJets/'
 #outputDir           = "/afs/cern.ch/work/h/hardenbr/2015/DIJET/DJANALYSIS/XX4J_mx500_30mm_rawaodplus_5k_SYS"
 #outputDir           = "/afs/cern.ch/work/h/hardenbr/2015/DIJET/DJANALYSIS/NOSYS_XX4J_300_1000mm"
 outputDir           = ""
@@ -13,12 +13,12 @@ appendData         = ""
 appendBkg          = ""
 ############ FLAGS #############
 debugLevel         = -1
-reportEveryNEvents = 100
+reportEveryNEvents = 5000
 isSignalMC         = False
 isMC               = True or isSignalMC
 isData             = not isMC
 doedm              = False
-nevents            = 100
+nevents            = -1
 
 #-------------- globaltags
 #gtag              = "74X_HLT_mcRun2_asymptotic_fromSpring15DR_v0" #spring 15 25ns
@@ -28,27 +28,25 @@ nevents            = 100
 #gtag              = "MCRUN2_74_V9" #guns
 #gtag              = "74X_dataRun2_Prompt_v2"  #data
 #gtag               = "76X_dataRun2_v15"
-
 gtag               = "76X_mcRun2_asymptotic_v12"
-#gtag               = "76X_mcRun2_asymptotic_v12"
 #gtag               = "80X_mcRun2_asymptotic_2016_v3"
 #gtag               = "80X_dataRun2_Prompt_v8"
-
 
 ## -------------json
 #JSON               = 'json_DCSONLY_Run2015B.txt'
 #JSON               = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-251883_13TeV_PromptReco_Collisions15_JSON.txt'
 #JSON               = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-255031_13TeV_PromptReco_Collisions15_25ns_JSON_v2.txt'
 #JSON               = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-258714_13TeV_PromptReco_Collisions15_25ns_JSON.txt'
-#silver json
-JSON                = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions16/13TeV/Cert_271036-274443_13TeV_PromptReco_Collisions16_JSON.txt'
+#reprocessing silver json
+JSON                = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Reprocessing/Cert_13TeV_16Dec2015ReReco_Collisions15_25ns_JSON_Silver_v2.txt'
+#JSON                = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions16/13TeV/Cert_271036-274443_13TeV_PromptReco_Collisions16_JSON.txt'
 
 #--------------trigger
 trigger_process     = "HLT" 
 #--------------analysis todos
 #$$$$$$$$$trigger fixes
 is76XTriggers       = False
-doApplyTrigger      = False if isData else False #not isSignalMC
+doApplyTrigger      = True if isData else False #not isSignalMC
 ##mu related
 doApplySingleMu     = False
 isOnlyMu            = False
@@ -188,24 +186,34 @@ if not isSignalMC and input_file_list == None and not isData:
 #   myfilelist.extend(['/store/mc/RunIISpring15DR74/QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/00000/00D76158-CCFC-E411-89EA-AC853DA06B56.root'])
 if isData and input_file_list == None:
    these_files = [
-      '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/60A3AB84-A728-E611-9B79-02163E0145C8.root',
-      '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/6C35F74B-AB28-E611-9E24-02163E0142B5.root',
-      '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/80312814-A728-E611-B42B-02163E012152.root',
-      '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/807E5387-A728-E611-99BF-02163E013754.root',
-      '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/8AD2477B-A728-E611-9B68-02163E013451.root',
-      '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/8CC17B49-AA28-E611-B270-02163E013827.root',
-      '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/8ED4FDA2-AF28-E611-9873-02163E014204.root',
-      '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/8EFDF42B-A728-E611-87EF-02163E0142D7.root',
-      '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/903DCC26-A728-E611-932D-02163E011AE1.root',
-      '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/92C47378-A728-E611-BD94-02163E014257.root',
-      '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/94EC16BC-AF28-E611-9144-02163E012B47.root',
-      '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/960BC5D3-AF28-E611-9B22-02163E012449.root',
-      '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/9AA8082F-A728-E611-8FB2-02163E0121D2.root',
-      '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/9AD5CBEF-B928-E611-826F-02163E01439B.root',
-      '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/A2B88C53-AF28-E611-9415-02163E0142B3.root',
-      '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/A41BE741-AC28-E611-8473-02163E011912.root',
-      '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/AC42C250-A728-E611-8739-02163E013469.root',
-      '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/BAD96F53-AC28-E611-8E22-02163E01452F.root']
+      '/store/data/Run2015D/DisplacedJet/AOD/16Dec2015-v1/00000/001D4FD3-C5AE-E511-8C2E-00259073E510.root',
+      '/store/data/Run2015D/DisplacedJet/AOD/16Dec2015-v1/00000/0079331D-BEAE-E511-8AB6-0025904B7C26.root',
+      '/store/data/Run2015D/DisplacedJet/AOD/16Dec2015-v1/00000/00A3C370-0AAF-E511-819F-0CC47A1E0482.root',
+      '/store/data/Run2015D/DisplacedJet/AOD/16Dec2015-v1/00000/020C2B72-04AF-E511-B675-00266CFAE740.root',
+      '/store/data/Run2015D/DisplacedJet/AOD/16Dec2015-v1/00000/0216CFAF-22AF-E511-B6DF-001E67398E6C.root']
+      # '/store/data/Run2015C_25ns/DisplacedJet/AOD/16Dec2015-v1/70000/52B384FC-E3AD-E511-A9A3-0025905A60E0.root',
+      # '/store/data/Run2015C_25ns/DisplacedJet/AOD/16Dec2015-v1/70000/62900C2E-E3AD-E511-8450-0CC47A4DEE00.root',
+      # '/store/data/Run2015C_25ns/DisplacedJet/AOD/16Dec2015-v1/70000/7CEBE4F8-E3AD-E511-B81D-0025905C3D96.root',
+      # '/store/data/Run2015C_25ns/DisplacedJet/AOD/16Dec2015-v1/70000/A4C3CEF5-E3AD-E511-8F85-3417EBE64B5B.root',
+      # '/store/data/Run2015C_25ns/DisplacedJet/AOD/16Dec2015-v1/70000/DAAF32E0-AAAD-E511-AB91-0CC47A1DFE60.root' ] 
+      # '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/60A3AB84-A728-E611-9B79-02163E0145C8.root',
+      # '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/6C35F74B-AB28-E611-9E24-02163E0142B5.root',
+      # '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/80312814-A728-E611-B42B-02163E012152.root',
+      # '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/807E5387-A728-E611-99BF-02163E013754.root',
+      # '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/8AD2477B-A728-E611-9B68-02163E013451.root',
+      # '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/8CC17B49-AA28-E611-B270-02163E013827.root',
+      # '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/8ED4FDA2-AF28-E611-9873-02163E014204.root',
+      # '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/8EFDF42B-A728-E611-87EF-02163E0142D7.root',
+      # '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/903DCC26-A728-E611-932D-02163E011AE1.root',
+      # '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/92C47378-A728-E611-BD94-02163E014257.root',
+      # '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/94EC16BC-AF28-E611-9144-02163E012B47.root',
+      # '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/960BC5D3-AF28-E611-9B22-02163E012449.root',
+      # '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/9AA8082F-A728-E611-8FB2-02163E0121D2.root',
+      # '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/9AD5CBEF-B928-E611-826F-02163E01439B.root',
+      # '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/A2B88C53-AF28-E611-9415-02163E0142B3.root',
+      # '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/A41BE741-AC28-E611-8473-02163E011912.root',
+      # '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/AC42C250-A728-E611-8739-02163E013469.root',
+      # '/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/274/241/00000/BAD96F53-AC28-E611-8E22-02163E01452F.root']
 #   these_files = ['/store/data/Run2016B/DisplacedJet/AOD/PromptReco-v2/000/273/150/00000/5A8A3B1F-D819-E611-8559-02163E01421D.root']
 #   these_files = ['file:/afs/cern.ch/user/h/hardenbr/eos/cms/store/group/phys_susy/razor/josh/RAZOR_DIJET/RAW_CONTENT_FILES/JetHT_AVR5_RAW_CONTENT/JetHT/crab_JetHT/160405_130026/JetHT_0000_head200.root']
    for mfile in these_files: 
@@ -240,6 +248,14 @@ process.load('JetMETCorrections.Configuration.DefaultJEC_cff')
 process.load('JetMETCorrections.Configuration.CorrectedJetProducers_cff')
 
 process.GlobalTag.globaltag = gtag
+
+# process.GlobalTag.toGet = cms.VPSet(
+#   cms.PSet(record = cms.string("JetCorrectionsRecord"),
+#            tag = cms.string("JetCorrectorParametersCollection_HI_PythiaCUETP8M1_5020GeV_753p1_v1_AK4Calo_offline"),
+#            connect = cms.string("frontier://FrontierProd/CMS_CONDITIONS")
+#           )
+# )
+
 
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(nevents))
 process.source = cms.Source("PoolSource", fileNames = myfilelist )
@@ -277,7 +293,8 @@ if isData:
 #                                    process.hltAK4CaloAbsoluteCorrector * process.hltAK4CaloCorrector * process.ak4CaloJetsL2L3)
 
 # #get the jet energy corrections from the db file
-# process.load("CondCore.CondDB.CondDB_cfi") 
+process.load("CondCore.CondDB.CondDB_cfi") 
+
 # process.jec = cms.ESSource("PoolDBESSource",
 #       DBParameters = cms.PSet(
 #         messageLevel = cms.untracked.int32(0)
@@ -286,21 +303,21 @@ if isData:
 #                            toGet = cms.VPSet(
 #       cms.PSet(
 #          record = cms.string('JetCorrectionsRecord'),
-#          # DATA
-#          #tag    = cms.string('JetCorrectorParametersCollection_Spring16_V3_DATA_AK4Calo'),
-#          # MC
+#          #DATA
+#          #tag    = cms.string('JetCorrectorParametersCollection_HI_PythiaCUETP8M1_5020GeV_753p1_v1_AK4Calo_offline'),
+#          #MC
 #          tag    = cms.string('JetCorrectorParametersCollection_Spring16_25nsV3_MC_AK4Calo'),
 #          label  = cms.untracked.string('AK4Calo')
 #          ),
 #       ), 
-#       # DATA
-# #      connect = cms.string('sqlite_file:Spring16_V3_DATA.db')
-#       # MC
+#       #DATA
+#       #connect = cms.string("frontier://FrontierProd/CMS_CONDITIONS") #sqlite_file:Spring16_V3_DATA.db')
+#       #MC
 #       connect = cms.string('sqlite_file:Spring16_25nsV3_MC.db')
 # )
 
-# # #make sure we use the db source and not the global tag
-# process.es_prefer_jec = cms.ESPrefer('PoolDBESSource','jec')
+# #make sure we use the db source and not the global tag
+#process.es_prefer_jec = cms.ESPrefer('PoolDBESSource','jec')
 # process.get = cms.EDAnalyzer("EventSetupRecordDataGetter",
 #     toGet = cms.VPSet(cms.PSet(
 #         record = cms.string('JetCorrectionsRecord'),
@@ -311,15 +328,29 @@ if isData:
 # )
 
 # jet corrections taken from the global tag
-process.ak4CaloL2RelativeCorrector.algorithm = cms.string("AK4Calo")
-process.ak4CaloL3AbsoluteCorrector.algorithm = cms.string("AK4Calo")
-#process.ak4CaloL2L3Corrector.algorithm = cms.string("ak4CaloHLT")
-process.correctJets = cms.Sequence(process.ak4CaloL2L3CorrectorChain * process.ak4CaloJetsL2L3)
-
 # process.ak4CaloL2RelativeCorrector.algorithm = cms.string("AK4Calo")
 # process.ak4CaloL3AbsoluteCorrector.algorithm = cms.string("AK4Calo")
-# process.correctJets = cms.Sequence( process.get * process.ak4CaloL2L3CorrectorChain * process.ak4CaloJetsL2L3)
+# #process.ak4CaloL2L3Corrector.algorithm = cms.string("ak4CaloHLT")
+# process.correctJets = cms.Sequence(process.ak4CaloL2L3CorrectorChain * process.ak4CaloJetsL2L3)
 
+process.ak4CaloL2RelativeCorrector.algorithm = cms.string("AK5Calo")
+process.ak4CaloL3AbsoluteCorrector.algorithm = cms.string("AK5Calo")
+print "ak4caloL2 relative corrector = ",  process.ak4CaloL2RelativeCorrector.algorithm
+print "ak4caloL3 aboslute corrector = ",  process.ak4CaloL3AbsoluteCorrector.algorithm
+process.correctJets = cms.Sequence( process.ak4CaloL2L3CorrectorChain * process.ak4CaloJetsL2L3)
+
+# process.load("CondCore.DBCommon.CondDBCommon_cfi")
+# # output database (in this case local sqlite file)
+# process.CondDBCommon.connect = 'sqlite_file:ak4calocorr_76X_mcRun2_asymptotic_v12.db'
+
+# process.PoolDBOutputService = cms.Service("PoolDBOutputService",
+#     process.CondDBCommon,
+#     timetype = cms.untracked.string('runnumber'),
+#     toPut = cms.VPSet(cms.PSet(
+#         record = cms.string('JetCorrectionsRecord'),
+#         tag = cms.string('JetCorrectorParametersCollection/AK4Calo')
+#     ))
+# )
 
 #configure the analyzers
 process.analyzerVTX  = cms.EDAnalyzer('DJetAnalyzer')
@@ -620,7 +651,7 @@ if doedm: #just dump the edm output of the djtagging sequence no analyzer
     process.btag_output = cms.EndPath(process.test_output)
 else: # run the analysis and tree dumper using the djtagging sequence output
     process.p *= process.analyzerCALO
-
+#    process.p *= cms.EndPath(process.PoolDBOutputService)
 # Automatic addition of the customisation function from SLHCUpgradeSimulations.Configuration.postLS1Customs
 #from SLHCUpgradeSimulations.Configuration.postLS1Customs import customisePostLS1
 

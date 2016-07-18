@@ -9,6 +9,8 @@ class DisplacedJet {
 	      const edm::EventSetup& iSetup_, const int & debug_)
    :  debug(debug_), iSetup(iSetup_), jet(jet_), isMC(isMC_), jetID(jetID_), selPV(primaryVertex){
 
+    if (debug > 2) std::cout << "[DEBUG] Creating a Displaced Jet with  " << jet_.pt() << " " << jet_.eta() << " " << jet_.phi() << std::endl;
+
     // track association variables
     nTracks		 = 0;
     nTracksPrompt	 = 0;
@@ -759,11 +761,11 @@ bool DisplacedJet::doGenCaloJetMatching(const float& ptMatch, const float& dRMat
 
 //keep the collection of tracks matched at the calo surface
 void DisplacedJet::addCaloTrackInfo(const reco::TrackRefVector & trackRefs) {
-  if (debug > 2) std::cout << "[DEBUG] Adding Calorimeter Matched Track Info  " << std::endl;
-    reco::TrackRefVector::const_iterator trackIter = trackRefs.begin();
-    for(; trackIter != trackRefs.end(); ++trackIter) {      
-      caloMatchedTracks.push_back(**trackIter);
-    }    
+  if (debug > 2) std::cout << "[DEBUG] Not Adding Calorimeter Matched Track Info  " << std::endl;
+    /* reco::TrackRefVector::const_iterator trackIter = trackRefs.begin(); */
+    /* for(; trackIter != trackRefs.end(); ++trackIter) {       */
+    /*   caloMatchedTracks.push_back(**trackIter); */
+    /* }     */
 }
 
 void DisplacedJet::addRegionalTracks(const reco::TrackRefVector & trackRefs, const int & collectionID, const float & smear_2dip, const float & smear_2dipsig) {	     

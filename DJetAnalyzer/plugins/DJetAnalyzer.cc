@@ -453,10 +453,14 @@ void  DJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   // Fill Trees
   /////////////////////////////////
 
+
+
   // event information 
   run	= iEvent.id().run();
   lumi	= iEvent.id().luminosityBlock();
-  event = iEvent.id().event();      
+  event = iEvent.id().event();     
+
+  if(debug > 0) std::cout << " RUN=" << run << " LUMI= " << lumi << " EVENT= " << event << std::endl;
 
   // ncalo jets indexes every jet branch
   nCaloJets = djEvent.getNJets();   
@@ -497,7 +501,9 @@ void  DJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 
   // mc matching (gen vertex and gen particle to calo jet matching) 
   // (genparticles, particle matching, vtx matching, vtx id matching, threshold for vtx match)
-  if(isMC_ && doGenMatch_) djEvent.doGenMatching(genCollection, true, false, false, isSignalMC_, 0.6, 0.4, 0.05);    
+  if(isMC_ && doGenMatch_)  {
+    djEvent.doGenMatching(genCollection, true, false, false, isSignalMC_, 0.6, 0.4, 0.05);    
+  }
   // only dump sim information for matching
   if(isMC_ && doSimMatch_) dumpSimInfo(simVtxCollection);  
 

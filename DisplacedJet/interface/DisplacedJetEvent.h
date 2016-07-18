@@ -25,6 +25,14 @@ class DisplacedJetEvent {
 
       if (pt > 40 && fabs(eta) < 3.0) caloHT += pt;
       if (pt < minPT || fabs(eta) > minEta) continue;
+      if(pt > 99999 || pt < 0 || isnan(pt)) {
+	std::cout << "Poorly Calibrated Jet?" << pt << " eta= " << eta << " phi= " << jetIter->phi() << std::endl;
+	continue;
+      }
+      if(fabs(eta) > 10 || fabs(jetIter->phi()) > 3.142) {
+	std::cout << "Jet in impossible region eta=" << eta << " phi= " << jetIter->phi() << std::endl;
+	continue;
+      }
     
       // check leading sub-leading kinematic quantities
       // if this is the first jet
@@ -40,6 +48,7 @@ class DisplacedJetEvent {
 	caloSubLeadingJetPT = pt;
       }       
     
+      if (debug > 2) std::cout << "[DEBUG 2] Creating from calo jet with " << jetIter->pt() << " " << jetIter->eta() << " " << jetIter->phi() << std::endl;
       DisplacedJet djet(*jetIter,  selPV, isMC, jetIDCounter, iSetup, debug);
     
       djets.push_back(djet);
@@ -552,12 +561,12 @@ void DisplacedJetEvent::mergeCaloIPTagInfo(const reco::TrackIPTagInfoCollection 
 }
 
 DisplacedJet & DisplacedJetEvent::findDisplacedJetByPtEtaPhi(const float& pt, const float& eta, const float& phi) {
-  if (debug > 2) std::cout << "[DEBUG] Finding Displaced Jet By PT ETA PHI " << std::endl;
+  if (debug > 2) std::cout << "[DEBUG] Finding Displaced Jet By PT ETA PHI " << pt << " " << eta << " " << phi << std::endl;
   std::vector<DisplacedJet>::iterator djetIter = djets.begin();
   bool found = false;
   for(; djetIter != djets.end(); ++djetIter) {
     float djet_pt = djetIter->caloPt, djet_eta = djetIter->caloEta, djet_phi = djetIter->caloPhi;
-    
+    if (debug > 2) std::cout << "[DEBUG] Checking Jet By PT ETA PHI " << djet_pt << " " << djet_eta << " " << djet_phi <<std::endl;
     bool    pt_match  = djet_pt == pt;
     bool    eta_match = djet_eta == eta;
     bool    phi_match = djet_phi == phi;

@@ -7,23 +7,23 @@ from DisplacedJets.DisplacedJetAssociationProducers.j2tParametersVX_cfi import *
 
 displacedAk4JetTracksAssociatorAtVertex = cms.EDProducer("JetTracksAssociatorAtVertex",
     j2tParametersVX,
-    jets = cms.InputTag("ak4CaloJetsL2L3")
+    jets = cms.InputTag("ak4CaloJetsL1FastL2L3")
 )
 
 
 displacedAk4JetTracksAssociatorAtVertexRegionalIter0124 = cms.EDProducer("JetTracksAssociatorAtVertex",
     j2tParametersVXRegionalIter0124,
-    jets = cms.InputTag("ak4CaloJetsL2L3")
+    jets = cms.InputTag("ak4CaloJetsL1FastL2L3")
 )
 
 displacedAk4JetTracksAssociatorAtVertexRegionalIter012 = cms.EDProducer("JetTracksAssociatorAtVertex",
     j2tParametersVXRegionalIter012,
-    jets = cms.InputTag("ak4CaloJetsL2L3")
+    jets = cms.InputTag("ak4CaloJetsL1FastL2L3")
 )
 
 displacedAk4JetTracksAssociatorAtVertexRegionalIter4 = cms.EDProducer("JetTracksAssociatorAtVertex",
     j2tParametersVXRegionalIter4,
-    jets = cms.InputTag("ak4CaloJetsL2L3")
+    jets = cms.InputTag("ak4CaloJetsL1FastL2L3")
 )
 
 # ak4JetTracksAssociatorAtVertexPF = cms.EDProducer("JetTracksAssociatorAtVertex",
@@ -39,7 +39,7 @@ displacedAk4JetTracksAssociatorAtVertexRegionalIter4 = cms.EDProducer("JetTracks
 
 displacedAk4JetTracksAssociatorAtCaloFace = cms.EDProducer("JetTracksAssociatorAtCaloFace",
     j2tParametersCALO,
-    jets = cms.InputTag("ak4CaloJetsL2L3")
+    jets = cms.InputTag("ak4CaloJetsL1FastL2L3")
 )
 
 # ak4JetExtender = cms.EDProducer("JetExtender",

@@ -18,7 +18,7 @@ isSignalMC         = False
 isMC               = True or isSignalMC
 isData             = not isMC
 doedm              = False
-nevents            = -1
+nevents            = 0
 
 #-------------- globaltags
 #gtag              = "74X_HLT_mcRun2_asymptotic_fromSpring15DR_v0" #spring 15 25ns
@@ -28,9 +28,18 @@ nevents            = -1
 #gtag              = "MCRUN2_74_V9" #guns
 #gtag              = "74X_dataRun2_Prompt_v2"  #data
 #gtag               = "76X_dataRun2_v15"
-gtag               = "76X_mcRun2_asymptotic_v12"
-#gtag               = "80X_mcRun2_asymptotic_2016_v3"
+#gtag               = "76X_mcRun2_asymptotic_v12"
+gtag               = "80X_mcRun2_asymptotic_2016_v3"
 #gtag               = "80X_dataRun2_Prompt_v8"
+
+# JEC TAGS
+jec_tag_DATA  = 'JetCorrectorParametersCollection_Spring16_25nsV6_DATA_AK4Calo'
+jec_tag_MC    = 'JetCorrectorParametersCollection_Spring16_25nsV6_MC_AK4Calo'
+jec_file_DATA = 'sqlite_file:Spring16_25nsV6_DATA.db'
+jec_file_MC   = 'sqlite_file:Spring16_25nsV6_MC.db'
+jec_tag       = jec_tag_MC if isMC else jec_tag_DATA 
+jec_file      = jec_file_MC if isMC else jec_file_DATA
+algorithm     = "AK4Calo"
 
 ## -------------json
 #JSON               = 'json_DCSONLY_Run2015B.txt'
@@ -268,89 +277,46 @@ if isData:
 
 ################################################################################################
 
-# process.hltAK4CaloFastJetCorrector = cms.EDProducer( "L1FastjetCorrectorProducer",
-#     srcRho = cms.InputTag( "fixedGridRhoFastjetAllCalo"),
-#     algorithm = cms.string( "AK4Calo" ),
-#     level = cms.string( "L1FastJet" )
-# )
-# process.hltAK4CaloRelativeCorrector = cms.EDProducer( "LXXXCorrectorProducer",
-#     algorithm = cms.string( "AK4Calo" ),
-#     level = cms.string( "L2Relative" )
-# )
-# process.hltAK4CaloAbsoluteCorrector = cms.EDProducer( "LXXXCorrectorProducer",
-#     algorithm = cms.string( "AK4Calo" ),
-#     level = cms.string( "L3Absolute" )
-# )
-# process.hltAK4CaloCorrector = cms.EDProducer( "ChainedJetCorrectorProducer",
-#     correctors = cms.VInputTag( 'hltAK4CaloFastJetCorrector','hltAK4CaloRelativeCorrector','hltAK4CaloAbsoluteCorrector' )
-# )
-# process.ak4CaloJetsL2L3 = cms.EDProducer( "CorrectedCaloJetProducer",
-#     src = cms.InputTag( "ak4CaloJets" ),
-#     correctors = cms.VInputTag( 'hltAK4CaloCorrector' )
-# )
-# process.correctJets = cms.Sequence(process.hltAK4CaloFastJetCorrector * 
-#                                    process.hltAK4CaloRelativeCorrector * 
-#                                    process.hltAK4CaloAbsoluteCorrector * process.hltAK4CaloCorrector * process.ak4CaloJetsL2L3)
-
 # #get the jet energy corrections from the db file
 process.load("CondCore.CondDB.CondDB_cfi") 
 
-# process.jec = cms.ESSource("PoolDBESSource",
-#       DBParameters = cms.PSet(
-#         messageLevel = cms.untracked.int32(0)
-#         ),
-#                            timetype = cms.string('runnumber'),
-#                            toGet = cms.VPSet(
-#       cms.PSet(
-#          record = cms.string('JetCorrectionsRecord'),
-#          #DATA
-#          #tag    = cms.string('JetCorrectorParametersCollection_HI_PythiaCUETP8M1_5020GeV_753p1_v1_AK4Calo_offline'),
-#          #MC
-#          tag    = cms.string('JetCorrectorParametersCollection_Spring16_25nsV3_MC_AK4Calo'),
-#          label  = cms.untracked.string('AK4Calo')
-#          ),
-#       ), 
-#       #DATA
-#       #connect = cms.string("frontier://FrontierProd/CMS_CONDITIONS") #sqlite_file:Spring16_V3_DATA.db')
-#       #MC
-#       connect = cms.string('sqlite_file:Spring16_25nsV3_MC.db')
-# )
+process.jec = cms.ESSource("PoolDBESSource",
+      DBParameters = cms.PSet(
+        messageLevel = cms.untracked.int32(0)
+        ),
+                           timetype = cms.string('runnumber'),
+                           toGet = cms.VPSet(
+      cms.PSet(
+         record = cms.string('JetCorrectionsRecord'),
+         tag    = cms.string(jec_tag),
+         label  = cms.untracked.string('AK4Calo')
+         ),
+      ), 
+      connect = cms.string(jec_file)
+)
 
 # #make sure we use the db source and not the global tag
-#process.es_prefer_jec = cms.ESPrefer('PoolDBESSource','jec')
-# process.get = cms.EDAnalyzer("EventSetupRecordDataGetter",
-#     toGet = cms.VPSet(cms.PSet(
-#         record = cms.string('JetCorrectionsRecord'),
-#         data = cms.vstring('JetCorrectorParametersCollection/AK4Calo')
-#     )
-#     ),
-#     verbose = cms.untracked.bool(True)
-# )
+process.es_prefer_jec = cms.ESPrefer('PoolDBESSource','jec')
+process.get = cms.EDAnalyzer("EventSetupRecordDataGetter",
+    toGet = cms.VPSet(cms.PSet(
+        record = cms.string('JetCorrectionsRecord'),
+        data = cms.vstring('JetCorrectorParametersCollection/AK4Calo')
+    )
+    ),
+    verbose = cms.untracked.bool(True)
+)
 
-# jet corrections taken from the global tag
-# process.ak4CaloL2RelativeCorrector.algorithm = cms.string("AK4Calo")
-# process.ak4CaloL3AbsoluteCorrector.algorithm = cms.string("AK4Calo")
-# #process.ak4CaloL2L3Corrector.algorithm = cms.string("ak4CaloHLT")
-# process.correctJets = cms.Sequence(process.ak4CaloL2L3CorrectorChain * process.ak4CaloJetsL2L3)
+# define the algoirthm for the corrections
+process.ak4CaloL1FastjetCorrector.algorithm  = cms.string(algorithm)
+process.ak4CaloL2RelativeCorrector.algorithm = cms.string(algorithm)
+process.ak4CaloL3AbsoluteCorrector.algorithm = cms.string(algorithm)
 
-process.ak4CaloL2RelativeCorrector.algorithm = cms.string("AK5Calo")
-process.ak4CaloL3AbsoluteCorrector.algorithm = cms.string("AK5Calo")
+print "ak4caloL1 offset corrector   = ",  process.ak4CaloL1FastjetCorrector.algorithm
 print "ak4caloL2 relative corrector = ",  process.ak4CaloL2RelativeCorrector.algorithm
-print "ak4caloL3 aboslute corrector = ",  process.ak4CaloL3AbsoluteCorrector.algorithm
-process.correctJets = cms.Sequence( process.ak4CaloL2L3CorrectorChain * process.ak4CaloJetsL2L3)
+print "ak4caloL3 absolute corrector = ",  process.ak4CaloL3AbsoluteCorrector.algorithm
 
-# process.load("CondCore.DBCommon.CondDBCommon_cfi")
-# # output database (in this case local sqlite file)
-# process.CondDBCommon.connect = 'sqlite_file:ak4calocorr_76X_mcRun2_asymptotic_v12.db'
-
-# process.PoolDBOutputService = cms.Service("PoolDBOutputService",
-#     process.CondDBCommon,
-#     timetype = cms.untracked.string('runnumber'),
-#     toPut = cms.VPSet(cms.PSet(
-#         record = cms.string('JetCorrectionsRecord'),
-#         tag = cms.string('JetCorrectorParametersCollection/AK4Calo')
-#     ))
-# )
+process.ak4CaloJetsL1FastL2L3 = process.ak4CaloJetsL1.clone(correctors = ['ak4CaloL1FastL2L3Corrector'])
+process.correctJets           = cms.Sequence( process.ak4CaloL1FastL2L3CorrectorChain * process.ak4CaloJetsL1FastL2L3 )
 
 #configure the analyzers
 process.analyzerVTX  = cms.EDAnalyzer('DJetAnalyzer')
@@ -422,7 +388,7 @@ process.analyzerCALO.triggerResults    = cms.untracked.InputTag('TriggerResults'
 
 # collection tags
 process.analyzerVTX.generalTracks          = cms.untracked.InputTag('generalTracks', '', '')
-process.analyzerVTX.ak4CaloJets            = cms.untracked.InputTag('ak4CaloJetsL2L3', '', '')
+process.analyzerVTX.ak4CaloJets            = cms.untracked.InputTag('ak4CaloJetsL1FastL2L3', '', '')
 process.analyzerVTX.genParticles           = cms.untracked.InputTag('genParticles', '', '')
 
 # regional tracking rom the HLT
@@ -434,7 +400,7 @@ process.analyzerVTX.regionalTracksIter4           = cms.untracked.InputTag('disp
 # process.analyzerVTX.regionalTracksIter4    = cms.untracked.InputTag('hltDisplacedhltIter4PFlowTrackSelectionHighPurity', '', '')
 
 process.analyzerCALO.generalTracks                 = cms.untracked.InputTag('generalTracks', '', '')
-process.analyzerCALO.ak4CaloJets                   = cms.untracked.InputTag('ak4CaloJetsL2L3', '', '')
+process.analyzerCALO.ak4CaloJets                   = cms.untracked.InputTag('ak4CaloJetsL1FastL2L3', '', '')
 process.analyzerCALO.genParticles                  = cms.untracked.InputTag('genParticles', '', '')
 process.analyzerCALO.caloMatchedTrackAssociation   = cms.untracked.InputTag('displacedAk4JetTracksAssociatorAtVertex','','ANA')
 process.analyzerCALO.vertexMatchedTrackAssociation = cms.untracked.InputTag('displacedAk4JetTracksAssociatorAtVertex','','ANA')
